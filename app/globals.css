@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    /* Visily-inspired Color Palette */
+    --orange-primary: #FF5C00;
+    --orange-hover: #FF7A2E;
+    --orange-light: #FFF4ED;
+    --github-green: #22C55E;
+    --green-light: #DCFCE7;
+
+    /* Backgrounds */
+    --bg-light: #FDFBF7;
+    --bg-warm: #F9F6F1;
+    --bg-card: #FFFFFF;
+
+    /* Text */
+    --text-primary: #1F2937;
+    --text-secondary: #6B7280;
+
+    /* Borders & Shadows */
+    --border-light: #E5E7EB;
+}
+
+[data-theme="dark"] {
+    --bg-light: #0F0F0F;
+    --bg-warm: #1A1A1A;
+    --bg-card: #252525;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --border-light: #374151;
+}
+
+body {
+    background: var(--bg-light);
+    color: var(--text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
+}
