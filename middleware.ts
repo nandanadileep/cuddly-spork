@@ -11,9 +11,8 @@ export async function middleware(request: NextRequest) {
     const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/signup')
     const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
-        request.nextUrl.pathname.startsWith('/platforms') ||
-        request.nextUrl.pathname.startsWith('/projects') ||
-        request.nextUrl.pathname.startsWith('/editor')
+        request.nextUrl.pathname.startsWith('/onboarding') ||
+        request.nextUrl.pathname.startsWith('/settings')
 
     // Redirect to dashboard if logged in and trying to access auth pages
     if (isAuthPage && token) {
@@ -33,9 +32,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
     matcher: [
         '/dashboard/:path*',
-        '/platforms/:path*',
-        '/projects/:path*',
-        '/editor/:path*',
+        '/onboarding',
+        '/settings',
         '/login',
         '/signup',
     ],
