@@ -3,33 +3,46 @@
 @tailwind utilities;
 
 :root {
-    /* Visily-inspired Color Palette */
-    --orange-primary: #FF5C00;
-    --orange-hover: #FF7A2E;
-    --orange-light: #FFF4ED;
-    --github-green: #22C55E;
-    --green-light: #DCFCE7;
+    /* Anthropic-inspired "Elegant" Palette */
+    /* Primary: Warm Clay / Muted Bronze */
+    --orange-primary: #D97757;
+    --orange-hover: #C46749;
+    --orange-light: #F2E8E4;
+    /* Very subtle warm tint */
 
-    /* Backgrounds */
-    --bg-light: #FDFBF7;
-    --bg-warm: #F9F6F1;
+    /* Accents */
+    --github-green: #3F7A5E;
+    /* Muted Forest Green */
+    --green-light: #E6F0EB;
+
+    /* Backgrounds - Warm & Paper-like */
+    --bg-light: #F9F8F6;
+    /* Warm Paper */
+    --bg-warm: #F2EFE9;
+    /* Slightly darker warm beige */
     --bg-card: #FFFFFF;
 
-    /* Text */
-    --text-primary: #1F2937;
-    --text-secondary: #6B7280;
+    /* Text - Softer */
+    --text-primary: #2D2926;
+    /* Warm Charcoal */
+    --text-secondary: #6B665E;
+    /* Warm Grey */
+
+    /* Typography */
+    --font-serif: "Newsreader", "Georgia", "Times New Roman", serif;
+    --font-sans: "Inter", system-ui, sans-serif;
 
     /* Borders & Shadows */
-    --border-light: #E5E7EB;
+    --border-light: #E6E1DB;
 }
 
 [data-theme="dark"] {
-    --bg-light: #0F0F0F;
-    --bg-warm: #1A1A1A;
-    --bg-card: #252525;
-    --text-primary: #F9FAFB;
-    --text-secondary: #9CA3AF;
-    --border-light: #374151;
+    --bg-light: #1A1918;
+    --bg-warm: #242220;
+    --bg-card: #2D2A28;
+    --text-primary: #F0EBE6;
+    --text-secondary: #A8A29D;
+    --border-light: #3E3B38;
 }
 
 body {

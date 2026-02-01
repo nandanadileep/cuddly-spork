@@ -14,7 +14,7 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-xl text-[var(--text-secondary)] mb-8 max-w-2xl mx-auto leading-relaxed">
-                    Connect your GitHub, GitLab, Behance, and more. Let AI curate your best work and generate a stunning LaTeX resume.
+                    Connect your GitHub, GitLab, Behance, and more. Let AI curate your best work and generate a stunning resume.
                 </p>
 
                 <div className="flex gap-4 justify-center">

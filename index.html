@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHire - AI-Powered Resume Builder</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">📄</span>
+                <span class="logo-text">GitHire</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Screen 1: Hero/Landing -->
+    <section id="hero" class="screen active">
+        <div class="container">
+            <div class="hero-content">
+                <div class="badge">✨ AI-Powered Resume Builder</div>
+                <h1 class="hero-title">Turn your scattered repos into an ATS-winning resume in 60 seconds</h1>
+                <p class="hero-subtitle">Connect your GitHub, GitLab, Behance, and more. Let AI curate your best work and generate a stunning LaTeX resume.</p>
+                <button class="btn-primary" onclick="navigateTo('connect')">
+                    Get Started Free
+                    <span class="btn-arrow">→</span>
+                </button>
+                <div class="trust-logos">
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="resume-preview-card">
+                    <div class="preview-header">
+                        <div class="preview-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="preview-content">
+                        <div class="preview-line long"></div>
+                        <div class="preview-line medium"></div>
+                        <div class="preview-line short"></div>
+                        <div class="preview-section">
+                            <div class="preview-line medium"></div>
+                            <div class="preview-line long"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screen 2: Connect Accounts -->
+    <section id="connect" class="screen">
+        <div class="container-small">
+            <div class="screen-header">
+                <h2>Connect Your Accounts</h2>
+                <p>Link your platforms to automatically import your projects</p>
+            </div>
+            <div class="connect-card">
+                <div class="connect-option" onclick="simulateConnect('github')">
+                    <div class="connect-icon github">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                        </svg>
+                    </div>
+                    <div class="connect-info">
+                        <h3>GitHub</h3>
+                        <p>Import repositories and contributions</p>
+                    </div>
+                    <span class="connect-arrow">→</span>
+                </div>
+
+                <div class="connect-option" onclick="simulateConnect('gitlab')">
+                    <div class="connect-icon gitlab">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0118.6 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51L23 13.45a.84.84 0 01-.35.94z"/>
+                        </svg>
+                    </div>
+                    <div class="connect-info">
+                        <h3>GitLab</h3>
+                        <p>Sync your GitLab projects</p>
+                    </div>
+                    <span class="connect-arrow">→</span>
+                </div>
+
+                <div class="connect-option" onclick="simulateConnect('behance')">
+                    <div class="connect-icon behance">
+                        <span style="font-size: 20px; font-weight: bold;">Be</span>
+                    </div>
+                    <div class="connect-info">
+                        <h3>Behance</h3>
+                        <p>Import design portfolios</p>
+                    </div>
+                    <span class="connect-arrow">→</span>
+                </div>
+
+                <div class="connect-option" onclick="simulateConnect('url')">
+                    <div class="connect-icon custom">
+                        <span style="font-size: 20px;">🔗</span>
+                    </div>
+                    <div class="connect-info">
+                        <h3>Custom URL</h3>
+                        <p>Add personal website or portfolio</p>
+                    </div>
+                    <span class="connect-arrow">→</span>
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="navigateTo('dashboard')">Continue</button>
+        </div>
+    </section>
+
+    <!-- Screen 3: Dashboard -->
+    <section id="dashboard" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <h2>Your Projects</h2>
+                <p>We found <strong>12 projects</strong> across your accounts</p>
+            </div>
+            <div class="projects-grid">
+                <div class="project-card featured">
+                    <div class="project-badge ai-pick">🔥 Top Pick</div>
+                    <div class="project-header">
+                        <div class="project-icon">📦</div>
+                        <div class="project-stats">
+                            <span class="stat">⭐ 234</span>
+                            <span class="stat">🔀 45</span>
+                        </div>
+                    </div>
+                    <h3>autonomous-ci-repair</h3>
+                    <p>AI agent that automatically fixes failing CI/CD pipelines</p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">Python</span>
+                        <span class="tech-badge">AI</span>
+                        <span class="tech-badge">DevOps</span>
+                    </div>
+                    <div class="ai-score">
+                        <span class="score-label">AI Impact Score</span>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: 95%"></div>
+                        </div>
+                        <span class="score-value">95/100</span>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-badge ai-pick">✨ AI Selected</div>
+                    <div class="project-header">
+                        <div class="project-icon">🎨</div>
+                        <div class="project-stats">
+                            <span class="stat">⭐ 156</span>
+                            <span class="stat">🔀 28</span>
+                        </div>
+                    </div>
+                    <h3>realtime-collab-editor</h3>
+                    <p>Real-time collaborative code editor with WebRTC</p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">React</span>
+                        <span class="tech-badge">WebRTC</span>
+                        <span class="tech-badge">Node.js</span>
+                    </div>
+                    <div class="ai-score">
+                        <span class="score-label">AI Impact Score</span>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: 88%"></div>
+                        </div>
+                        <span class="score-value">88/100</span>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">🚀</div>
+                        <div class="project-stats">
+                            <span class="stat">⭐ 89</span>
+                            <span class="stat">🔀 12</span>
+                        </div>
+                    </div>
+                    <h3>serverless-api-gateway</h3>
+                    <p>Lightweight API gateway for serverless functions</p>
+                    <div class="tech-stack">
+                        <span class="tech-badge">Go</span>
+                        <span class="tech-badge">AWS</span>
+                        <span class="tech-badge">Docker</span>
+                    </div>
+                    <div class="ai-score">
+                        <span class="score-label">AI Impact Score</span>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: 76%"></div>
+                        </div>
+                        <span class="score-value">76/100</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="navigateTo('curate')">Let AI Select Best Projects</button>
+        </div>
+    </section>
+
+    <!-- Screen 4: AI Curation -->
+    <section id="curate" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <h2>AI Project Curation</h2>
+                <p>Drag to reorder • Select your top 5-7 projects</p>
+            </div>
+            <div class="curation-grid">
+                <div class="curation-item selected">
+                    <input type="checkbox" checked>
+                    <div class="project-mini">
+                        <span class="drag-handle">⋮⋮</span>
+                        <div class="project-icon">📦</div>
+                        <div class="project-details">
+                            <h4>autonomous-ci-repair</h4>
+                            <div class="tech-stack">
+                                <span class="tech-badge">Python</span>
+                                <span class="tech-badge">AI</span>
+                            </div>
+                        </div>
+                        <div class="ai-recommendation">
+                            <span class="rec-badge top">🔥 Top Pick</span>
+                            <span class="rec-score">95</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="curation-item selected">
+                    <input type="checkbox" checked>
+                    <div class="project-mini">
+                        <span class="drag-handle">⋮⋮</span>
+                        <div class="project-icon">🎨</div>
+                        <div class="project-details">
+                            <h4>realtime-collab-editor</h4>
+                            <div class="tech-stack">
+                                <span class="tech-badge">React</span>
+                                <span class="tech-badge">WebRTC</span>
+                            </div>
+                        </div>
+                        <div class="ai-recommendation">
+                            <span class="rec-badge good">✨ Strong</span>
+                            <span class="rec-score">88</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="curation-item">
+                    <input type="checkbox">
+                    <div class="project-mini">
+                        <span class="drag-handle">⋮⋮</span>
+                        <div class="project-icon">🚀</div>
+                        <div class="project-details">
+                            <h4>serverless-api-gateway</h4>
+                            <div class="tech-stack">
+                                <span class="tech-badge">Go</span>
+                                <span class="tech-badge">AWS</span>
+                            </div>
+                        </div>
+                        <div class="ai-recommendation">
+                            <span class="rec-score">76</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="navigateTo('builder')">Build Resume</button>
+        </div>
+    </section>
+
+    <!-- Screen 5: Resume Builder -->
+    <section id="builder" class="screen">
+        <div class="container-wide">
+            <div class="screen-header">
+                <h2>Resume Builder</h2>
+                <p>Edit bullet points • Let AI optimize for ATS</p>
+            </div>
+            <div class="builder-layout">
+                <div class="builder-sidebar">
+                    <div class="job-input">
+                        <label>Target Job Description (Optional)</label>
+                        <textarea placeholder="Paste job description for AI optimization..."></textarea>
+                    </div>
+                    <div class="section-toggles">
+                        <h4>Sections</h4>
+                        <label class="toggle-item">
+                            <input type="checkbox" checked>
+                            <span>Projects</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" checked>
+                            <span>Skills</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox">
+                            <span>Education</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="builder-content">
+                    <div class="project-editor">
+                        <div class="editor-header">
+                            <h3>autonomous-ci-repair</h3>
+                            <button class="btn-icon">✏️</button>
+                        </div>
+                        <div class="bullet-list">
+                            <div class="bullet-item">
+                                <span class="bullet">•</span>
+                                <input type="text" value="Built autonomous AI agent that automatically detects and fixes failing CI/CD pipelines">
+                                <button class="ai-rewrite" title="AI Rewrite">✨</button>
+                            </div>
+                            <div class="bullet-item">
+                                <span class="bullet">•</span>
+                                <input type="text" value="Reduced pipeline failure resolution time by 80% using LLM-powered debugging">
+                                <button class="ai-rewrite" title="AI Rewrite">✨</button>
+                            </div>
+                            <div class="bullet-item">
+                                <span class="bullet">•</span>
+                                <input type="text" value="Implemented guardrail system to prevent infinite loops and ensure safe execution">
+                                <button class="ai-rewrite" title="AI Rewrite">✨</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="navigateTo('preview')">Preview Resume</button>
+        </div>
+    </section>
+
+    <!-- Screen 6: Live Preview -->
+    <section id="preview" class="screen">
+        <div class="container-wide">
+            <div class="screen-header">
+                <h2>Resume Preview</h2>
+                <p>Live LaTeX rendering</p>
+            </div>
+            <div class="preview-layout">
+                <div class="preview-editor">
+                    <div class="editor-toolbar">
+                        <button class="toolbar-btn active">Edit</button>
+                        <button class="toolbar-btn">LaTeX</button>
+                    </div>
+                    <div class="latex-editor">
+                        <div class="code-line"><span class="keyword">\section</span>{Projects}</div>
+                        <div class="code-line"><span class="keyword">\project</span>{autonomous-ci-repair}</div>
+                        <div class="code-line">  <span class="keyword">\item</span> Built autonomous AI agent...</div>
+                        <div class="code-line">  <span class="keyword">\item</span> Reduced pipeline failure...</div>
+                    </div>
+                </div>
+                <div class="preview-pdf">
+                    <div class="pdf-viewer">
+                        <div class="pdf-page">
+                            <div class="pdf-header">
+                                <h1>John Developer</h1>
+                                <p>john@example.com • github.com/john</p>
+                            </div>
+                            <div class="pdf-section">
+                                <h2>Projects</h2>
+                                <div class="pdf-project">
+                                    <h3>autonomous-ci-repair</h3>
+                                    <ul>
+                                        <li>Built autonomous AI agent that automatically detects and fixes failing CI/CD pipelines</li>
+                                        <li>Reduced pipeline failure resolution time by 80% using LLM-powered debugging</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="navigateTo('success')">Download PDF</button>
+        </div>
+    </section>
+
+    <!-- Screen 7: Success -->
+    <section id="success" class="screen">
+        <div class="container-small">
+            <div class="success-content">
+                <div class="success-icon">✅</div>
+                <h2>Your Resume is Ready!</h2>
+                <p>Download your ATS-optimized resume or share it with recruiters</p>
+                
+                <div class="success-preview">
+                    <div class="mini-pdf">
+                        <div class="pdf-thumbnail">
+                            <div class="thumb-line"></div>
+                            <div class="thumb-line short"></div>
+                            <div class="thumb-line"></div>
+                            <div class="thumb-line medium"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="success-actions">
+                    <button class="btn-primary large">
+                        <span>📥</span>
+                        Download PDF
+                    </button>
+                    <button class="btn-secondary large">
+                        <span>🔗</span>
+                        Copy Shareable Link
+                    </button>
+                    <button class="btn-twitter">
+                        <span>𝕏</span>
+                        Post to X
+                    </button>
+                </div>
+
+                <div class="success-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">12</span>
+                        <span class="stat-label">Projects Analyzed</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">5</span>
+                        <span class="stat-label">Selected</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">98%</span>
+                        <span class="stat-label">ATS Score</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>

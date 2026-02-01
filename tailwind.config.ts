@@ -8,6 +8,10 @@ export default {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+                serif: ['var(--font-newsreader)', 'Georgia', 'serif'],
+            },
             colors: {
                 background: "var(--background)",
                 foreground: "var(--foreground)",

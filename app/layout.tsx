@@ -1,13 +1,18 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Newsreader } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const newsreader = Newsreader({
+    subsets: ['latin'],
+    style: ['normal', 'italic'],
+    variable: '--font-newsreader'
+})
 
 export const metadata: Metadata = {
-    title: 'GitHire - AI-Powered Resume Builder',
-    description: 'Turn your scattered repos into an ATS-winning resume in 60 seconds',
+    title: 'GitHire - Elegant Resume Builder',
+    description: 'Turn your code into a professional resume.',
 }
 
 export default function RootLayout({
@@ -17,7 +22,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={inter.className} suppressHydrationWarning>
+            <body className={`${inter.variable} ${newsreader.variable} font-sans`} suppressHydrationWarning>
                 <AuthProvider>{children}</AuthProvider>
             </body>
         </html>

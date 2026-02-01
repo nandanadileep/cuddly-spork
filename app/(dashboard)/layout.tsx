@@ -14,9 +14,7 @@ export default function DashboardLayout({
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-        { name: 'Platforms', href: '/platforms', icon: '🔗' },
-        { name: 'Projects', href: '/projects', icon: '📦' },
-        { name: 'Resumes', href: '/resumes', icon: '📄' },
+        { name: 'Settings', href: '/settings', icon: '⚙️' },
     ]
 
     return (
@@ -26,25 +24,25 @@ export default function DashboardLayout({
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
-                        <Link href="/dashboard" className="flex items-center gap-2">
-                            <span className="text-2xl">📄</span>
-                            <span className="text-xl font-extrabold">GitHire</span>
+                        <Link href="/dashboard" className="flex items-center gap-2 group">
+                            <span className="text-2xl group-hover:scale-110 transition-transform">📄</span>
+                            <span className="text-xl font-serif font-bold tracking-tight text-[var(--text-primary)]">GitHire</span>
                         </Link>
 
                         {/* Navigation Links */}
-                        <div className="hidden md:flex items-center gap-1">
+                        <div className="hidden md:flex items-center gap-6">
                             {navigation.map((item) => {
                                 const isActive = pathname === item.href
                                 return (
                                     <Link
                                         key={item.name}
                                         href={item.href}
-                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${isActive
-                                                ? 'bg-[var(--orange-light)] text-[var(--orange-primary)]'
-                                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]'
+                                        className={`flex items-center gap-2 text-sm font-medium transition-colors ${isActive
+                                            ? 'text-[var(--orange-primary)]'
+                                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                             }`}
                                     >
-                                        <span className="mr-2">{item.icon}</span>
+                                        <span className={`text-lg ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.icon}</span>
                                         {item.name}
                                     </Link>
                                 )
@@ -53,13 +51,13 @@ export default function DashboardLayout({
 
                         {/* User Menu */}
                         <div className="flex items-center gap-4">
-                            <div className="text-sm">
-                                <div className="font-semibold">{session?.user?.name || 'User'}</div>
+                            <div className="text-sm text-right hidden sm:block">
+                                <div className="font-medium text-[var(--text-primary)]">{session?.user?.name || 'User'}</div>
                                 <div className="text-[var(--text-secondary)] text-xs">{session?.user?.email}</div>
                             </div>
                             <button
                                 onClick={() => signOut({ callbackUrl: '/' })}
-                                className="px-4 py-2 rounded-lg border-2 border-[var(--border-light)] hover:border-[var(--orange-primary)] transition-all text-sm font-medium"
+                                className="px-4 py-2 rounded-md border border-[var(--border-light)] hover:bg-[var(--bg-warm)] transition-colors text-sm font-medium text-[var(--text-secondary)]"
                             >
                                 Sign Out
                             </button>
