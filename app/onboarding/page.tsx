@@ -13,12 +13,23 @@ export default function OnboardingPage() {
     const { data: session } = useSession()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
+    const [isLinkedinSyncing, setIsLinkedinSyncing] = useState(false)
+    const [isWebsiteSyncing, setIsWebsiteSyncing] = useState(false)
 
     // Form State
     const [linkedinUrl, setLinkedinUrl] = useState('')
+    const [contactEmail, setContactEmail] = useState('')
+    const [phoneNumber, setPhoneNumber] = useState('')
+    const [location, setLocation] = useState('')
+    const [websiteUrl, setWebsiteUrl] = useState('')
     const [targetRole, setTargetRole] = useState('')
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
     const [platformUrls, setPlatformUrls] = useState<Record<string, string>>({})
+    const [websitePreview, setWebsitePreview] = useState<{
+        title?: string
+        description?: string
+        url?: string
+    } | null>(null)
 
     // Syncing state
     const [syncProgress, setSyncProgress] = useState<Record<string, 'pending' | 'syncing' | 'complete'>>({})
@@ -35,6 +46,43 @@ export default function OnboardingPage() {
             setPlatformUrls(newUrls)
         } else {
             setSelectedPlatforms([...selectedPlatforms, id])
+        }
+    }
+
+    const handleProfileContinue = async () => {
+        setIsLoading(true)
+        try {
+            if (linkedinUrl) {
+                setIsLinkedinSyncing(true)
+                await fetch('/api/sync/linkedin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: linkedinUrl })
+                })
+            }
+
+            if (websiteUrl) {
+                setIsWebsiteSyncing(true)
+                const response = await fetch('/api/sync/website', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: websiteUrl })
+                })
+
+                if (response.ok) {
+                    const data = await response.json()
+                    setWebsitePreview(data?.metadata ?? null)
+                }
+            }
+
+            handleNext()
+        } catch (error) {
+            console.error('Profile fetch error:', error)
+            handleNext()
+        } finally {
+            setIsLoading(false)
+            setIsLinkedinSyncing(false)
+            setIsWebsiteSyncing(false)
         }
     }
 
@@ -100,6 +148,11 @@ export default function OnboardingPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     linkedinUrl,
+                    contactEmail,
+                    phoneNumber,
+                    location,
+                    websiteUrl,
+                    websitePreview,
                     targetRole,
                     platforms: selectedPlatforms.map(id => ({
                         id,
@@ -135,36 +188,124 @@ export default function OnboardingPage() {
                             {step === 5 ? 'Setting up your profile...' : `Step ${step} of 4`}
                         </p>
                     </div>
+                    <div className="hidden sm:block text-xs text-[var(--text-secondary)] max-w-[180px] text-right">
+                        Kindly use desktop for a better experience.
+                    </div>
                 </div>
+                <p className="sm:hidden text-xs text-[var(--text-secondary)] mb-6 text-center">
+                    Kindly use desktop for a better experience.
+                </p>
 
-                {/* Step 1: LinkedIn */}
+                {/* Step 1: LinkedIn + Contact */}
                 {step === 1 && (
                     <div className="space-y-8">
                         <div className="text-center py-8">
                             <SiLinkedin className="mx-auto text-5xl text-[#0077B5] mb-6 opacity-90" />
-                            <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Connect your LinkedIn</h2>
+                            <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Share your LinkedIn & contact info</h2>
                             <p className="text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-                                We'll fetch your education and experience to build your resume.
+                                We'll try to fetch your education and experience. Everything here is optional.
                             </p>
                         </div>
 
-                        <div className="max-w-lg mx-auto">
-                            <input
-                                type="url"
-                                placeholder="https://www.linkedin.com/in/username"
-                                className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
-                                value={linkedinUrl}
-                                onChange={(e) => setLinkedinUrl(e.target.value)}
-                            />
-                            <p className="text-xs text-[var(--text-secondary)] mt-2">Optional - you can skip this step</p>
+                        <div className="grid gap-4 max-w-xl mx-auto">
+                            <div>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2 block">
+                                    LinkedIn URL
+                                </label>
+                                <input
+                                    type="url"
+                                    placeholder="https://www.linkedin.com/in/username"
+                                    className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                    value={linkedinUrl}
+                                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2 block">
+                                        Contact email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        placeholder="you@example.com"
+                                        className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                        value={contactEmail}
+                                        onChange={(e) => setContactEmail(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2 block">
+                                        Phone number
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        placeholder="+1 555 000 0000"
+                                        className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2 block">
+                                        Location
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="City, Country"
+                                        className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2 block">
+                                        Website
+                                    </label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://yourportfolio.com"
+                                        className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                        value={websiteUrl}
+                                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {(isLinkedinSyncing || isWebsiteSyncing) && (
+                                <p className="text-xs text-[var(--text-secondary)]">
+                                    {isLinkedinSyncing && 'Trying to fetch LinkedIn details... '}
+                                    {isWebsiteSyncing && 'Looking at your website content...'}
+                                </p>
+                            )}
+
+                            {websitePreview && (
+                                <div className="rounded-md border border-[var(--border-light)] bg-white p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                                        Website preview
+                                    </p>
+                                    <p className="text-sm font-semibold text-[var(--text-primary)] mt-2">
+                                        {websitePreview.title || 'Untitled page'}
+                                    </p>
+                                    {websitePreview.description && (
+                                        <p className="text-xs text-[var(--text-secondary)] mt-1">
+                                            {websitePreview.description}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-center">
                             <button
-                                onClick={handleNext}
-                                className="px-8 py-3 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-all shadow-sm"
+                                onClick={handleProfileContinue}
+                                disabled={isLoading}
+                                className="px-8 py-3 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-all shadow-sm disabled:opacity-60"
                             >
-                                Continue
+                                {isLoading ? 'Saving...' : 'Continue'}
                             </button>
                         </div>
                     </div>
@@ -291,7 +432,7 @@ export default function OnboardingPage() {
                             </button>
                             <button
                                 onClick={handleContinueToSync}
-                                disabled={isLoading || !targetRole}
+                                disabled={isLoading}
                                 className="px-8 py-2 bg-[var(--github-green)] text-white rounded-md font-medium hover:opacity-90 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
                             >
                                 {isLoading ? 'Saving...' : 'Start Syncing'}

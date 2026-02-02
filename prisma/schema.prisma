@@ -18,6 +18,11 @@ model User {
   openai_credits       Int                  @default(100)
   target_role          String?
   linkedin_url         String?              // manual entry linkedin url
+  contact_email        String?
+  phone_number         String?
+  location             String?
+  website_url          String?
+  website_metadata_jsonb Json?
   onboarding_completed Boolean              @default(false)
   job_description_jsonb Json?                // full job description for analysis
   created_at           DateTime             @default(now())

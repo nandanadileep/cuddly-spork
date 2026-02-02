@@ -60,6 +60,9 @@ export default function SignupPage() {
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-extrabold mb-2">Create your account</h1>
                     <p className="text-[var(--text-secondary)]">Start building your AI-powered resume</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-2">
+                        Kindly use desktop for a better experience.
+                    </p>
                 </div>
 
                 <div className="bg-[var(--bg-card)] rounded-2xl p-8 shadow-lg border border-[var(--border-light)]">

@@ -12,7 +12,16 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json()
-        const { linkedinUrl, targetRole, platforms = [] } = body
+        const {
+            linkedinUrl,
+            contactEmail,
+            phoneNumber,
+            location,
+            websiteUrl,
+            websitePreview,
+            targetRole,
+            platforms = []
+        } = body
 
         console.log('Onboarding request:', { linkedinUrl, targetRole, platforms })
 
@@ -37,6 +46,11 @@ export async function POST(req: NextRequest) {
             where: { id: session.user.id },
             data: {
                 linkedin_url: linkedinUrl || null,
+                contact_email: contactEmail || null,
+                phone_number: phoneNumber || null,
+                location: location || null,
+                website_url: websiteUrl || null,
+                website_metadata_jsonb: websitePreview || undefined,
                 target_role: targetRole || null,
                 job_description_jsonb: jobDescriptionJsonb || undefined,
                 onboarding_completed: true,
