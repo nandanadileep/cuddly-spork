@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
 
         // Validate input
         if (!email || !password) {
+            console.log('Signup failed: Missing email or password');
             return NextResponse.json(
                 { error: 'Email and password are required' },
                 { status: 400 }
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (password.length < 8) {
+            console.log('Signup failed: Password too short');
             return NextResponse.json(
                 { error: 'Password must be at least 8 characters' },
                 { status: 400 }

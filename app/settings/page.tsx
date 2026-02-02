@@ -137,22 +137,22 @@ export default function SettingsPage() {
                         <span>✓</span> Connected Platforms ({connections.length})
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {connections.map(conn => {
-                            const platform = getPlatformById(conn.platform)
-                            if (!platform) return null
-
-                            return (
-                                <div key={conn.id} className="flex items-center gap-3 bg-white rounded-md p-3">
-                                    <platform.icon className="text-xl flex-shrink-0" style={{ color: platform.color }} />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm">{platform.name}</div>
-                                        <div className="text-xs text-[var(--text-secondary)] truncate">
-                                            {conn.username}
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
+                        {connections.map(conn => (
+                            <ConnectionCard
+                                key={conn.id}
+                                connection={conn}
+                                onSyncComplete={() => {
+                                    // Refresh connections
+                                    fetch('/api/user/connections')
+                                        .then(r => r.json())
+                                        .then(data => {
+                                            if (data.connections) {
+                                                setConnections(data.connections)
+                                            }
+                                        })
+                                }}
+                            />
+                        ))}
                     </div>
                 </section>
             )}
@@ -211,6 +211,60 @@ export default function SettingsPage() {
                     </div>
                 )}
             </section>
+        </div>
+    )
+}
+
+function ConnectionCard({ connection, onSyncComplete }: { connection: Connection, onSyncComplete: () => void }) {
+    const platform = getPlatformById(connection.platform)
+    const [syncing, setSyncing] = useState(false)
+
+    if (!platform) return null
+
+    const handleSync = async () => {
+        setSyncing(true)
+        try {
+            if (connection.platform === 'github') {
+                const response = await fetch('/api/sync/github', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: connection.username })
+                })
+
+                if (response.ok) {
+                    const result = await response.json()
+                    alert(`Synced ${result.stats?.total || 0} repositories!`)
+                    onSyncComplete()
+                } else {
+                    alert('Sync failed')
+                }
+            } else {
+                alert('Sync not implemented for this platform yet')
+            }
+        } catch (error) {
+            console.error('Sync error:', error)
+            alert('Sync failed')
+        } finally {
+            setSyncing(false)
+        }
+    }
+
+    return (
+        <div className="flex items-center gap-3 bg-white rounded-md p-3">
+            <platform.icon className="text-xl flex-shrink-0" style={{ color: platform.color }} />
+            <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm">{platform.name}</div>
+                <div className="text-xs text-[var(--text-secondary)] truncate">
+                    {connection.username}
+                </div>
+            </div>
+            <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="px-3 py-1 text-xs bg-[var(--orange-primary)] text-white rounded font-medium hover:bg-[var(--orange-hover)] transition-colors disabled:opacity-50"
+            >
+                {syncing ? '...' : '🔄'}
+            </button>
         </div>
     )
 }

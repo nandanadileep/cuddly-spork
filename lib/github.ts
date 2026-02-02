@@ -10,10 +10,11 @@ export interface GitHubRepo {
     stargazers_count: number
     forks_count: number
     topics: string[]
-    created_at: string
-    updated_at: string
-    pushed_at: string
+    created_at: string | null
+    updated_at: string | null
+    pushed_at: string | null
     private: boolean
+    fork: boolean
 }
 
 /**
@@ -62,6 +63,7 @@ export async function fetchUserRepositories(
             updated_at: repo.updated_at,
             pushed_at: repo.pushed_at,
             private: repo.private,
+            fork: repo.fork,
         }))
     } catch (error) {
         console.error('GitHub API error:', error)

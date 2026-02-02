@@ -102,4 +102,10 @@ export interface ResumeData {
         institution: string
         year: string
     }>
+    workExperience?: Array<{
+        company: string
+        position: string
+        date: string
+        description?: string
+    }>
 }

@@ -13,6 +13,7 @@ export interface GitHubRepo {
     created_at: string
     updated_at: string
     pushed_at: string
+    fork: boolean
 }
 
 export class GitHubClient {
@@ -76,6 +77,29 @@ export class GitHubClient {
         }
 
         return response.json()
+    }
+
+    async fetchReadme(owner: string, repo: string): Promise<string | null> {
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                    Accept: 'application/vnd.github.v3+json',
+                },
+            })
+
+            if (response.status === 404) return null
+            if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`)
+
+            const data = await response.json()
+            if (data.content && data.encoding === 'base64') {
+                return Buffer.from(data.content, 'base64').toString('utf-8')
+            }
+            return null
+        } catch (error) {
+            console.error(`Error fetching README for ${owner}/${repo}:`, error)
+            return null
+        }
     }
 
     static async getUserInfo(accessToken: string): Promise<{ login: string; email: string | null; name: string | null }> {

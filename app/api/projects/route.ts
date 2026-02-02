@@ -11,22 +11,32 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const connections = await prisma.platformConnection.findMany({
+        const projects = await prisma.project.findMany({
             where: { user_id: session.user.id },
             select: {
                 id: true,
+                name: true,
+                description: true,
+                url: true,
                 platform: true,
-                username: true,
-                last_synced: true,
-                metadata_jsonb: true,
+                stars: true,
+                forks: true,
+                language: true,
+                technologies_jsonb: true,
+                created_at: true,
+                updated_at: true,
             },
+            orderBy: [
+                { stars: 'desc' },
+                { updated_at: 'desc' }
+            ]
         })
 
-        return NextResponse.json({ connections })
+        return NextResponse.json({ projects })
     } catch (error) {
-        console.error('Fetch connections error:', error)
+        console.error('Fetch projects error:', error)
         return NextResponse.json(
-            { error: 'Failed to fetch connections' },
+            { error: 'Failed to fetch projects' },
             { status: 500 }
         )
     }
