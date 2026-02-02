@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
@@ -12,15 +12,33 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json()
-        const { linkedinUrl, platforms = [] } = body
+        const { linkedinUrl, targetRole, platforms = [] } = body
 
-        console.log('Onboarding request:', { linkedinUrl, platforms })
+        console.log('Onboarding request:', { linkedinUrl, targetRole, platforms })
+
+        // 0. Generate AI Analysis for target role if provided
+        let jobDescriptionJsonb = null
+        if (targetRole) {
+            try {
+                const { generateJobDescription } = await import('@/lib/openai')
+                const analysis = await generateJobDescription(targetRole)
+                jobDescriptionJsonb = {
+                    raw_jd: '',
+                    analysis: analysis,
+                    last_updated: new Date().toISOString()
+                }
+            } catch (error) {
+                console.error('Failed to generate job description in onboarding:', error)
+            }
+        }
 
         // 1. Update User Profile
         await prisma.user.update({
             where: { id: session.user.id },
             data: {
                 linkedin_url: linkedinUrl || null,
+                target_role: targetRole || null,
+                job_description_jsonb: jobDescriptionJsonb || undefined,
                 onboarding_completed: true,
             },
         })
