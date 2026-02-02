@@ -1,25 +1,9 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 
 export default function DashboardPage() {
     const { data: session, status } = useSession()
-    const router = useRouter()
-
-    useEffect(() => {
-        // Redirect to onboarding if not completed
-        if (status === 'authenticated' && session?.user) {
-            fetch('/api/user/profile')
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.onboarding_completed) {
-                        router.push('/onboarding')
-                    }
-                })
-        }
-    }, [session, status, router])
 
     if (status === 'loading') {
         return (
