@@ -78,33 +78,6 @@ export default function ProfilePage() {
         }
     };
 
-    const handleUpdateTarget = async () => {
-        if (!newRole) return;
-        setIsSavingRole(true);
-        try {
-            const res = await fetch('/api/profile/target-role', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    target_role: newRole,
-                    job_description: newJD
-                })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setAnalysis(data.analysis);
-                alert('Target role updated and analyzed!');
-            } else {
-                alert(data.error || 'Failed to update target role');
-            }
-        } catch (error) {
-            console.error('Update role error:', error);
-            alert('Failed to update target role');
-        } finally {
-            setIsSavingRole(false);
-        }
-    };
-
     const formatDate = (dateString?: string) => {
         if (!dateString) return '';
         return new Date(dateString).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -251,32 +224,10 @@ export default function ProfilePage() {
                         <div className="space-y-4">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Target Role</label>
-                                <input
-                                    placeholder="e.g. Frontend Developer"
-                                    className="w-full p-2 rounded-lg border border-[var(--border-light)] text-sm focus:ring-1 focus:ring-[var(--orange-primary)] outline-none"
-                                    value={newRole}
-                                    onChange={e => setNewRole(e.target.value)}
-                                />
+                                <div className="p-2 rounded-lg border border-[var(--border-light)] bg-[var(--bg-light)] text-sm font-medium text-[var(--text-primary)]">
+                                    {newRole || 'Not set'}
+                                </div>
                             </div>
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">JD Analysis (Optional)</label>
-                                <textarea
-                                    placeholder="Paste Job Description..."
-                                    className="w-full p-2 rounded-lg border border-[var(--border-light)] text-[11px] h-32 focus:ring-1 focus:ring-[var(--orange-primary)] outline-none resize-none"
-                                    value={newJD}
-                                    onChange={e => setNewJD(e.target.value)}
-                                />
-                            </div>
-
-                            <button
-                                onClick={handleUpdateTarget}
-                                disabled={isSavingRole || !newRole}
-                                className="w-full py-2 bg-[var(--orange-primary)] text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
-                            >
-                                {isSavingRole ? 'Analyzing...' : 'Analyze with AI'}
-                                {!isSavingRole && <span className="text-xs">✨</span>}
-                            </button>
                         </div>
 
                         {analysis && (
