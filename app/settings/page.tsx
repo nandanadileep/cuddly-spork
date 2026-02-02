@@ -1,18 +1,54 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import PlatformSelector from '@/components/PlatformSelector'
+import { getPlatformById } from '@/lib/constants/platforms'
+
+interface Connection {
+    id: string
+    platform: string
+    username: string
+    last_synced: string | null
+    metadata_jsonb: any
+}
 
 export default function SettingsPage() {
     const { data: session } = useSession()
 
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+    const [platformUrls, setPlatformUrls] = useState<Record<string, string>>({})
+    const [connections, setConnections] = useState<Connection[]>([])
     const [isSaving, setIsSaving] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        // Fetch existing connections
+        fetch('/api/user/connections')
+            .then(res => res.json())
+            .then(data => {
+                if (data.connections) {
+                    setConnections(data.connections)
+                    // Pre-populate selected platforms and URLs
+                    const connectedIds = data.connections.map((c: Connection) => c.platform)
+                    const urls: Record<string, string> = {}
+                    data.connections.forEach((c: Connection) => {
+                        urls[c.platform] = c.username
+                    })
+                    setSelectedPlatforms(connectedIds)
+                    setPlatformUrls(urls)
+                }
+            })
+            .catch(err => console.error('Failed to fetch connections:', err))
+            .finally(() => setIsLoading(false))
+    }, [])
 
     const handlePlatformToggle = (id: string) => {
         if (selectedPlatforms.includes(id)) {
             setSelectedPlatforms(selectedPlatforms.filter(p => p !== id))
+            const newUrls = { ...platformUrls }
+            delete newUrls[id]
+            setPlatformUrls(newUrls)
         } else {
             setSelectedPlatforms([...selectedPlatforms, id])
         }
@@ -20,11 +56,46 @@ export default function SettingsPage() {
 
     const handleSave = async () => {
         setIsSaving(true)
-        // TODO: Implement actual save to API
-        setTimeout(() => {
+
+        try {
+            const platforms = selectedPlatforms.map(id => ({
+                id,
+                url: platformUrls[id] || ''
+            })).filter(p => p.url) // only include platforms with URLs
+
+            const response = await fetch('/api/user/onboarding', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    linkedinUrl: session?.user?.email, // placeholder
+                    platforms
+                }),
+            })
+
+            if (response.ok) {
+                alert('Settings saved successfully!')
+                // Refresh connections
+                const data = await fetch('/api/user/connections').then(r => r.json())
+                if (data.connections) {
+                    setConnections(data.connections)
+                }
+            } else {
+                alert('Failed to save settings')
+            }
+        } catch (error) {
+            console.error('Save error:', error)
+            alert('An error occurred')
+        } finally {
             setIsSaving(false)
-            alert('Settings saved!')
-        }, 1000)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="max-w-4xl mx-auto">
+                <div className="text-center py-12 text-[var(--text-secondary)]">Loading...</div>
+            </div>
+        )
     }
 
     return (
@@ -59,13 +130,40 @@ export default function SettingsPage() {
                 </div>
             </section>
 
-            {/* Connected Platforms */}
+            {/* Connected Platforms Summary */}
+            {connections.length > 0 && (
+                <section className="bg-[var(--green-light)] rounded-lg p-6 border border-[var(--github-green)]">
+                    <h3 className="font-serif font-semibold text-lg mb-3 flex items-center gap-2">
+                        <span>✓</span> Connected Platforms ({connections.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {connections.map(conn => {
+                            const platform = getPlatformById(conn.platform)
+                            if (!platform) return null
+
+                            return (
+                                <div key={conn.id} className="flex items-center gap-3 bg-white rounded-md p-3">
+                                    <platform.icon className="text-xl flex-shrink-0" style={{ color: platform.color }} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-sm">{platform.name}</div>
+                                        <div className="text-xs text-[var(--text-secondary)] truncate">
+                                            {conn.username}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </section>
+            )}
+
+            {/* Manage Platforms */}
             <section className="space-y-4">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h2 className="text-xl font-serif font-semibold">Connected Platforms</h2>
+                        <h2 className="text-xl font-serif font-semibold">Manage Platforms</h2>
                         <p className="text-sm text-[var(--text-secondary)] mt-1">
-                            Manage the platforms where you showcase your work
+                            Add or update the platforms where you showcase your work
                         </p>
                     </div>
                     <button
@@ -81,6 +179,37 @@ export default function SettingsPage() {
                     selectedPlatforms={selectedPlatforms}
                     onPlatformToggle={handlePlatformToggle}
                 />
+
+                {/* URL Inputs for Selected Platforms */}
+                {selectedPlatforms.length > 0 && (
+                    <div className="mt-6 space-y-3">
+                        <h3 className="font-semibold text-lg">Platform URLs</h3>
+                        {selectedPlatforms.map(id => {
+                            const platform = getPlatformById(id)
+                            if (!platform) return null
+
+                            return (
+                                <div key={id} className="flex items-center gap-4 p-4 rounded-lg border border-[var(--border-light)] bg-white">
+                                    <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-[var(--bg-light)] rounded-md">
+                                        <platform.icon className="text-xl" style={{ color: platform.color }} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-1 block">
+                                            {platform.name}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Your profile URL or username"
+                                            className="w-full bg-transparent border-none p-0 focus:ring-0 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/40 font-medium"
+                                            value={platformUrls[id] || ''}
+                                            onChange={(e) => setPlatformUrls({ ...platformUrls, [id]: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
             </section>
         </div>
     )
