@@ -28,6 +28,7 @@ model User {
   resumes             Resume[]
   education           Education[]
   workExperience      WorkExperience[]
+  analysisDraft       AnalysisDraft?
   
   @@map("users")
 }
@@ -131,4 +132,19 @@ model WorkExperience {
 
   @@index([user_id])
   @@map("work_experience")
+}
+
+model AnalysisDraft {
+  id                         String   @id @default(cuid())
+  user_id                    String   @unique
+  selected_project_ids_jsonb Json?
+  manual_projects_jsonb      Json?
+  skills_jsonb               Json?
+  manual_skills_jsonb        Json?
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("analysis_drafts")
 }
