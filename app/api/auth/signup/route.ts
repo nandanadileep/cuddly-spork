@@ -7,10 +7,18 @@ export async function POST(req: NextRequest) {
         const { name, email, password } = await req.json()
 
         // Validate input
-        if (!email || !password) {
+        if (!name || !email || !password) {
             console.log('Signup failed: Missing email or password');
             return NextResponse.json(
-                { error: 'Email and password are required' },
+                { error: 'Full name, email, and password are required' },
+                { status: 400 }
+            )
+        }
+
+        const normalizedName = String(name).trim()
+        if (normalizedName.split(/\s+/).length < 2) {
+            return NextResponse.json(
+                { error: 'Please enter your full name (first and last).' },
                 { status: 400 }
             )
         }
@@ -41,7 +49,7 @@ export async function POST(req: NextRequest) {
         // Create user
         const user = await prisma.user.create({
             data: {
-                name,
+                name: normalizedName,
                 email,
                 password_hash,
             },

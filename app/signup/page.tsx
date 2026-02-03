@@ -71,13 +71,13 @@ export default function SignupPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold mb-2">Name</label>
+                            <label className="block text-sm font-semibold mb-2">Full name</label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
-                                placeholder="John Doe"
+                                placeholder="First Last"
                                 required
                             />
                         </div>
