@@ -38,6 +38,9 @@ export default function DashboardPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [isAutoSelecting, setIsAutoSelecting] = useState(false)
     const [analysisProgress, setAnalysisProgress] = useState<{ total: number; current: number; failed: number } | null>(null)
+    const [analysisSelection, setAnalysisSelection] = useState<Record<string, boolean>>({})
+    const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
+    const [analysisCooldown, setAnalysisCooldown] = useState(0)
     const [roleMode, setRoleMode] = useState<'title' | 'description'>('title')
     const [jobTitleInput, setJobTitleInput] = useState('')
     const [jobDescriptionInput, setJobDescriptionInput] = useState('')
@@ -52,6 +55,15 @@ export default function DashboardPage() {
             .then(data => {
                 if (data.projects) {
                     setProjects(data.projects)
+                    setAnalysisSelection(prev => {
+                        const next = { ...prev }
+                        for (const project of data.projects as Project[]) {
+                            if (next[project.id] === undefined) {
+                                next[project.id] = true
+                            }
+                        }
+                        return next
+                    })
                 }
             })
             .catch(err => console.error('Failed to fetch projects:', err))
@@ -80,27 +92,55 @@ export default function DashboardPage() {
     }, [status])
 
     const handleAnalyzeAll = async () => {
-        if (projects.length === 0) return
+        const selectedProjects = projects.filter(project => analysisSelection[project.id] !== false)
+        if (selectedProjects.length === 0) return
         setIsAnalyzing(true)
-        setAnalysisProgress({ total: projects.length, current: 0, failed: 0 })
+        setAnalysisProgress({ total: selectedProjects.length, current: 0, failed: 0 })
         try {
+            const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+            const batchSize = 3
+            const cooldownSeconds = 20
             let failedCount = 0
-            for (let i = 0; i < projects.length; i += 1) {
-                const project = projects[i]
+
+            for (let start = 0; start < selectedProjects.length; start += batchSize) {
+                const batch = selectedProjects.slice(start, start + batchSize)
                 const res = await fetch('/api/projects/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projectIds: [project.id] })
+                    body: JSON.stringify({ projectIds: batch.map(project => project.id) })
                 })
                 if (!res.ok) {
-                    failedCount += 1
+                    failedCount += batch.length
+                } else {
+                    const data = await res.json()
+                    if (Array.isArray(data.results)) {
+                        failedCount += data.results.filter((item: any) => item?.success === false).length
+                    }
                 }
-                setAnalysisProgress({ total: projects.length, current: i + 1, failed: failedCount })
+                setAnalysisProgress((prev) => ({
+                    total: selectedProjects.length,
+                    current: Math.min((prev?.current || 0) + batch.length, selectedProjects.length),
+                    failed: failedCount
+                }))
+
+                if (start + batchSize < selectedProjects.length) {
+                    setAnalysisCooldown(cooldownSeconds)
+                    for (let i = cooldownSeconds; i > 0; i -= 1) {
+                        await sleep(1000)
+                        setAnalysisCooldown(i - 1)
+                    }
+                }
             }
+
             await fetchProjects()
-            alert('Analysis complete!')
+            if (failedCount > 0) {
+                setAnalysisMessage(`Analysis complete with ${failedCount} failed project${failedCount === 1 ? '' : 's'}.`)
+            } else {
+                setAnalysisMessage('Analysis complete! All selected projects are scored.')
+            }
         } catch (error) {
             console.error('Analysis error:', error)
+            setAnalysisMessage('Analysis failed. Please try again.')
         } finally {
             setIsAnalyzing(false)
         }
@@ -356,7 +396,9 @@ export default function DashboardPage() {
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div>
                                     <h2 className="text-2xl font-serif font-semibold">AI Curation</h2>
-                                    <p className="text-sm text-[var(--text-secondary)]">Let AI find the best projects for your resume.</p>
+                                    <p className="text-sm text-[var(--text-secondary)]">
+                                        Click a project card to exclude it from analysis.
+                                    </p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
@@ -367,13 +409,6 @@ export default function DashboardPage() {
                                         {isAnalyzing && analysisProgress
                                             ? `Analyzing ${analysisProgress.current}/${analysisProgress.total}` 
                                             : 'Analyze Projects'} ✨
-                                    </button>
-                                    <button
-                                        onClick={handleAutoSelect}
-                                        disabled={isAutoSelecting || projects.length === 0}
-                                        className="px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md text-sm font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
-                                    >
-                                        {isAutoSelecting ? 'Selecting...' : 'Auto-Select Best'} 🎯
                                     </button>
                                 </div>
                             </div>
@@ -393,15 +428,37 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                             )}
+                            {analysisMessage && !isAnalyzing && (
+                                <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-warm)] border border-[var(--border-light)] rounded-lg px-4 py-3 flex items-center justify-between">
+                                    <span>{analysisMessage}</span>
+                                    <button
+                                        onClick={() => setAnalysisMessage(null)}
+                                        className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                    >
+                                        Dismiss
+                                    </button>
+                                </div>
+                            )}
+                            {analysisCooldown > 0 && (
+                                <div className="text-xs text-[var(--text-secondary)]">
+                                    Rate limit cooldown: waiting {analysisCooldown}s before the next batch.
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {projects.map(project => (
                                     <div
                                         key={project.id}
-                                        className={`bg-[var(--bg-card)] rounded-lg p-5 border shadow-sm transition-all relative ${project.is_selected
-                                                ? 'border-[var(--orange-primary)] ring-1 ring-[var(--orange-primary)]'
-                                                : 'border-[var(--border-light)] hover:shadow-md'
-                                            }`}
+                                        onClick={() => {
+                                            setAnalysisSelection(prev => ({
+                                                ...prev,
+                                                [project.id]: prev[project.id] === false,
+                                            }))
+                                        }}
+                                        className={`bg-[var(--bg-card)] rounded-lg p-5 border shadow-sm transition-all relative cursor-pointer ${analysisSelection[project.id] === false
+                                                ? 'border-[var(--border-light)] hover:shadow-md'
+                                                : 'border-[var(--orange-primary)] ring-1 ring-[var(--orange-primary)] bg-[var(--orange-light)]'
+                                            } ${project.is_selected ? 'outline outline-1 outline-[var(--orange-primary)]' : ''}`}
                                     >
                                         {project.is_selected && (
                                             <div className="absolute -top-2 -right-2 bg-[var(--orange-primary)] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
@@ -441,7 +498,7 @@ export default function DashboardPage() {
                                                 <span>⭐ {project.stars}</span>
                                             )}
                                             {project.forks !== null && project.forks > 0 && (
-                                                <span>🔀 {project.forks}</span>
+                                                <span> {project.forks}</span>
                                             )}
                                         </div>
 
@@ -458,6 +515,7 @@ export default function DashboardPage() {
                                                 href={project.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
+                                                onClick={(event) => event.stopPropagation()}
                                                 className="inline-block text-xs text-[var(--orange-primary)] hover:underline font-medium"
                                             >
                                                 View Repo →
@@ -508,9 +566,9 @@ export default function DashboardPage() {
                         <div className="bg-[var(--bg-warm)] rounded-lg p-8 border border-[var(--border-light)]">
                             <h2 className="text-2xl font-serif font-semibold mb-4">What's Next?</h2>
                             <div className="space-y-3 text-[var(--text-secondary)]">
-                                <p>🔄 Your platform data will be synced automatically</p>
-                                <p>📊 View and manage your connected platforms in Settings</p>
-                                <p>🚀 Your projects will appear here once syncing is complete</p>
+                                <p> Your platform data will be synced automatically</p>
+                                <p> View and manage your connected platforms in Settings</p>
+                                <p> Your projects will appear here once syncing is complete</p>
                             </div>
                         </div>
                     )}
