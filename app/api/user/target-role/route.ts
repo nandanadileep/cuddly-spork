@@ -46,11 +46,11 @@ export async function PATCH(request: NextRequest) {
         // If role is the same and we have cached data, use it
         const cachedData = existingUser?.job_description_jsonb as any
         if (existingUser?.target_role === targetRole && cachedData?.title) {
-            console.log('🎯 Using cached job description for:', targetRole)
+            console.log(' Using cached job description for:', targetRole)
             jobDescriptionData = cachedData as GeneratedJobDescription
         } else {
             // New role - generate description with LLM
-            console.log('🤖 Generating new job description for:', targetRole)
+            console.log(' Generating new job description for:', targetRole)
 
             if (userProvidedDescription) {
                 // User provided their own description - just store basic info

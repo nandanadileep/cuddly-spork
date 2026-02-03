@@ -99,7 +99,7 @@ function buildAnalysisPrompt(project: AnalyzeProjectInput): string {
     if (project.targetRole) {
         parts.push(
             ``,
-            `**🎯 TARGET ROLE:** ${project.targetRole}`,
+            `** TARGET ROLE:** ${project.targetRole}`,
             ``
         )
 

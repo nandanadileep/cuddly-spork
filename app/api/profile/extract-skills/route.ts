@@ -71,7 +71,26 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Extract skills using AI
-        const skills = await extractSkills(dataItems)
+        let skills: string[] = []
+        try {
+            skills = await extractSkills(dataItems)
+        } catch (error: any) {
+            const isRateLimit = error?.status === 429 || error?.code === 'rate_limit_exceeded'
+            if (isRateLimit) {
+                const draft = await prisma.analysisDraft.findUnique({
+                    where: { user_id: session.user.id },
+                    select: { skills_jsonb: true }
+                })
+                const cachedSkills = Array.isArray(draft?.skills_jsonb) ? (draft?.skills_jsonb as string[]) : []
+                return NextResponse.json({
+                    success: cachedSkills.length > 0,
+                    skills: cachedSkills,
+                    cached: cachedSkills.length > 0,
+                    error: 'Rate limit reached. Please try again shortly.'
+                }, { status: 429 })
+            }
+            throw error
+        }
 
         // 4. Update user profile (or just return them for now)
         // We can store these in the user profile if we have a field, 
