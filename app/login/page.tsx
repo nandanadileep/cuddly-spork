@@ -40,7 +40,7 @@ export default function LoginPage() {
             <div className="max-w-md w-full">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-extrabold mb-2">Welcome back</h1>
-                    <p className="text-[var(--text-secondary)]">Sign in to your GitHire account</p>
+                    <p className="text-[var(--text-secondary)]">Sign in to your ShipCV account</p>
                 </div>
 
                 <div className="bg-[var(--bg-card)] rounded-2xl p-8 shadow-lg border border-[var(--border-light)]">

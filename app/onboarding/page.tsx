@@ -130,7 +130,7 @@ export default function OnboardingPage() {
                 {/* Progress */}
                 <div className="flex justify-between items-end mb-8 border-b border-[var(--border-light)] pb-4">
                     <div>
-                        <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)]">Welcome to GitHire</h1>
+                        <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)]">Welcome to ShipCV</h1>
                         <p className="text-[var(--text-secondary)] mt-1 font-sans">
                             {step === 5 ? 'Setting up your profile...' : `Step ${step} of 4`}
                         </p>
