@@ -162,44 +162,69 @@ export async function POST(req: NextRequest) {
                 position: item.position,
                 dateRange: formatDateRange(item.start_date, item.end_date, item.is_current),
                 location: item.location || '',
-                bulletPoints: item.description
-                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
-                    : [],
+                bulletPoints: (() => {
+                    if (!item.description) return []
+                    const normalized = item.description.trim()
+                    if (normalized.includes('\n\n')) {
+                        return normalized.split(/\n\s*\n/).map(line => line.trim()).filter(Boolean)
+                    }
+                    return [normalized.replace(/\s*\n\s*/g, ' ')]
+                })(),
             })),
             education: education.map(item => ({
                 institution: item.institution,
                 degree: [item.degree, item.field].filter(Boolean).join(', '),
                 location: item.location || '',
                 dateRange: formatDateRange(item.start_date, item.end_date, item.is_current),
-                bulletPoints: item.description
-                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
-                    : [],
+                bulletPoints: (() => {
+                    if (!item.description) return []
+                    const normalized = item.description.trim()
+                    if (normalized.includes('\n\n')) {
+                        return normalized.split(/\n\s*\n/).map(line => line.trim()).filter(Boolean)
+                    }
+                    return [normalized.replace(/\s*\n\s*/g, ' ')]
+                })(),
             })),
             extracurriculars: extracurriculars.map(item => ({
                 title: item.title,
                 organization: item.organization || '',
                 location: item.location || '',
                 dateRange: formatDateRange(item.start_date, item.end_date, item.is_current),
-                bulletPoints: item.description
-                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
-                    : [],
+                bulletPoints: (() => {
+                    if (!item.description) return []
+                    const normalized = item.description.trim()
+                    if (normalized.includes('\n\n')) {
+                        return normalized.split(/\n\s*\n/).map(line => line.trim()).filter(Boolean)
+                    }
+                    return [normalized.replace(/\s*\n\s*/g, ' ')]
+                })(),
             })),
             awards: awards.map(item => ({
                 title: item.title,
                 issuer: item.issuer || '',
                 date: formatDate(item.awarded_at),
-                bulletPoints: item.description
-                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
-                    : [],
+                bulletPoints: (() => {
+                    if (!item.description) return []
+                    const normalized = item.description.trim()
+                    if (normalized.includes('\n\n')) {
+                        return normalized.split(/\n\s*\n/).map(line => line.trim()).filter(Boolean)
+                    }
+                    return [normalized.replace(/\s*\n\s*/g, ' ')]
+                })(),
             })),
             publications: publications.map(item => ({
                 title: item.title,
                 venue: item.venue || '',
                 date: formatDate(item.published_at),
                 url: item.url || null,
-                bulletPoints: item.description
-                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
-                    : [],
+                bulletPoints: (() => {
+                    if (!item.description) return []
+                    const normalized = item.description.trim()
+                    if (normalized.includes('\n\n')) {
+                        return normalized.split(/\n\s*\n/).map(line => line.trim()).filter(Boolean)
+                    }
+                    return [normalized.replace(/\s*\n\s*/g, ' ')]
+                })(),
             })),
         }
 
