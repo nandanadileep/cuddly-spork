@@ -189,7 +189,7 @@ document.addEventListener('click', (e) => {
 // Post to X Simulation
 document.addEventListener('click', (e) => {
     if (e.target.textContent.includes('Post to X')) {
-        const tweetText = encodeURIComponent('Just built my resume with GitHire! 🚀 From scattered repos to ATS-winning PDF in 60 seconds. Check it out!');
+        const tweetText = encodeURIComponent('Just built my resume with ShipCV! 🚀 From scattered repos to ATS-winning PDF in 60 seconds. Check it out!');
         const url = encodeURIComponent('https://githire.app');
         window.open(`https://twitter.com/intent/tweet?text=${tweetText}&url=${url}`, '_blank');
     }
@@ -207,6 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Initialize app
-console.log('🚀 GitHire initialized');
+console.log('🚀 ShipCV initialized');
 console.log('💡 Use navigateTo("screenId") to switch between screens');
 console.log('🎨 Toggle dark mode with the moon/sun button');
