@@ -28,44 +28,109 @@ export interface ResumePayload {
         institution: string
         degree: string
         dateRange: string
+        location?: string
+        bulletPoints: string[]
+    }>
+    extracurriculars?: Array<{
+        title: string
+        organization?: string
+        location?: string
+        dateRange: string
+        bulletPoints: string[]
+    }>
+    awards?: Array<{
+        title: string
+        issuer?: string
+        date: string
+        bulletPoints: string[]
+    }>
+    publications?: Array<{
+        title: string
+        venue?: string
+        date: string
+        url?: string | null
         bulletPoints: string[]
     }>
 }
 
-const basePreamble = `\\documentclass[11pt]{article}
-\\usepackage[margin=0.8in]{geometry}
-\\usepackage{hyperref}
+const basePreamble = `\\documentclass[letterpaper,11pt]{article}
+\\usepackage[empty]{fullpage}
+\\usepackage{titlesec}
+\\usepackage[usenames,dvipsnames]{color}
 \\usepackage{enumitem}
-\\setlist[itemize]{noitemsep, topsep=2pt}
+\\usepackage[hidelinks]{hyperref}
+\\usepackage{tabularx}
+\\usepackage{fontawesome5}
 \\pagenumbering{gobble}
+\\raggedbottom
+\\raggedright
+\\setlength{\\tabcolsep}{0in}
+\\setlength{\\parskip}{0pt}
+\\setlist[itemize]{itemsep=2pt, topsep=3pt}
+\\addtolength{\\oddsidemargin}{-0.5in}
+\\addtolength{\\evensidemargin}{-0.5in}
+\\addtolength{\\textwidth}{1in}
+\\addtolength{\\topmargin}{-.5in}
+\\addtolength{\\textheight}{1.0in}
+
+\\newcommand{\\resumeSubHeadingListStart}{\\begin{itemize}[leftmargin=0.15in, label={}]}
+\\newcommand{\\resumeSubHeadingListEnd}{\\end{itemize}}
+\\newcommand{\\resumeItemListStart}{\\begin{itemize}}
+\\newcommand{\\resumeItemListEnd}{\\end{itemize}\\vspace{2pt}}
+\\newcommand{\\resumeItem}[1]{\\item\\small{#1}}
+
+\\newcommand{\\resumeSubheading}[4]{
+  \\item
+  \\begin{tabular*}{0.97\\textwidth}{l@{\\extracolsep{\\fill}}r}
+    \\textbf{#1} & #2 \\\\
+    \\textit{\\small #3} & \\textit{\\small #4} \\\\
+  \\end{tabular*}\\vspace{2pt}
+}
+
+\\newcommand{\\resumeProjectHeading}[2]{
+  \\item
+  \\begin{tabular*}{0.97\\textwidth}{l@{\\extracolsep{\\fill}}r}
+    \\small #1 & #2 \\\\
+  \\end{tabular*}\\vspace{2pt}
+}
 `
 
 const templateStyles: Record<TemplateId, string> = {
     modern: `
-\\usepackage{titlesec}
-\\titleformat{\\section}{\\large\\bfseries}{ }{0pt}{}[\\vspace{2pt}\\hrule]
-\\titlespacing*{\\section}{0pt}{10pt}{4pt}
-`,
-    classic: `
-\\usepackage{titlesec}
-\\titleformat{\\section}{\\large\\scshape}{ }{0pt}{}[\\vspace{4pt}]
+\\usepackage[default]{lato}
+\\titleformat{\\section}{
+  \\vspace{-2pt}\\raggedright\\large\\bfseries
+}{}{0em}{}[\\color{black}\\titlerule \\vspace{-3pt}]
 \\titlespacing*{\\section}{0pt}{12pt}{6pt}
 `,
-    minimal: `
-\\usepackage{titlesec}
-\\titleformat{\\section}{\\normalsize\\bfseries}{ }{0pt}{}[\\vspace{2pt}]
-\\titlespacing*{\\section}{0pt}{8pt}{4pt}
-`,
-    bold: `
-\\usepackage{titlesec}
-\\titleformat{\\section}{\\Large\\bfseries}{ }{0pt}{}[\\vspace{2pt}\\hrule]
+    classic: `
+\\usepackage{mathptmx}
+\\titleformat{\\section}{
+  \\vspace{-2pt}\\raggedright\\large\\bfseries
+}{}{0em}{}[\\color{black}\\titlerule \\vspace{-3pt}]
 \\titlespacing*{\\section}{0pt}{14pt}{6pt}
 `,
+    minimal: `
+\\usepackage{lmodern}
+\\titleformat{\\section}{
+  \\vspace{-2pt}\\raggedright\\normalsize\\bfseries
+}{}{0em}{}[]
+\\titlespacing*{\\section}{0pt}{10pt}{5pt}
+`,
+    bold: `
+\\usepackage[default]{lato}
+\\titleformat{\\section}{
+  \\vspace{-2pt}\\raggedright\\Large\\bfseries
+}{}{0em}{}[\\color{black}\\titlerule \\vspace{-3pt}]
+\\titlespacing*{\\section}{0pt}{16pt}{7pt}
+`,
     compact: `
-\\usepackage{titlesec}
-\\titleformat{\\section}{\\normalsize\\bfseries}{ }{0pt}{}[\\vspace{1pt}\\hrule]
-\\titlespacing*{\\section}{0pt}{6pt}{2pt}
-\\setlist[itemize]{noitemsep, topsep=1pt}
+\\usepackage[default]{lato}
+\\titleformat{\\section}{
+  \\vspace{-2pt}\\raggedright\\normalsize\\bfseries
+}{}{0em}{}[\\color{black}\\titlerule \\vspace{-3pt}]
+\\setlist[itemize]{itemsep=1pt, topsep=2pt}
+\\titlespacing*{\\section}{0pt}{10pt}{4pt}
 `,
 }
 
@@ -95,12 +160,13 @@ const buildProjectsSection = (projects: ResumePayload['projects']) =>
             const bullets = project.bulletPoints
                 .map(point => `\\item ${escapeLatex(point)}`)
                 .join('\n')
-            const descriptionLine = project.description ? `${escapeLatex(project.description)}\n` : ''
-            const link = project.url ? `\\href{${escapeLatex(project.url)}}{GitHub Link}` : ''
-            const header = link
-                ? `\\textbf{${escapeLatex(toTitleCase(project.name))}} \\hfill ${link}`
-                : `\\textbf{${escapeLatex(toTitleCase(project.name))}}`
-            return `${header}\\\\\n${descriptionLine}\\begin{itemize}\n${bullets}\n\\end{itemize}\n`
+            const techLine = project.technologies && project.technologies.length > 0
+                ? ` $|$ \\emph{${escapeLatex(project.technologies.join(', '))}}`
+                : ''
+            const link = project.url
+                ? `\\href{${escapeLatex(project.url)}}{\\faGithub\\ GitHub}`
+                : ''
+            return `\\resumeProjectHeading{\\textbf{${escapeLatex(toTitleCase(project.name))}}${techLine}}{${link}}\n\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd\n`
         })
         .join('\n')
 
@@ -111,9 +177,10 @@ const buildWorkSection = (items: ResumePayload['workExperience']) => {
             const bullets = item.bulletPoints
                 .map(point => `\\item ${escapeLatex(point)}`)
                 .join('\n')
-            const bulletBlock = bullets ? `\\begin{itemize}\n${bullets}\n\\end{itemize}` : ''
-            const location = item.location ? ` — ${escapeLatex(item.location)}` : ''
-            return `\\textbf{${escapeLatex(item.position)}} — ${escapeLatex(item.company)}${location} \\hfill ${escapeLatex(item.dateRange)}\n${bulletBlock}\n`
+            const bulletBlock = bullets ? `\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd` : ''
+            const location = item.location ? escapeLatex(item.location) : ''
+            const dateRange = item.dateRange ? escapeLatex(item.dateRange) : ''
+            return `\\resumeSubheading{${escapeLatex(item.company)}}{${location}}{${escapeLatex(item.position)}}{${dateRange}}\n${bulletBlock}\n`
         })
         .join('\n')
 }
@@ -125,8 +192,60 @@ const buildEducationSection = (items: ResumePayload['education']) => {
             const bullets = item.bulletPoints
                 .map(point => `\\item ${escapeLatex(point)}`)
                 .join('\n')
-            const bulletBlock = bullets ? `\\begin{itemize}\n${bullets}\n\\end{itemize}` : ''
-            return `\\textbf{${escapeLatex(item.degree)}} --- ${escapeLatex(item.institution)} \\hfill ${escapeLatex(item.dateRange)}\n${bulletBlock}\n`
+            const bulletBlock = bullets ? `\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd` : ''
+            const dateRange = item.dateRange ? escapeLatex(item.dateRange) : ''
+            const location = item.location ? escapeLatex(item.location) : ''
+            return `\\resumeSubheading{${escapeLatex(item.institution)}}{${dateRange}}{${escapeLatex(item.degree)}}{${location}}\n${bulletBlock}\n`
+        })
+        .join('\n')
+}
+
+const buildExtracurricularSection = (items: ResumePayload['extracurriculars']) => {
+    if (!items || items.length === 0) return ''
+    return items
+        .map(item => {
+            const bullets = item.bulletPoints
+                .map(point => `\\item ${escapeLatex(point)}`)
+                .join('\n')
+            const bulletBlock = bullets ? `\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd` : ''
+            const organization = item.organization ? escapeLatex(item.organization) : ''
+            const location = item.location ? escapeLatex(item.location) : ''
+            const dateRange = item.dateRange ? escapeLatex(item.dateRange) : ''
+            return `\\resumeSubheading{${escapeLatex(item.title)}}{${location}}{${organization}}{${dateRange}}\n${bulletBlock}\n`
+        })
+        .join('\n')
+}
+
+const buildAwardsSection = (items: ResumePayload['awards']) => {
+    if (!items || items.length === 0) return ''
+    return items
+        .map(item => {
+            const bullets = item.bulletPoints
+                .map(point => `\\item ${escapeLatex(point)}`)
+                .join('\n')
+            const bulletBlock = bullets ? `\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd` : ''
+            const issuer = item.issuer ? escapeLatex(item.issuer) : ''
+            const date = item.date ? escapeLatex(item.date) : ''
+            return `\\resumeSubheading{${escapeLatex(item.title)}}{${date}}{${issuer}}{}\n${bulletBlock}\n`
+        })
+        .join('\n')
+}
+
+const buildPublicationsSection = (items: ResumePayload['publications']) => {
+    if (!items || items.length === 0) return ''
+    return items
+        .map(item => {
+            const bullets = item.bulletPoints
+                .map(point => `\\item ${escapeLatex(point)}`)
+                .join('\n')
+            const bulletBlock = bullets ? `\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd` : ''
+            const venue = item.venue ? escapeLatex(item.venue) : ''
+            const date = item.date ? escapeLatex(item.date) : ''
+            const link = item.url ? `\\href{${escapeLatex(item.url)}}{Link}` : ''
+            const titleLine = link
+                ? `\\textbf{${escapeLatex(item.title)}} ${link}`
+                : `\\textbf{${escapeLatex(item.title)}}`
+            return `\\resumeSubheading{${titleLine}}{${date}}{${venue}}{}\n${bulletBlock}\n`
         })
         .join('\n')
 }
@@ -143,8 +262,16 @@ const buildSkillsSection = (skills: string[]) => {
 
     const normalize = (value: string) => value.toLowerCase()
 
-    const matches = (value: string, items: string[]) =>
-        items.some(item => normalize(value).includes(normalize(item)))
+    const matches = (value: string, items: string[]) => {
+        const normalized = normalize(value)
+        return items.some(item => {
+            const needle = normalize(item)
+            if (needle.length <= 2) {
+                return normalized === needle
+            }
+            return normalized.includes(needle)
+        })
+    }
 
     const languageKeywords = [
         'python', 'c++', 'c#', 'c', 'java', 'javascript', 'typescript', 'sql', 'go', 'rust', 'swift', 'kotlin', 'r'
@@ -183,9 +310,10 @@ const buildSkillsSection = (skills: string[]) => {
 
     const lines = Object.entries(buckets)
         .filter(([, values]) => values.length > 0)
-        .map(([label, values]) => `\\textbf{${escapeLatex(label)}}: ${values.map(escapeLatex).join(', ')} \\\\`)
+        .map(([label, values]) => `\\textbf{${escapeLatex(label)}}{${escapeLatex(':')}} ${values.map(escapeLatex).join(', ')} \\\\`)
 
-    return lines.join('\n')
+    if (lines.length === 0) return ''
+    return `\\begin{itemize}[leftmargin=0.15in, label={}]\n\\small{\\item{\n${lines.join('\n')}\n}}\n\\end{itemize}`
 }
 
 export const renderLatexTemplate = (templateId: TemplateId, payload: ResumePayload) => {
@@ -193,41 +321,40 @@ export const renderLatexTemplate = (templateId: TemplateId, payload: ResumePaylo
     if (payload.phone) {
         contactParts.push(escapeLatex(payload.phone))
     }
-    if (payload.location) {
-        contactParts.push(escapeLatex(payload.location))
-    }
     if (payload.email) {
         contactParts.push(`\\href{mailto:${escapeLatex(payload.email)}}{${escapeLatex(payload.email)}}`)
     }
     if (payload.linkedin) {
-        contactParts.push(`\\href{${escapeLatex(payload.linkedin)}}{LinkedIn}`)
-    }
-    if (payload.website) {
-        contactParts.push(`\\href{${escapeLatex(payload.website)}}{Website}`)
+        contactParts.push(`\\href{${escapeLatex(payload.linkedin)}}{\\faLinkedin}`)
     }
     if (payload.github) {
-        contactParts.push(`\\href{${escapeLatex(payload.github)}}{GitHub}`)
+        contactParts.push(`\\href{${escapeLatex(payload.github)}}{\\faGithub}`)
     }
-    const contactLine = contactParts.join(' \\textbullet\\ ')
+    const contactLine = contactParts.join(' $|$ ')
 
     const template = `${basePreamble}
 ${templateStyles[templateId]}
 \\begin{document}
 \\begin{center}
-    {\\LARGE \\textbf{[[.name]]}}\\\\
-    \\vspace{4pt}
-    [[.contactLine]]
+    {\\Huge \\scshape [[.name]]}\\\\ \\vspace{2pt}
+    [[.locationLine]] \\\\ \\vspace{2pt}
+    \\small [[.contactLine]] \\\\
+    [[.websiteLine]]
 \\end{center}
 
 [[.experienceSection]]
 
-\\section*{Projects}
 [[.projectsSection]]
 
-\\section*{Technical Skills}
-[[.skillsLine]]
+[[.skillsSection]]
 
 [[.educationSection]]
+
+[[.awardsSection]]
+
+[[.publicationsSection]]
+
+[[.extracurricularSection]]
 
 \\end{document}
 `
@@ -236,15 +363,30 @@ ${templateStyles[templateId]}
         name: escapeLatex(payload.name),
         email: escapeLatex(payload.email),
         contactLine: contactLine || escapeLatex(payload.email),
+        locationLine: payload.location ? escapeLatex(payload.location) : '\\mbox{}',
+        websiteLine: payload.website ? `\\href{${escapeLatex(payload.website)}}{\\faGlobe}` : '',
         targetRole: escapeLatex(payload.targetRole || 'Open to roles'),
-        projectsSection: buildProjectsSection(payload.projects),
+        projectsSection: payload.projects && payload.projects.length > 0
+            ? `\\section{Key Projects}\n\\resumeSubHeadingListStart\n${buildProjectsSection(payload.projects)}\\resumeSubHeadingListEnd`
+            : '',
         experienceSection: payload.workExperience && payload.workExperience.length > 0
-            ? `\\section*{Professional Experience}\n${buildWorkSection(payload.workExperience)}`
+            ? `\\section{Professional Experience}\n\\resumeSubHeadingListStart\n${buildWorkSection(payload.workExperience)}\\resumeSubHeadingListEnd`
             : '',
         educationSection: payload.education && payload.education.length > 0
-            ? `\\section*{Education}\n${buildEducationSection(payload.education)}`
+            ? `\\section{Education}\n\\resumeSubHeadingListStart\n${buildEducationSection(payload.education)}\\resumeSubHeadingListEnd`
             : '',
-        skillsLine: buildSkillsSection(payload.skills),
+        awardsSection: payload.awards && payload.awards.length > 0
+            ? `\\section{Awards}\n\\resumeSubHeadingListStart\n${buildAwardsSection(payload.awards)}\\resumeSubHeadingListEnd`
+            : '',
+        publicationsSection: payload.publications && payload.publications.length > 0
+            ? `\\section{Publications}\n\\resumeSubHeadingListStart\n${buildPublicationsSection(payload.publications)}\\resumeSubHeadingListEnd`
+            : '',
+        extracurricularSection: payload.extracurriculars && payload.extracurriculars.length > 0
+            ? `\\section{Extracurricular Activities}\n\\resumeSubHeadingListStart\n${buildExtracurricularSection(payload.extracurriculars)}\\resumeSubHeadingListEnd`
+            : '',
+        skillsSection: buildSkillsSection(payload.skills)
+            ? `\\section{Technical Skills}\n${buildSkillsSection(payload.skills)}`
+            : '',
     }
 
     return { template, data }
