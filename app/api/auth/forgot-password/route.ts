@@ -19,22 +19,24 @@ export async function POST(req: NextRequest) {
         }
 
         const token = crypto.randomBytes(32).toString('hex')
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
         const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
         await prisma.user.update({
             where: { id: user.id },
             data: {
-                password_reset_token: token,
+                password_reset_token: hashedToken,
                 password_reset_expires: expires,
             },
         })
 
-        // TODO: Send email with reset link, e.g.:
-        // https://yourapp.com/reset-password?token=...
-        // For now we just store the token. Integrate Nodemailer, Resend, or your email provider.
-        console.log('[Forgot password] Reset token for', user.email, '- link: /reset-password?token=' + token)
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+        const resetUrl = `${baseUrl}/reset-password?token=${token}`
 
-        return NextResponse.json({ success: true })
+        // TODO: Send email with reset link via provider (Resend/Nodemailer/etc.)
+        console.log('[Forgot password] Reset link for', user.email, resetUrl)
+
+        return NextResponse.json({ success: true, ...(process.env.NODE_ENV === 'development' ? { resetUrl } : {}) })
     } catch (error) {
         console.error('Forgot password error:', error)
         return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/utils'
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
     try {
@@ -12,9 +13,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
         }
 
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+
         const user = await prisma.user.findFirst({
             where: {
-                password_reset_token: token,
+                password_reset_token: hashedToken,
                 password_reset_expires: { gt: new Date() },
             },
         })
