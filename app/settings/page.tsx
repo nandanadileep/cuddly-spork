@@ -134,7 +134,7 @@ export default function SettingsPage() {
             {connections.length > 0 && (
                 <section className="bg-[var(--green-light)] rounded-lg p-6 border border-[var(--github-green)]">
                     <h3 className="font-serif font-semibold text-lg mb-3 flex items-center gap-2">
-                        <span>✓</span> Connected Platforms ({connections.length})
+                            <span>Connected Platforms ({connections.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {connections.map(conn => (

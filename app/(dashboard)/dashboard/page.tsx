@@ -408,7 +408,7 @@ export default function DashboardPage() {
                                     >
                                         {isAnalyzing && analysisProgress
                                             ? `Analyzing ${analysisProgress.current}/${analysisProgress.total}` 
-                                            : 'Analyze Projects'} ✨
+                                            : 'Analyze Projects'}
                                     </button>
                                 </div>
                             </div>
@@ -533,7 +533,7 @@ export default function DashboardPage() {
                             <div className="bg-[var(--bg-card)] rounded-lg p-6 border border-[var(--border-light)] shadow-sm">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-12 h-12 rounded-full bg-[var(--green-light)] flex items-center justify-center">
-                                        <span className="text-2xl">✓</span>
+                                <span className="text-sm font-semibold">Selected</span>
                                     </div>
                                     <div>
                                         <h3 className="font-serif font-semibold text-lg">Onboarding Complete</h3>
@@ -545,7 +545,7 @@ export default function DashboardPage() {
                             <div className="bg-[var(--bg-card)] rounded-lg p-6 border border-[var(--border-light)] shadow-sm">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-12 h-12 rounded-full bg-[var(--orange-light)] flex items-center justify-center">
-                                        <span className="text-2xl">⚙️</span>
+                            <span className="text-sm font-semibold">Settings</span>
                                     </div>
                                     <div>
                                         <h3 className="font-serif font-semibold text-lg">Manage Platforms</h3>

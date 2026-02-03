@@ -296,7 +296,7 @@ export default function ResumeBuilderPage() {
                                                                     }}
                                                                     className="px-2 py-1 text-xs rounded border border-[var(--border-light)] text-red-600"
                                                                 >
-                                                                    ✕
+                                                                    Remove
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -362,7 +362,7 @@ export default function ResumeBuilderPage() {
                                                                 }}
                                                                 className="px-2 py-1 text-xs rounded border border-[var(--border-light)] text-red-600"
                                                             >
-                                                                ✕
+                                                                Remove
                                                             </button>
                                                         </div>
                                                     </div>

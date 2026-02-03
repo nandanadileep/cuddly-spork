@@ -70,7 +70,7 @@ export default function DashboardLayout({
                                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                     }`}
                             >
-                                <span className={`text-lg ${pathname === '/settings' ? 'opacity-100' : 'opacity-70'}`}>⚙️</span>
+                        <span className={`text-lg ${pathname === '/settings' ? 'opacity-100' : 'opacity-70'}`}>Settings</span>
                                 Settings
                             </Link>
 

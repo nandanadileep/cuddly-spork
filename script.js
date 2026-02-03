@@ -33,7 +33,7 @@ themeToggle.addEventListener('click', () => {
 
 function updateThemeIcon(theme) {
     const icon = themeToggle.querySelector('.theme-icon');
-    icon.textContent = theme === 'light' ? '' : '☀️';
+        icon.textContent = theme === 'light' ? '' : 'Light';
 }
 
 // Simulate Connect Actions
@@ -55,7 +55,7 @@ function simulateConnect(platform) {
 
         // Add checkmark
         const arrow = event.target.closest('.connect-option').querySelector('.connect-arrow');
-        arrow.textContent = '✓';
+    arrow.textContent = 'Selected';
         arrow.style.color = 'var(--github-green)';
     }, 1000);
 }
@@ -70,7 +70,7 @@ document.addEventListener('click', (e) => {
         button.style.pointerEvents = 'none';
 
         setTimeout(() => {
-            button.textContent = '✓';
+    button.textContent = 'Done';
             button.style.background = 'var(--github-green)';
             button.style.color = 'white';
 
@@ -156,7 +156,7 @@ document.addEventListener('click', (e) => {
         button.style.pointerEvents = 'none';
 
         setTimeout(() => {
-            button.innerHTML = '<span>✓</span> Downloaded!';
+    button.innerHTML = '<span>Done</span> Downloaded!';
             button.style.background = 'var(--github-green)';
 
             setTimeout(() => {
@@ -174,7 +174,7 @@ document.addEventListener('click', (e) => {
         const button = e.target;
         const originalText = button.innerHTML;
 
-        button.innerHTML = '<span>✓</span> Copied to Clipboard!';
+    button.innerHTML = '<span>Done</span> Copied to Clipboard!';
         button.style.background = 'var(--github-green)';
         button.style.color = 'white';
 

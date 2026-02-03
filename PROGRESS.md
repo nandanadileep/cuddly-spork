@@ -1,6 +1,6 @@
 # ShipCV - Phase 1 & 2 Complete! 
 
-## ✅ What's Been Built
+## What's Been Built
 
 ### Phase 1: Foundation
 - Next.js 14 with App Router, TypeScript, and Tailwind CSS

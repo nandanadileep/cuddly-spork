@@ -18,13 +18,13 @@ async function main() {
     console.log('Deleting users...')
     await prisma.user.deleteMany({})
 
-    console.log('✅ Database wiped successfully!')
+console.log('Database wiped successfully!')
     console.log('All users, projects, resumes, and connections have been removed.')
 }
 
 main()
     .catch((e) => {
-        console.error('❌ Error wiping database:', e)
+console.error('Error wiping database:', e)
         process.exit(1)
     })
     .finally(async () => {
