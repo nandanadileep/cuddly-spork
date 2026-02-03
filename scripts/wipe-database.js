@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 async function main() {
-    console.log('🗑️  Starting database cleanup...')
+    console.log('️  Starting database cleanup...')
 
     // Delete in order to respect foreign key constraints
     console.log('Deleting resumes...')

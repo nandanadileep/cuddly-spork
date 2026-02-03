@@ -263,7 +263,7 @@ function ConnectionCard({ connection, onSyncComplete }: { connection: Connection
                 disabled={syncing}
                 className="px-3 py-1 text-xs bg-[var(--orange-primary)] text-white rounded font-medium hover:bg-[var(--orange-hover)] transition-colors disabled:opacity-50"
             >
-                {syncing ? '...' : '🔄'}
+                {syncing ? '...' : ''}
             </button>
         </div>
     )

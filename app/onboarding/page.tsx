@@ -262,7 +262,7 @@ export default function OnboardingPage() {
                 {step === 4 && (
                     <div className="space-y-8">
                         <div className="text-center py-4">
-                            <div className="text-4xl mb-4">🎯</div>
+                            <div className="text-4xl mb-4"></div>
                             <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">What's your target role?</h2>
                             <p className="text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
                                 This helps us tailor your resume and highlight the right skills for the job.

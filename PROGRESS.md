@@ -1,4 +1,4 @@
-# ShipCV - Phase 1 & 2 Complete! 🎉
+# ShipCV - Phase 1 & 2 Complete! 
 
 ## ✅ What's Been Built
 
@@ -24,7 +24,7 @@
 
 ---
 
-## 🗂️ Project Structure
+## ️ Project Structure
 
 ```
 resume-generator/
@@ -66,7 +66,7 @@ resume-generator/
 
 ---
 
-## 🚀 Next Steps
+##  Next Steps
 
 To get the app running:
 
@@ -108,4 +108,4 @@ To get the app running:
 
 ---
 
-## 🗂️ Project Structure
+## ️ Project Structure

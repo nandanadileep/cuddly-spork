@@ -217,7 +217,7 @@ export default function ProfilePage() {
                 <div className="lg:col-span-1 space-y-6">
                     <section className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-light)] shadow-sm space-y-4">
                         <div className="flex items-center gap-2 text-[var(--orange-primary)] border-b border-[var(--border-light)] pb-3">
-                            <span className="text-xl">🎯</span>
+                            <span className="text-xl"></span>
                             <h3 className="font-bold text-[var(--text-primary)]">Job Target</h3>
                         </div>
 
@@ -234,7 +234,7 @@ export default function ProfilePage() {
                             <div className="pt-4 border-t border-[var(--border-light)] space-y-4 animate-in fade-in slide-in-from-top-2">
                                 <div className="space-y-2">
                                     <h4 className="text-[10px] font-bold text-[var(--text-primary)] uppercase flex items-center gap-1.5">
-                                        <span className="text-[var(--orange-primary)]">🛠️</span> Core Skills
+                                        <span className="text-[var(--orange-primary)]">️</span> Core Skills
                                     </h4>
                                     <div className="flex flex-wrap gap-1.5">
                                         {analysis.requiredSkills?.slice(0, 8).map((skill: string) => (
@@ -247,7 +247,7 @@ export default function ProfilePage() {
 
                                 <div className="space-y-2">
                                     <h4 className="text-[10px] font-bold text-[var(--text-primary)] uppercase flex items-center gap-1.5">
-                                        <span className="text-[var(--orange-primary)]">🎯</span> Key Focus
+                                        <span className="text-[var(--orange-primary)]"></span> Key Focus
                                     </h4>
                                     <ul className="text-[11px] text-[var(--text-secondary)] space-y-1 ml-4 list-disc marker:text-[var(--orange-primary)]">
                                         {analysis.keywords?.slice(0, 4).map((kw: string) => (

@@ -13,7 +13,7 @@ export default function DashboardLayout({
     const pathname = usePathname()
 
     const navigation = [
-        { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+        { name: 'Dashboard', href: '/dashboard', icon: '' },
     ]
 
     return (
@@ -25,7 +25,7 @@ export default function DashboardLayout({
                         {/* Logo */}
                         <div className="flex items-center gap-12">
                             <Link href="/dashboard" className="flex items-center gap-2 group">
-                                <span className="text-2xl group-hover:scale-110 transition-transform">📄</span>
+                                <span className="text-2xl group-hover:scale-110 transition-transform"></span>
                                 <span className="text-xl font-serif font-bold tracking-tight text-[var(--text-primary)]">ShipCV</span>
                             </Link>
 
@@ -59,7 +59,7 @@ export default function DashboardLayout({
                                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                     }`}
                             >
-                                <span className={`text-lg ${pathname === '/profile' ? 'opacity-100' : 'opacity-70'}`}>👤</span>
+                                <span className={`text-lg ${pathname === '/profile' ? 'opacity-100' : 'opacity-70'}`}></span>
                                 Profile
                             </Link>
 

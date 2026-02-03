@@ -66,7 +66,7 @@ export default function TargetRoleModal({ isOpen, onClose, onSuccess, currentRol
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--bg-card)] rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-[var(--border-light)]">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold">🎯 Set Target Role</h2>
+                    <h2 className="text-2xl font-bold"> Set Target Role</h2>
                     <button
                         onClick={onClose}
                         className="text-2xl text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -121,7 +121,7 @@ export default function TargetRoleModal({ isOpen, onClose, onSuccess, currentRol
                                 placeholder="e.g., Senior Backend Engineer, Full Stack Developer"
                             />
                             <p className="text-xs text-[var(--text-secondary)] mt-2">
-                                💡 Examples: "Senior Backend Engineer", "Frontend Developer - React", "DevOps Engineer"
+                                 Examples: "Senior Backend Engineer", "Frontend Developer - React", "DevOps Engineer"
                             </p>
                         </div>
                     ) : (
@@ -137,7 +137,7 @@ export default function TargetRoleModal({ isOpen, onClose, onSuccess, currentRol
                                 placeholder="Paste the full job description here..."
                             />
                             <p className="text-xs text-[var(--text-secondary)] mt-2">
-                                💡 Paste the entire job posting for more accurate analysis
+                                 Paste the entire job posting for more accurate analysis
                             </p>
                         </div>
                     )}
