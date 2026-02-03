@@ -8,6 +8,7 @@ const schema = z.object({
     institution: z.string().min(1),
     degree: z.string().min(1),
     field: z.string().optional(),
+    location: z.string().optional(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     is_current: z.boolean().optional(),
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
             institution: data.institution,
             degree: data.degree,
             field: data.field,
+            location: data.location,
             is_current: data.is_current || false,
             description: data.description,
         };

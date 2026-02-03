@@ -9,6 +9,7 @@ interface Education {
     institution: string;
     degree: string;
     field?: string;
+    location?: string;
     start_date?: string;
     end_date?: string;
     is_current: boolean;
@@ -26,6 +27,34 @@ interface WorkExperience {
     description?: string;
 }
 
+interface Extracurricular {
+    id?: string;
+    title: string;
+    organization?: string;
+    location?: string;
+    start_date?: string;
+    end_date?: string;
+    is_current: boolean;
+    description?: string;
+}
+
+interface Award {
+    id?: string;
+    title: string;
+    issuer?: string;
+    awarded_at?: string;
+    description?: string;
+}
+
+interface Publication {
+    id?: string;
+    title: string;
+    venue?: string;
+    published_at?: string;
+    url?: string;
+    description?: string;
+}
+
 export default function ProfilePage() {
     const { data: session } = useSession();
     const [loading, setLoading] = useState(false);
@@ -34,18 +63,33 @@ export default function ProfilePage() {
     // List States
     const [education, setEducation] = useState<Education[]>([]);
     const [experience, setExperience] = useState<WorkExperience[]>([]);
+    const [extracurriculars, setExtracurriculars] = useState<Extracurricular[]>([]);
+    const [awards, setAwards] = useState<Award[]>([]);
+    const [publications, setPublications] = useState<Publication[]>([]);
 
     // Form States
     const [isAddingWork, setIsAddingWork] = useState(false);
     const [isAddingEdu, setIsAddingEdu] = useState(false);
     const [editingWorkId, setEditingWorkId] = useState<string | null>(null);
     const [editingEduId, setEditingEduId] = useState<string | null>(null);
+    const [isAddingExtra, setIsAddingExtra] = useState(false);
+    const [isAddingAward, setIsAddingAward] = useState(false);
+    const [isAddingPub, setIsAddingPub] = useState(false);
+    const [editingExtraId, setEditingExtraId] = useState<string | null>(null);
+    const [editingAwardId, setEditingAwardId] = useState<string | null>(null);
+    const [editingPubId, setEditingPubId] = useState<string | null>(null);
 
     // Form Data States
     const [newWork, setNewWork] = useState<WorkExperience>({ company: '', position: '', is_current: false });
     const [newEdu, setNewEdu] = useState<Education>({ institution: '', degree: '', is_current: false });
     const [editWork, setEditWork] = useState<WorkExperience>({ company: '', position: '', is_current: false });
     const [editEdu, setEditEdu] = useState<Education>({ institution: '', degree: '', is_current: false });
+    const [newExtra, setNewExtra] = useState<Extracurricular>({ title: '', is_current: false });
+    const [editExtra, setEditExtra] = useState<Extracurricular>({ title: '', is_current: false });
+    const [newAward, setNewAward] = useState<Award>({ title: '' });
+    const [editAward, setEditAward] = useState<Award>({ title: '' });
+    const [newPub, setNewPub] = useState<Publication>({ title: '' });
+    const [editPub, setEditPub] = useState<Publication>({ title: '' });
 
     // Job Target States
     const [newRole, setNewRole] = useState('');
@@ -66,6 +110,9 @@ export default function ProfilePage() {
                 const data = await res.json();
                 setEducation(data.education || []);
                 setExperience(data.workExperience || []);
+                setExtracurriculars(data.extracurriculars || []);
+                setAwards(data.awards || []);
+                setPublications(data.publications || []);
                 if (data.linkedin_url) setLinkedInUrl(data.linkedin_url);
                 setNewRole(data.target_role || '');
                 setNewJD(data.job_description_jsonb?.raw_jd || '');
@@ -203,6 +250,150 @@ export default function ProfilePage() {
         }
     };
 
+    const handleAddExtra = async () => {
+        try {
+            const res = await fetch('/api/profile/extracurricular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newExtra),
+            });
+            if (res.ok) {
+                setNewExtra({ title: '', is_current: false });
+                setIsAddingExtra(false);
+                fetchProfile();
+            } else {
+                alert('Failed to add extracurricular');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleUpdateExtra = async () => {
+        if (!editingExtraId) return;
+        try {
+            const res = await fetch(`/api/profile/extracurricular?id=${editingExtraId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editExtra),
+            });
+            if (res.ok) {
+                setEditingExtraId(null);
+                fetchProfile();
+            } else {
+                alert('Failed to update extracurricular');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleDeleteExtra = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this extracurricular?')) return;
+        try {
+            const res = await fetch(`/api/profile/extracurricular?id=${id}`, { method: 'DELETE' });
+            if (res.ok) fetchProfile();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleAddAward = async () => {
+        try {
+            const res = await fetch('/api/profile/awards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newAward),
+            });
+            if (res.ok) {
+                setNewAward({ title: '' });
+                setIsAddingAward(false);
+                fetchProfile();
+            } else {
+                alert('Failed to add award');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleUpdateAward = async () => {
+        if (!editingAwardId) return;
+        try {
+            const res = await fetch(`/api/profile/awards?id=${editingAwardId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editAward),
+            });
+            if (res.ok) {
+                setEditingAwardId(null);
+                fetchProfile();
+            } else {
+                alert('Failed to update award');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleDeleteAward = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this award?')) return;
+        try {
+            const res = await fetch(`/api/profile/awards?id=${id}`, { method: 'DELETE' });
+            if (res.ok) fetchProfile();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleAddPub = async () => {
+        try {
+            const res = await fetch('/api/profile/publications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newPub),
+            });
+            if (res.ok) {
+                setNewPub({ title: '' });
+                setIsAddingPub(false);
+                fetchProfile();
+            } else {
+                alert('Failed to add publication');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleUpdatePub = async () => {
+        if (!editingPubId) return;
+        try {
+            const res = await fetch(`/api/profile/publications?id=${editingPubId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editPub),
+            });
+            if (res.ok) {
+                setEditingPubId(null);
+                fetchProfile();
+            } else {
+                alert('Failed to update publication');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleDeletePub = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this publication?')) return;
+        try {
+            const res = await fetch(`/api/profile/publications?id=${id}`, { method: 'DELETE' });
+            if (res.ok) fetchProfile();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-12">
             <header className="border-b border-[var(--border-light)] pb-6 flex justify-between items-end">
@@ -233,8 +424,8 @@ export default function ProfilePage() {
                         {analysis && (
                             <div className="pt-4 border-t border-[var(--border-light)] space-y-4 animate-in fade-in slide-in-from-top-2">
                                 <div className="space-y-2">
-                                    <h4 className="text-[10px] font-bold text-[var(--text-primary)] uppercase flex items-center gap-1.5">
-                                        <span className="text-[var(--orange-primary)]">️</span> Core Skills
+                                    <h4 className="text-[10px] font-bold text-[var(--text-primary)] uppercase">
+                                        Core Skills
                                     </h4>
                                     <div className="flex flex-wrap gap-1.5">
                                         {analysis.requiredSkills?.slice(0, 8).map((skill: string) => (
@@ -246,8 +437,8 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <h4 className="text-[10px] font-bold text-[var(--text-primary)] uppercase flex items-center gap-1.5">
-                                        <span className="text-[var(--orange-primary)]"></span> Key Focus
+                                    <h4 className="text-[10px] font-bold text-[var(--text-primary)] uppercase">
+                                        Key Focus
                                     </h4>
                                     <ul className="text-[11px] text-[var(--text-secondary)] space-y-1 ml-4 list-disc marker:text-[var(--orange-primary)]">
                                         {analysis.keywords?.slice(0, 4).map((kw: string) => (
@@ -261,7 +452,6 @@ export default function ProfilePage() {
 
                     <section className="p-5 bg-[var(--green-light)] border border-[var(--github-green)] rounded-xl space-y-3">
                         <div className="flex items-center gap-2 text-[var(--github-green)]">
-                            <span className="text-xl">⚙️</span>
                             <h3 className="font-bold text-[var(--text-primary)]">Settings</h3>
                         </div>
                         <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
@@ -402,6 +592,7 @@ export default function ProfilePage() {
                                 <div className="p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg space-y-3">
                                     <input placeholder="School" className="w-full p-2 rounded border" value={newEdu.institution} onChange={e => setNewEdu({ ...newEdu, institution: e.target.value })} />
                                     <input placeholder="Degree" className="w-full p-2 rounded border" value={newEdu.degree} onChange={e => setNewEdu({ ...newEdu, degree: e.target.value })} />
+                                    <input placeholder="Location" className="w-full p-2 rounded border" value={newEdu.location || ''} onChange={e => setNewEdu({ ...newEdu, location: e.target.value })} />
                                     <div className="flex gap-2 text-sm">
                                         <input type="date" className="p-1 border rounded" onChange={e => setNewEdu({ ...newEdu, start_date: e.target.value })} />
                                         <span className="self-center">to</span>
@@ -424,6 +615,10 @@ export default function ProfilePage() {
                                                     <label className="text-xs font-medium text-[var(--text-secondary)]">Degree</label>
                                                     <input className="w-full p-2 border rounded text-sm" value={editEdu.degree} onChange={e => setEditEdu({ ...editEdu, degree: e.target.value })} />
                                                 </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Location</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.location || ''} onChange={e => setEditEdu({ ...editEdu, location: e.target.value })} />
+                                                </div>
                                                 <div className="flex justify-end gap-2 pt-2">
                                                     <button onClick={() => setEditingEduId(null)} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancel</button>
                                                     <button onClick={handleUpdateEdu} className="px-4 py-2 text-sm bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Update</button>
@@ -433,12 +628,241 @@ export default function ProfilePage() {
                                             <>
                                                 <div className="font-bold text-lg">{edu.institution}</div>
                                                 <div className="text-[var(--text-primary)]">{edu.degree}</div>
+                                                {edu.location && (
+                                                    <div className="text-sm text-[var(--text-secondary)]">{edu.location}</div>
+                                                )}
                                                 <div className="text-sm text-[var(--text-secondary)]">
                                                     {formatDate(edu.start_date)} - {edu.is_current ? 'Present' : formatDate(edu.end_date)}
                                                 </div>
                                                 <div className="flex gap-2 mt-3">
                                                     <button onClick={() => { setEditingEduId(edu.id!); setEditEdu(edu); setIsAddingEdu(false); }} className="text-xs text-[var(--orange-primary)] hover:underline">Edit</button>
                                                     <button onClick={() => handleDeleteEdu(edu.id!)} className="text-xs text-red-500 hover:underline">Delete</button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {/* Extracurricular Section */}
+                        <section className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold">Extracurricular</h3>
+                                <button onClick={() => { setIsAddingExtra(!isAddingExtra); setEditingExtraId(null); }} className="text-sm text-[var(--orange-primary)] hover:underline">
+                                    {isAddingExtra ? 'Cancel' : '+ Add'}
+                                </button>
+                            </div>
+
+                            {isAddingExtra && (
+                                <div className="p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg space-y-3">
+                                    <input placeholder="Title" className="w-full p-2 rounded border" value={newExtra.title} onChange={e => setNewExtra({ ...newExtra, title: e.target.value })} />
+                                    <input placeholder="Organization" className="w-full p-2 rounded border" value={newExtra.organization || ''} onChange={e => setNewExtra({ ...newExtra, organization: e.target.value })} />
+                                    <input placeholder="Location" className="w-full p-2 rounded border" value={newExtra.location || ''} onChange={e => setNewExtra({ ...newExtra, location: e.target.value })} />
+                                    <textarea placeholder="Description" className="w-full p-2 rounded border text-sm" rows={3} value={newExtra.description || ''} onChange={e => setNewExtra({ ...newExtra, description: e.target.value })} />
+                                    <div className="flex gap-2 text-sm">
+                                        <input type="date" className="p-1 border rounded" onChange={e => setNewExtra({ ...newExtra, start_date: e.target.value })} />
+                                        <span className="self-center">to</span>
+                                        <input type="date" className="p-1 border rounded" disabled={newExtra.is_current} onChange={e => setNewExtra({ ...newExtra, end_date: e.target.value })} />
+                                    </div>
+                                    <label className="flex items-center gap-2 text-sm">
+                                        <input type="checkbox" checked={newExtra.is_current} onChange={e => setNewExtra({ ...newExtra, is_current: e.target.checked })} /> Current
+                                    </label>
+                                    <button onClick={handleAddExtra} className="w-full py-2 bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Save</button>
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                {extracurriculars.map((item) => (
+                                    <div key={item.id} className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-lg hover:border-[var(--orange-primary)] transition-colors group relative">
+                                        {editingExtraId === item.id ? (
+                                            <div className="space-y-3 p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Title</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editExtra.title} onChange={e => setEditExtra({ ...editExtra, title: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Organization</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editExtra.organization || ''} onChange={e => setEditExtra({ ...editExtra, organization: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Location</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editExtra.location || ''} onChange={e => setEditExtra({ ...editExtra, location: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Description</label>
+                                                    <textarea className="w-full p-2 border rounded text-sm" rows={3} value={editExtra.description || ''} onChange={e => setEditExtra({ ...editExtra, description: e.target.value })} />
+                                                </div>
+                                                <div className="flex gap-2 text-sm">
+                                                    <div className="flex-1 space-y-1">
+                                                        <label className="text-[10px] text-[var(--text-secondary)]">Start Date</label>
+                                                        <input type="date" className="w-full p-1 border rounded" value={editExtra.start_date?.split('T')[0] || ''} onChange={e => setEditExtra({ ...editExtra, start_date: e.target.value })} />
+                                                    </div>
+                                                    <div className="flex-1 space-y-1">
+                                                        <label className="text-[10px] text-[var(--text-secondary)]">End Date</label>
+                                                        <input type="date" className="w-full p-1 border rounded" disabled={editExtra.is_current} value={editExtra.end_date?.split('T')[0] || ''} onChange={e => setEditExtra({ ...editExtra, end_date: e.target.value })} />
+                                                    </div>
+                                                </div>
+                                                <label className="flex items-center gap-2 text-sm mt-2">
+                                                    <input type="checkbox" checked={editExtra.is_current} onChange={e => setEditExtra({ ...editExtra, is_current: e.target.checked })} /> Current
+                                                </label>
+                                                <div className="flex justify-end gap-2 pt-2">
+                                                    <button onClick={() => setEditingExtraId(null)} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancel</button>
+                                                    <button onClick={handleUpdateExtra} className="px-4 py-2 text-sm bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Update</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="font-bold text-lg">{item.title}</div>
+                                                {(item.organization || item.location) && (
+                                                    <div className="text-[var(--text-primary)]">
+                                                        {[item.organization, item.location].filter(Boolean).join(' · ')}
+                                                    </div>
+                                                )}
+                                                <div className="text-sm text-[var(--text-secondary)]">
+                                                    {formatDate(item.start_date)} - {item.is_current ? 'Present' : formatDate(item.end_date)}
+                                                </div>
+                                                {item.description && <div className="text-sm mt-1 text-[var(--text-secondary)] line-clamp-2">{item.description}</div>}
+
+                                                <div className="flex gap-2 mt-3">
+                                                    <button onClick={() => { setEditingExtraId(item.id!); setEditExtra(item); setIsAddingExtra(false); }} className="text-xs text-[var(--orange-primary)] hover:underline">Edit</button>
+                                                    <button onClick={() => handleDeleteExtra(item.id!)} className="text-xs text-red-500 hover:underline">Delete</button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Awards Section */}
+                        <section className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold">Awards</h3>
+                                <button onClick={() => { setIsAddingAward(!isAddingAward); setEditingAwardId(null); }} className="text-sm text-[var(--orange-primary)] hover:underline">
+                                    {isAddingAward ? 'Cancel' : '+ Add'}
+                                </button>
+                            </div>
+
+                            {isAddingAward && (
+                                <div className="p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg space-y-3">
+                                    <input placeholder="Award title" className="w-full p-2 rounded border" value={newAward.title} onChange={e => setNewAward({ ...newAward, title: e.target.value })} />
+                                    <input placeholder="Issuer" className="w-full p-2 rounded border" value={newAward.issuer || ''} onChange={e => setNewAward({ ...newAward, issuer: e.target.value })} />
+                                    <textarea placeholder="Description" className="w-full p-2 rounded border text-sm" rows={3} value={newAward.description || ''} onChange={e => setNewAward({ ...newAward, description: e.target.value })} />
+                                    <input type="date" className="p-1 border rounded" onChange={e => setNewAward({ ...newAward, awarded_at: e.target.value })} />
+                                    <button onClick={handleAddAward} className="w-full py-2 bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Save</button>
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                {awards.map((item) => (
+                                    <div key={item.id} className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-lg hover:border-[var(--orange-primary)] transition-colors group relative">
+                                        {editingAwardId === item.id ? (
+                                            <div className="space-y-3 p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Title</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editAward.title} onChange={e => setEditAward({ ...editAward, title: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Issuer</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editAward.issuer || ''} onChange={e => setEditAward({ ...editAward, issuer: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Description</label>
+                                                    <textarea className="w-full p-2 border rounded text-sm" rows={3} value={editAward.description || ''} onChange={e => setEditAward({ ...editAward, description: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] text-[var(--text-secondary)]">Date</label>
+                                                    <input type="date" className="w-full p-1 border rounded" value={editAward.awarded_at?.split('T')[0] || ''} onChange={e => setEditAward({ ...editAward, awarded_at: e.target.value })} />
+                                                </div>
+                                                <div className="flex justify-end gap-2 pt-2">
+                                                    <button onClick={() => setEditingAwardId(null)} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancel</button>
+                                                    <button onClick={handleUpdateAward} className="px-4 py-2 text-sm bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Update</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="font-bold text-lg">{item.title}</div>
+                                                {item.issuer && <div className="text-[var(--text-primary)]">{item.issuer}</div>}
+                                                <div className="text-sm text-[var(--text-secondary)]">{formatDate(item.awarded_at)}</div>
+                                                {item.description && <div className="text-sm mt-1 text-[var(--text-secondary)] line-clamp-2">{item.description}</div>}
+                                                <div className="flex gap-2 mt-3">
+                                                    <button onClick={() => { setEditingAwardId(item.id!); setEditAward(item); setIsAddingAward(false); }} className="text-xs text-[var(--orange-primary)] hover:underline">Edit</button>
+                                                    <button onClick={() => handleDeleteAward(item.id!)} className="text-xs text-red-500 hover:underline">Delete</button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Publications Section */}
+                        <section className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold">Publications</h3>
+                                <button onClick={() => { setIsAddingPub(!isAddingPub); setEditingPubId(null); }} className="text-sm text-[var(--orange-primary)] hover:underline">
+                                    {isAddingPub ? 'Cancel' : '+ Add'}
+                                </button>
+                            </div>
+
+                            {isAddingPub && (
+                                <div className="p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg space-y-3">
+                                    <input placeholder="Publication title" className="w-full p-2 rounded border" value={newPub.title} onChange={e => setNewPub({ ...newPub, title: e.target.value })} />
+                                    <input placeholder="Venue / Journal" className="w-full p-2 rounded border" value={newPub.venue || ''} onChange={e => setNewPub({ ...newPub, venue: e.target.value })} />
+                                    <input placeholder="URL" className="w-full p-2 rounded border" value={newPub.url || ''} onChange={e => setNewPub({ ...newPub, url: e.target.value })} />
+                                    <textarea placeholder="Description" className="w-full p-2 rounded border text-sm" rows={3} value={newPub.description || ''} onChange={e => setNewPub({ ...newPub, description: e.target.value })} />
+                                    <input type="date" className="p-1 border rounded" onChange={e => setNewPub({ ...newPub, published_at: e.target.value })} />
+                                    <button onClick={handleAddPub} className="w-full py-2 bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Save</button>
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                {publications.map((item) => (
+                                    <div key={item.id} className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-lg hover:border-[var(--orange-primary)] transition-colors group relative">
+                                        {editingPubId === item.id ? (
+                                            <div className="space-y-3 p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Title</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editPub.title} onChange={e => setEditPub({ ...editPub, title: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Venue</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editPub.venue || ''} onChange={e => setEditPub({ ...editPub, venue: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">URL</label>
+                                                    <input className="w-full p-2 border rounded text-sm" value={editPub.url || ''} onChange={e => setEditPub({ ...editPub, url: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Description</label>
+                                                    <textarea className="w-full p-2 border rounded text-sm" rows={3} value={editPub.description || ''} onChange={e => setEditPub({ ...editPub, description: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] text-[var(--text-secondary)]">Date</label>
+                                                    <input type="date" className="w-full p-1 border rounded" value={editPub.published_at?.split('T')[0] || ''} onChange={e => setEditPub({ ...editPub, published_at: e.target.value })} />
+                                                </div>
+                                                <div className="flex justify-end gap-2 pt-2">
+                                                    <button onClick={() => setEditingPubId(null)} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancel</button>
+                                                    <button onClick={handleUpdatePub} className="px-4 py-2 text-sm bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Update</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="font-bold text-lg">{item.title}</div>
+                                                {item.venue && <div className="text-[var(--text-primary)]">{item.venue}</div>}
+                                                <div className="text-sm text-[var(--text-secondary)]">{formatDate(item.published_at)}</div>
+                                                {item.url && (
+                                                    <div className="text-xs text-[var(--text-secondary)] break-all">
+                                                        {item.url}
+                                                    </div>
+                                                )}
+                                                {item.description && <div className="text-sm mt-1 text-[var(--text-secondary)] line-clamp-2">{item.description}</div>}
+                                                <div className="flex gap-2 mt-3">
+                                                    <button onClick={() => { setEditingPubId(item.id!); setEditPub(item); setIsAddingPub(false); }} className="text-xs text-[var(--orange-primary)] hover:underline">Edit</button>
+                                                    <button onClick={() => handleDeletePub(item.id!)} className="text-xs text-red-500 hover:underline">Delete</button>
                                                 </div>
                                             </>
                                         )}
