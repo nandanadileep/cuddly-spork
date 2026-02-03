@@ -36,6 +36,7 @@ export default function AnalysisFlowPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [analysisProgress, setAnalysisProgress] = useState<{ total: number; current: number; failed: number } | null>(null)
+    const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
     const [skills, setSkills] = useState<string[]>([])
     const [manualSkills, setManualSkills] = useState<string[]>([])
     const [skillInput, setSkillInput] = useState('')
@@ -43,7 +44,13 @@ export default function AnalysisFlowPage() {
         name: '',
         description: '',
         technologies: '',
+        url: '',
     })
+    const [isAutoSelecting, setIsAutoSelecting] = useState(false)
+    const [analysisCooldown, setAnalysisCooldown] = useState(0)
+    const [skillsMessage, setSkillsMessage] = useState<string | null>(null)
+    const [isFetchingUrl, setIsFetchingUrl] = useState(false)
+    const [urlMessage, setUrlMessage] = useState<string | null>(null)
 
     const fetchProjects = () => {
         return fetch('/api/projects')
@@ -51,6 +58,7 @@ export default function AnalysisFlowPage() {
             .then(data => {
                 if (data.projects) {
                     setProjects(data.projects)
+                    return data
                 }
             })
             .catch(err => console.error('Failed to fetch projects:', err))
@@ -63,8 +71,8 @@ export default function AnalysisFlowPage() {
                 if (data?.draft) {
                     setSelectedProjectIds(data.draft.selectedProjectIds || [])
                     setManualProjects(data.draft.manualProjects || [])
-                    setSkills(data.draft.skills || [])
-                    setManualSkills(data.draft.manualSkills || [])
+                    setSkills(Array.isArray(data.draft.skills) ? data.draft.skills.filter((item: any) => typeof item === 'string') : [])
+                    setManualSkills(Array.isArray(data.draft.manualSkills) ? data.draft.manualSkills.filter((item: any) => typeof item === 'string') : [])
                 }
             })
             .catch(err => console.error('Failed to fetch analysis draft:', err))
@@ -77,10 +85,41 @@ export default function AnalysisFlowPage() {
         }
     }, [status])
 
+    useEffect(() => {
+        if (status !== 'authenticated') return
+        if (projects.length === 0) return
+        if (selectedProjectIds.length > 0) return
+
+        const autoSelect = async () => {
+            setIsAutoSelecting(true)
+            try {
+                const res = await fetch('/api/projects/auto-select', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: 7 }),
+                })
+                const data = await res.json()
+                if (res.ok && data.projectIds) {
+                    setSelectedProjectIds(data.projectIds)
+                    await fetchProjects()
+                    await saveDraft({ selectedProjectIds: data.projectIds })
+                }
+            } catch (error) {
+                console.error('Auto-select error:', error)
+            } finally {
+                setIsAutoSelecting(false)
+            }
+        }
+
+        autoSelect()
+    }, [status, projects, selectedProjectIds])
+
     const toggleProjectSelection = (projectId: string) => {
-        setSelectedProjectIds(prev => (
-            prev.includes(projectId) ? prev.filter(id => id !== projectId) : [...prev, projectId]
-        ))
+        const next = selectedProjectIds.includes(projectId)
+            ? selectedProjectIds.filter(id => id !== projectId)
+            : [...selectedProjectIds, projectId]
+        setSelectedProjectIds(next)
+        saveDraft({ selectedProjectIds: next })
     }
 
     const handleAddManualProject = (e: React.FormEvent) => {
@@ -108,7 +147,40 @@ export default function AnalysisFlowPage() {
         setManualProjects(nextManualProjects)
         setSelectedProjectIds(nextSelected)
         saveDraft({ manualProjects: nextManualProjects, selectedProjectIds: nextSelected })
-        setManualProjectInput({ name: '', description: '', technologies: '' })
+        setManualProjectInput({ name: '', description: '', technologies: '', url: '' })
+    }
+
+    const handleFetchFromUrl = async () => {
+        if (!manualProjectInput.url.trim()) {
+            setUrlMessage('Add a URL to fetch details.')
+            return
+        }
+        setIsFetchingUrl(true)
+        setUrlMessage(null)
+        try {
+            const res = await fetch('/api/projects/fetch-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: manualProjectInput.url.trim() }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                setUrlMessage(data?.error || 'Failed to fetch URL')
+                return
+            }
+            setManualProjectInput(prev => ({
+                ...prev,
+                name: prev.name || data.title || '',
+                description: prev.description || data.description || '',
+                technologies: prev.technologies || (Array.isArray(data.keywords) ? data.keywords.join(', ') : ''),
+            }))
+            setUrlMessage('Details pulled from URL.')
+        } catch (error) {
+            console.error('Fetch URL error:', error)
+            setUrlMessage('Failed to fetch URL.')
+        } finally {
+            setIsFetchingUrl(false)
+        }
     }
 
     const saveDraft = async (overrides?: Partial<{
@@ -143,37 +215,122 @@ export default function AnalysisFlowPage() {
         setIsAnalyzing(true)
         setAnalysisProgress({ total: apiProjectIds.length, current: 0, failed: 0 })
         try {
+            const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+            const batchSize = 3
+            const cooldownSeconds = 20
             let failedCount = 0
-            for (let i = 0; i < apiProjectIds.length; i += 1) {
-                const projectId = apiProjectIds[i]
+
+            for (let start = 0; start < apiProjectIds.length; start += batchSize) {
+                const batch = apiProjectIds.slice(start, start + batchSize)
                 const res = await fetch('/api/projects/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projectIds: [projectId] }),
+                    body: JSON.stringify({ projectIds: batch }),
                 })
                 if (!res.ok) {
-                    failedCount += 1
+                    failedCount += batch.length
+                } else {
+                    const data = await res.json()
+                    if (Array.isArray(data.results)) {
+                        failedCount += data.results.filter((item: any) => item?.success === false).length
+                    }
                 }
-                setAnalysisProgress({ total: apiProjectIds.length, current: i + 1, failed: failedCount })
+                setAnalysisProgress((prev) => ({
+                    total: apiProjectIds.length,
+                    current: Math.min((prev?.current || 0) + batch.length, apiProjectIds.length),
+                    failed: failedCount
+                }))
+
+                if (start + batchSize < apiProjectIds.length) {
+                    setAnalysisCooldown(cooldownSeconds)
+                    for (let i = cooldownSeconds; i > 0; i -= 1) {
+                        await sleep(1000)
+                        setAnalysisCooldown(i - 1)
+                    }
+                }
             }
-            await fetchProjects()
+            const refreshed = await fetchProjects()
+            if (failedCount > 0) {
+                setAnalysisMessage(`Analysis complete with ${failedCount} failed project${failedCount === 1 ? '' : 's'}.`)
+            } else {
+                setAnalysisMessage('Analysis complete! All selected projects are scored.')
+            }
+
+            const latestProjects = (refreshed as any)?.projects || projects
+            const selectedProjects = latestProjects.filter((project: Project) => apiProjectIds.includes(project.id))
+            const derivedSkills = new Set<string>()
+            const keywordSkills = [
+                // Languages
+                'JavaScript', 'TypeScript', 'Python', 'Java', 'Go', 'Rust', 'C++', 'C#', 'C', 'Swift', 'Kotlin', 'Scala',
+                'Ruby', 'PHP', 'Elixir', 'Erlang', 'Haskell', 'Clojure', 'R', 'MATLAB', 'Dart', 'Lua', 'Perl',
+                'Bash', 'PowerShell', 'SQL',
+                // Frontend
+                'HTML', 'CSS', 'Sass', 'Less', 'Tailwind', 'Bootstrap', 'Material UI', 'Chakra UI', 'Ant Design',
+                'React', 'Next.js', 'Vue', 'Nuxt', 'Angular', 'Svelte', 'SvelteKit', 'Remix', 'Gatsby', 'SolidJS',
+                'Redux', 'Zustand', 'MobX', 'Recoil', 'React Query', 'SWR',
+                // Backend
+                'Node.js', 'Express', 'NestJS', 'Fastify', 'Koa', 'Hapi',
+                'Django', 'Flask', 'FastAPI', 'Spring', 'Spring Boot', 'Quarkus', 'Micronaut',
+                'ASP.NET', '.NET', 'Rails', 'Laravel', 'Phoenix',
+                // Data / ML
+                'Pandas', 'NumPy', 'SciPy', 'Scikit-learn', 'TensorFlow', 'PyTorch', 'Keras', 'XGBoost',
+                'LightGBM', 'CatBoost', 'OpenCV', 'Hugging Face', 'LangChain',
+                'LLM', 'ChatGPT', 'OpenAI', 'RAG', 'Vector DB', 'Embeddings',
+                // Datastores
+                'PostgreSQL', 'MySQL', 'MariaDB', 'SQLite', 'MongoDB', 'DynamoDB', 'Cassandra',
+                'Redis', 'Elasticsearch', 'OpenSearch', 'ClickHouse', 'BigQuery', 'Snowflake',
+                // Cloud / DevOps
+                'AWS', 'GCP', 'Azure', 'Terraform', 'CloudFormation', 'Pulumi',
+                'Docker', 'Kubernetes', 'Helm', 'ArgoCD', 'GitHub Actions', 'GitLab CI', 'CircleCI', 'Jenkins',
+                'Prometheus', 'Grafana', 'Datadog', 'New Relic', 'Sentry', 'ELK', 'OpenTelemetry',
+                // APIs / Protocols
+                'REST', 'GraphQL', 'gRPC', 'WebSocket', 'OAuth', 'JWT',
+                // Mobile
+                'React Native', 'Flutter', 'iOS', 'Android',
+                // Testing
+                'Jest', 'Vitest', 'Cypress', 'Playwright', 'Puppeteer', 'PyTest', 'JUnit',
+                // Tools
+                'Git', 'Linux', 'Nginx', 'Apache', 'Kafka', 'RabbitMQ', 'Redis Streams'
+            ]
+            const matchKeywords = (text: string) => {
+                const lower = text.toLowerCase()
+                keywordSkills.forEach((skill) => {
+                    if (lower.includes(skill.toLowerCase())) {
+                        derivedSkills.add(skill)
+                    }
+                })
+            }
+            selectedProjects.forEach((project: Project) => {
+                if (project.language) derivedSkills.add(project.language)
+                const techs = Array.isArray((project as any).technologies_jsonb) ? (project as any).technologies_jsonb : []
+                techs.forEach((tech: any) => typeof tech === 'string' && derivedSkills.add(tech))
+                const aiTechs = project.ai_analysis_jsonb?.techStack || []
+                aiTechs.forEach((tech: any) => typeof tech === 'string' && derivedSkills.add(tech))
+                if (project.name) matchKeywords(project.name)
+                if (project.description) matchKeywords(project.description)
+                if (project.ai_analysis_jsonb?.summary) matchKeywords(project.ai_analysis_jsonb.summary)
+                if (project.ai_analysis_jsonb?.readme_excerpt) matchKeywords(project.ai_analysis_jsonb.readme_excerpt)
+                if (Array.isArray(project.ai_analysis_jsonb?.strengths)) {
+                    project.ai_analysis_jsonb.strengths.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
+                }
+                if (Array.isArray(project.ai_analysis_jsonb?.improvements)) {
+                    project.ai_analysis_jsonb.improvements.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
+                }
+                if (Array.isArray(project.ai_analysis_jsonb?.bulletPoints)) {
+                    project.ai_analysis_jsonb.bulletPoints.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
+                }
+            })
+            const nextSkills = Array.from(derivedSkills)
+            if (nextSkills.length > 0) {
+                setSkills(nextSkills)
+                await saveDraft({ skills: nextSkills })
+                setSkillsMessage('Skills updated from project analysis.')
+            }
         } catch (error) {
             console.error('Analysis error:', error)
+            setAnalysisMessage('Analysis failed. Please try again.')
         } finally {
             setIsAnalyzing(false)
-        }
-    }
-
-    const handleExtractSkills = async () => {
-        try {
-            const res = await fetch('/api/profile/extract-skills', { method: 'POST' })
-            const data = await res.json()
-            if (res.ok && data.skills) {
-                setSkills(data.skills)
-                await saveDraft({ skills: data.skills })
-            }
-        } catch (error) {
-            console.error('Skill extraction error:', error)
         }
     }
 
@@ -244,38 +401,41 @@ export default function AnalysisFlowPage() {
                     <div className="lg:col-span-2 space-y-4">
                         <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-2xl font-serif font-semibold">Select Projects</h2>
+                                <div>
+                                    <h2 className="text-2xl font-serif font-semibold">AI Selected Projects</h2>
+                                    <p className="text-xs text-[var(--text-secondary)]">
+                                        Click a project card to exclude it from analysis.
+                                    </p>
+                                </div>
                                 <span className="text-sm text-[var(--text-secondary)]">
                                     {selectedProjectIds.length} selected
                                 </span>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {projects.map(project => (
-                                    <label
+                                    <div
                                         key={project.id}
+                                        onClick={() => toggleProjectSelection(project.id)}
                                         className={`border rounded-xl p-4 cursor-pointer transition-all ${selectedProjectIds.includes(project.id)
                                                 ? 'border-[var(--orange-primary)] bg-[var(--orange-light)]'
                                                 : 'border-[var(--border-light)] bg-[var(--bg-card)] hover:shadow-sm'
                                             }`}
                                     >
-                                        <div className="flex items-start gap-3">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedProjectIds.includes(project.id)}
-                                                onChange={() => toggleProjectSelection(project.id)}
-                                                className="mt-1"
-                                            />
-                                            <div>
-                                                <div className="font-semibold text-[var(--text-primary)]">{project.name}</div>
-                                                <div className="text-sm text-[var(--text-secondary)] line-clamp-2">
-                                                    {project.description || 'No description'}
-                                                </div>
+                                        <div>
+                                            <div className="font-semibold text-[var(--text-primary)]">{project.name}</div>
+                                            <div className="text-sm text-[var(--text-secondary)] line-clamp-2">
+                                                {project.description || 'No description'}
                                             </div>
                                         </div>
-                                    </label>
+                                    </div>
                                 ))}
                             </div>
                         </div>
+                        {isAutoSelecting && (
+                            <div className="text-xs text-[var(--text-secondary)]">
+                                Auto-selecting top projects based on AI scores...
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-4">
@@ -285,6 +445,28 @@ export default function AnalysisFlowPage() {
                                 Don’t see a project? Add it here and continue through the flow.
                             </p>
                             <form onSubmit={handleAddManualProject} className="space-y-3">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="url"
+                                        value={manualProjectInput.url}
+                                        onChange={(e) => setManualProjectInput(prev => ({ ...prev, url: e.target.value }))}
+                                        placeholder="Project URL (GitHub, Kaggle, Figma, etc.)"
+                                        className="w-full px-3 py-2 rounded-lg border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleFetchFromUrl}
+                                        disabled={isFetchingUrl}
+                                        className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                                    >
+                                        {isFetchingUrl ? 'Fetching...' : 'Fetch'}
+                                    </button>
+                                </div>
+                                {urlMessage && (
+                                    <div className="text-xs text-[var(--text-secondary)]">
+                                        {urlMessage}
+                                    </div>
+                                )}
                                 <input
                                     type="text"
                                     value={manualProjectInput.name}
@@ -382,6 +564,22 @@ export default function AnalysisFlowPage() {
                                 </div>
                             </div>
                         )}
+                        {analysisMessage && !isAnalyzing && (
+                            <div className="mt-4 text-sm text-[var(--text-secondary)] bg-[var(--bg-warm)] border border-[var(--border-light)] rounded-lg px-4 py-3 flex items-center justify-between">
+                                <span>{analysisMessage}</span>
+                                <button
+                                    onClick={() => setAnalysisMessage(null)}
+                                    className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+                        )}
+                        {analysisCooldown > 0 && (
+                            <div className="mt-2 text-xs text-[var(--text-secondary)]">
+                                Rate limit cooldown: waiting {analysisCooldown}s before the next batch.
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -397,12 +595,12 @@ export default function AnalysisFlowPage() {
                                             {project.description || 'No description'}
                                         </p>
                                     </div>
-                                    {project.ai_score !== null && (
-                                        <div className="text-right">
-                                            <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold">AI Match</div>
-                                            <div className="text-2xl font-bold text-[var(--orange-primary)]">{project.ai_score}%</div>
+                                    <div className="text-right">
+                                        <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold">AI Match</div>
+                                        <div className="text-2xl font-bold text-[var(--orange-primary)]">
+                                            {typeof project.ai_score === 'number' ? `${project.ai_score}%` : 'Not scored'}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                                 {project.ai_analysis_jsonb?.bulletPoints && (
                                     <ul className="mt-4 text-sm text-[var(--text-secondary)] list-disc pl-5 space-y-1">
@@ -468,16 +666,15 @@ export default function AnalysisFlowPage() {
                             <div>
                                 <h2 className="text-2xl font-serif font-semibold">Skills</h2>
                                 <p className="text-sm text-[var(--text-secondary)]">
-                                    Pull skills from your profile or add them manually.
+                                    Skills are generated automatically from your analyzed projects.
                                 </p>
                             </div>
-                            <button
-                                onClick={handleExtractSkills}
-                                className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)]"
-                            >
-                                Extract Skills with AI
-                            </button>
                         </div>
+                        {skillsMessage && (
+                            <div className="mt-3 text-xs text-[var(--text-secondary)]">
+                                {skillsMessage}
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -485,9 +682,9 @@ export default function AnalysisFlowPage() {
                             <h3 className="text-lg font-serif font-semibold mb-3">AI Suggested Skills</h3>
                             {skills.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
-                                    {skills.map(skill => (
+                                    {skills.map((skill, i) => (
                                         <span
-                                            key={skill}
+                                            key={`${skill}-${i}`}
                                             className="px-3 py-1 rounded-full bg-[var(--orange-light)] text-sm text-[var(--text-primary)]"
                                         >
                                             {skill}
