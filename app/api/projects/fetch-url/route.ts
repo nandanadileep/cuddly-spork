@@ -12,6 +12,38 @@ const isValidUrl = (value: string) => {
     }
 }
 
+const normalizeUrl = (value: URL) => {
+    const normalized = new URL(value.toString())
+    normalized.hash = ''
+    normalized.search = ''
+    normalized.pathname = normalized.pathname.replace(/\/$/, '')
+    return normalized.toString()
+}
+
+const detectPlatform = (url: URL) => {
+    const host = url.hostname.replace(/^www\./, '').toLowerCase()
+    if (host === 'github.com') return 'github'
+    if (host === 'kaggle.com') return 'kaggle'
+    if (host === 'figma.com') return 'figma'
+    if (host === 'behance.net') return 'behance'
+    if (host === 'dribbble.com') return 'dribbble'
+    if (host === 'medium.com') return 'medium'
+    if (host === 'dev.to') return 'devto'
+    if (host === 'hashnode.com') return 'hashnode'
+    if (host.endsWith('substack.com')) return 'substack'
+    if (host === 'producthunt.com') return 'producthunt'
+    if (host === 'youtube.com' || host === 'youtu.be') return 'youtube'
+    if (host === 'vimeo.com') return 'vimeo'
+    if (host === 'codepen.io') return 'codepen'
+    if (host === 'codesandbox.io') return 'codesandbox'
+    if (host === 'stackblitz.com') return 'stackblitz'
+    if (host === 'npmjs.com') return 'npm'
+    if (host === 'pypi.org') return 'pypi'
+    if (host === 'huggingface.co') return 'huggingface'
+    if (host === 'kaggle.com') return 'kaggle'
+    return host
+}
+
 const tryFetchGithubRepo = async (url: URL) => {
     if (url.hostname !== 'github.com') return null
     const [owner, repo] = url.pathname.split('/').filter(Boolean)
@@ -32,6 +64,7 @@ const tryFetchGithubRepo = async (url: URL) => {
         keywords: Array.isArray(data.topics) ? data.topics : [],
         siteName: 'GitHub',
         language: data.language || null,
+        platform: 'github'
     }
 }
 
@@ -53,7 +86,7 @@ export async function POST(req: NextRequest) {
         const url = new URL(urlString)
         const githubData = await tryFetchGithubRepo(url)
         if (githubData) {
-            return NextResponse.json({ success: true, ...githubData })
+            return NextResponse.json({ success: true, url: normalizeUrl(url), platform: 'github', ...githubData })
         }
 
         const response = await fetch(url.toString(), {
@@ -94,6 +127,8 @@ export async function POST(req: NextRequest) {
             description,
             keywords,
             siteName,
+            url: normalizeUrl(url),
+            platform: detectPlatform(url)
         })
     } catch (error) {
         console.error('[Fetch URL] Error:', error)
