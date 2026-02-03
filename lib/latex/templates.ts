@@ -324,6 +324,9 @@ export const renderLatexTemplate = (templateId: TemplateId, payload: ResumePaylo
     if (payload.email) {
         contactParts.push(`\\href{mailto:${escapeLatex(payload.email)}}{${escapeLatex(payload.email)}}`)
     }
+    if (payload.website) {
+        contactParts.push(`\\href{${escapeLatex(payload.website)}}{${escapeLatex(payload.website)}}`)
+    }
     if (payload.linkedin) {
         contactParts.push(`\\href{${escapeLatex(payload.linkedin)}}{\\faLinkedin}`)
     }
@@ -339,7 +342,6 @@ ${templateStyles[templateId]}
     {\\Huge \\scshape [[.name]]}\\\\ \\vspace{2pt}
     [[.locationLine]] \\\\ \\vspace{2pt}
     \\small [[.contactLine]] \\\\
-    [[.websiteLine]]
 \\end{center}
 
 [[.experienceSection]]
@@ -364,7 +366,7 @@ ${templateStyles[templateId]}
         email: escapeLatex(payload.email),
         contactLine: contactLine || escapeLatex(payload.email),
         locationLine: payload.location ? escapeLatex(payload.location) : '\\mbox{}',
-        websiteLine: payload.website ? `\\href{${escapeLatex(payload.website)}}{\\faGlobe}` : '',
+        websiteLine: '',
         targetRole: escapeLatex(payload.targetRole || 'Open to roles'),
         projectsSection: payload.projects && payload.projects.length > 0
             ? `\\section{Key Projects}\n\\resumeSubHeadingListStart\n${buildProjectsSection(payload.projects)}\\resumeSubHeadingListEnd`
