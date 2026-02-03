@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions)
 
-        if (!session?.user?.id) {
+        if (!session?.user?.id && !session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -33,8 +33,20 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Update User Profile
+        const userId = session.user.id || null
+        const userEmail = session.user.email || null
+        const userRecord = userId
+            ? await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })
+            : userEmail
+                ? await prisma.user.findUnique({ where: { email: userEmail }, select: { id: true } })
+                : null
+
+        if (!userRecord?.id) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        }
+
         await prisma.user.update({
-            where: { id: session.user.id },
+            where: { id: userRecord.id },
             data: {
                 linkedin_url: linkedinUrl || null,
                 target_role: targetRole || null,
@@ -60,12 +72,12 @@ export async function POST(req: NextRequest) {
                     await prisma.platformConnection.upsert({
                         where: {
                             user_id_platform: {
-                                user_id: session.user.id,
+                                user_id: userRecord.id,
                                 platform: p.id,
                             },
                         },
                         create: {
-                            user_id: session.user.id,
+                            user_id: userRecord.id,
                             platform: p.id,
                             username: p.url, // Store raw input for manual
                             metadata_jsonb: { manual_url: p.url },

@@ -282,6 +282,111 @@ export interface GeneratedJobDescription {
     industry: string[]
 }
 
+const normalizeRoleKey = (roleTitle: string) =>
+    roleTitle.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+
+const ROLE_PRESETS: Record<string, GeneratedJobDescription> = {
+    'sde': {
+        title: 'Software Development Engineer',
+        summary: 'Build and maintain scalable software systems across backend and frontend services.',
+        requiredSkills: ['Data Structures', 'Algorithms', 'System Design', 'APIs', 'Git'],
+        preferredSkills: ['Cloud', 'CI/CD', 'Observability'],
+        responsibilities: [
+            'Design and implement software features',
+            'Write reliable tests and maintain code quality',
+            'Collaborate with cross-functional teams',
+            'Participate in code reviews and architecture discussions',
+        ],
+        keywords: ['software', 'backend', 'frontend', 'scalable', 'services', 'apis', 'testing', 'design'],
+        experienceLevel: 'Mid',
+        industry: ['technology'],
+    },
+    'ai engineer': {
+        title: 'AI Engineer',
+        summary: 'Build AI-powered systems, integrate models, and deploy AI services into products.',
+        requiredSkills: ['Machine Learning', 'Python', 'Model Deployment', 'APIs', 'Data Pipelines'],
+        preferredSkills: ['LLMs', 'MLOps', 'Vector Databases'],
+        responsibilities: [
+            'Develop and deploy AI models and services',
+            'Integrate AI systems into product workflows',
+            'Evaluate model performance and reliability',
+            'Collaborate with product and engineering teams',
+        ],
+        keywords: ['ai', 'ml', 'models', 'inference', 'deployment', 'pipelines', 'evaluation'],
+        experienceLevel: 'Mid',
+        industry: ['technology'],
+    },
+    'ml engineer': {
+        title: 'Machine Learning Engineer',
+        summary: 'Design and deploy ML models with robust pipelines, monitoring, and performance tuning.',
+        requiredSkills: ['Machine Learning', 'Python', 'Feature Engineering', 'Model Training', 'MLOps'],
+        preferredSkills: ['Kubernetes', 'Monitoring', 'Experiment Tracking'],
+        responsibilities: [
+            'Build ML training and inference pipelines',
+            'Optimize model performance and scalability',
+            'Monitor and maintain models in production',
+            'Collaborate with data and product teams',
+        ],
+        keywords: ['ml', 'training', 'features', 'pipelines', 'monitoring', 'deployment'],
+        experienceLevel: 'Mid',
+        industry: ['technology'],
+    },
+    'data analyst': {
+        title: 'Data Analyst',
+        summary: 'Analyze data to generate insights, dashboards, and recommendations for stakeholders.',
+        requiredSkills: ['SQL', 'Data Visualization', 'Statistics', 'Excel', 'Analytics'],
+        preferredSkills: ['Python', 'BI Tools', 'A/B Testing'],
+        responsibilities: [
+            'Build dashboards and reports',
+            'Analyze business metrics and trends',
+            'Support decision-making with insights',
+            'Ensure data quality and consistency',
+        ],
+        keywords: ['data', 'analysis', 'dashboard', 'metrics', 'insights', 'sql'],
+        experienceLevel: 'Mid',
+        industry: ['technology'],
+    },
+    'product designer': {
+        title: 'Product Designer',
+        summary: 'Design user-centric product experiences with strong UX and visual design craft.',
+        requiredSkills: ['UX Design', 'UI Design', 'Prototyping', 'User Research', 'Design Systems'],
+        preferredSkills: ['Figma', 'Accessibility', 'Usability Testing'],
+        responsibilities: [
+            'Design end-to-end product flows',
+            'Collaborate with product and engineering',
+            'Conduct user research and testing',
+            'Maintain design systems and standards',
+        ],
+        keywords: ['ux', 'ui', 'prototyping', 'research', 'design systems', 'accessibility'],
+        experienceLevel: 'Mid',
+        industry: ['technology'],
+    },
+}
+
+const resolveRolePreset = (roleTitle: string): GeneratedJobDescription | null => {
+    const normalized = normalizeRoleKey(roleTitle)
+
+    const contains = (value: string) => normalized.includes(value)
+
+    if (contains('sde') || contains('software development engineer') || contains('software engineer')) {
+        return ROLE_PRESETS['sde']
+    }
+    if (contains('ai engineer') || contains('artificial intelligence engineer')) {
+        return ROLE_PRESETS['ai engineer']
+    }
+    if (contains('ml engineer') || contains('machine learning engineer')) {
+        return ROLE_PRESETS['ml engineer']
+    }
+    if (contains('data analyst')) {
+        return ROLE_PRESETS['data analyst']
+    }
+    if (contains('product designer') || contains('product design')) {
+        return ROLE_PRESETS['product designer']
+    }
+
+    return ROLE_PRESETS[normalized] || null
+}
+
 /**
  * Generate a detailed job description from a role title using LLM
  * This is cached in the database to avoid redundant API calls
@@ -289,6 +394,11 @@ export interface GeneratedJobDescription {
 export async function generateJobDescription(
     roleTitle: string
 ): Promise<GeneratedJobDescription> {
+    const preset = resolveRolePreset(roleTitle)
+    if (preset) {
+        return preset
+    }
+
     const prompt = `Generate a detailed job description for the role: "${roleTitle}"
 
 You are a professional HR recruiter. Based on the job title, generate a comprehensive job description that would help analyze project relevance.

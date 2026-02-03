@@ -8,7 +8,7 @@ export async function PATCH(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions)
 
-        if (!session?.user?.id) {
+        if (!session?.user?.id && !session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -22,18 +22,23 @@ export async function PATCH(request: NextRequest) {
             )
         }
 
-        // Check if we already have this role cached
-        let existingUser
-        try {
-            existingUser = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: {
-                    target_role: true,
-                    job_description_jsonb: true,
-                },
+        const userId = session.user.id || null
+        const userEmail = session.user.email || null
+
+        const existingUser = userId
+            ? await prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, target_role: true, job_description_jsonb: true },
             })
-        } catch {
-            existingUser = null
+            : userEmail
+                ? await prisma.user.findUnique({
+                    where: { email: userEmail },
+                    select: { id: true, target_role: true, job_description_jsonb: true },
+                })
+                : null
+
+        if (!existingUser?.id) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
         let jobDescriptionData: GeneratedJobDescription | null = null
@@ -68,7 +73,7 @@ export async function PATCH(request: NextRequest) {
         // Update user's target role with generated/cached description
         try {
             const user = await prisma.user.update({
-                where: { id: session.user.id },
+                where: { id: existingUser.id },
                 data: {
                     target_role: targetRole,
                     job_description_jsonb: jobDescriptionData as any,
@@ -109,18 +114,24 @@ export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions)
 
-        if (!session?.user?.id) {
+        if (!session?.user?.id && !session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         try {
-            const user = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: {
-                    target_role: true,
-                    job_description_jsonb: true,
-                },
-            })
+            const userId = session.user.id || null
+            const userEmail = session.user.email || null
+            const user = userId
+                ? await prisma.user.findUnique({
+                    where: { id: userId },
+                    select: { target_role: true, job_description_jsonb: true },
+                })
+                : userEmail
+                    ? await prisma.user.findUnique({
+                        where: { email: userEmail },
+                        select: { target_role: true, job_description_jsonb: true },
+                    })
+                    : null
 
             return NextResponse.json({
                 targetRole: user?.target_role || null,
