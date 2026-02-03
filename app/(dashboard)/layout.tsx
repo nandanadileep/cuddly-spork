@@ -14,6 +14,8 @@ export default function DashboardLayout({
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: '' },
+        { name: 'Profile', href: '/profile', icon: '' },
+        { name: 'Settings', href: '/settings', icon: '' },
     ]
 
     return (
@@ -23,7 +25,7 @@ export default function DashboardLayout({
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
-                        <div className="flex items-center gap-12">
+                        <div className="flex items-center gap-10">
                             <Link href="/dashboard" className="flex items-center gap-2 group">
                                 <span className="text-2xl group-hover:scale-110 transition-transform"></span>
                                 <span className="text-xl font-serif font-bold tracking-tight text-[var(--text-primary)]">ShipCV</span>
@@ -42,7 +44,6 @@ export default function DashboardLayout({
                                                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                                 }`}
                                         >
-                                            <span className={`text-lg ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.icon}</span>
                                             {item.name}
                                         </Link>
                                     )
@@ -52,27 +53,6 @@ export default function DashboardLayout({
 
                         {/* User Menu */}
                         <div className="flex items-center gap-6">
-                            <Link
-                                href="/profile"
-                                className={`flex items-center gap-2 text-sm font-medium transition-colors ${pathname === '/profile'
-                                    ? 'text-[var(--orange-primary)]'
-                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                                    }`}
-                            >
-                                <span className={`text-lg ${pathname === '/profile' ? 'opacity-100' : 'opacity-70'}`}></span>
-                                Profile
-                            </Link>
-
-                            <Link
-                                href="/settings"
-                                className={`flex items-center gap-2 text-sm font-medium transition-colors ${pathname === '/settings'
-                                    ? 'text-[var(--orange-primary)]'
-                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                                    }`}
-                            >
-                        <span className={`text-lg ${pathname === '/settings' ? 'opacity-100' : 'opacity-70'}`}>Settings</span>
-                                Settings
-                            </Link>
 
                             <div className="h-6 w-px bg-[var(--border-light)]" />
 

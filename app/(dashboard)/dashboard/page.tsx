@@ -48,6 +48,45 @@ export default function DashboardPage() {
     const [jobDescription, setJobDescription] = useState<JobDescriptionData | null>(null)
     const [isSavingRole, setIsSavingRole] = useState(false)
     const [roleError, setRoleError] = useState('')
+    const [showTour, setShowTour] = useState(false)
+    const [tourStep, setTourStep] = useState(0)
+    const [tourHideNext, setTourHideNext] = useState(false)
+
+    const tourSteps = [
+        {
+            title: 'Connect your platforms',
+            body: 'Add GitHub, Kaggle, Figma, or any other platform so we can pull your projects.',
+            cta: 'Go to Settings',
+            action: () => router.push('/settings'),
+        },
+        {
+            title: 'Set a target role',
+            body: 'Tell us the role you want so AI scoring is tailored to your goal.',
+            cta: 'Update role',
+            action: () => {
+                const el = document.getElementById('target-role-card')
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            },
+        },
+        {
+            title: 'Analyze projects',
+            body: 'Run AI scoring to prioritize your strongest projects for this role.',
+            cta: 'Start analysis',
+            action: () => router.push('/analysis'),
+        },
+        {
+            title: 'Review skills',
+            body: 'Confirm the skill list and remove anything that does not fit.',
+            cta: 'Open analysis flow',
+            action: () => router.push('/analysis'),
+        },
+        {
+            title: 'Generate your resume',
+            body: 'Pick a template, edit bullets, and download a final PDF.',
+            cta: 'Open builder',
+            action: () => router.push('/builder'),
+        },
+    ]
 
     const fetchProjects = () => {
         return fetch('/api/projects')
@@ -88,6 +127,15 @@ export default function DashboardPage() {
         if (status === 'authenticated') {
             setIsLoading(true)
             Promise.all([fetchProjects(), fetchTargetRole()]).finally(() => setIsLoading(false))
+        }
+    }, [status])
+
+    useEffect(() => {
+        if (status !== 'authenticated') return
+        if (typeof window === 'undefined') return
+        const seen = localStorage.getItem('shipcv_tour_seen')
+        if (!seen) {
+            setShowTour(true)
         }
     }, [status])
 
@@ -228,8 +276,78 @@ export default function DashboardPage() {
         )
     }
 
-    return (
+        return (
         <div className="max-w-7xl mx-auto">
+            {showTour && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
+                    <div className="w-full max-w-lg bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-xl space-y-4">
+                        <div>
+                            <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold">
+                                Getting Started
+                            </div>
+                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">
+                                {tourSteps[tourStep]?.title}
+                            </h2>
+                            <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                {tourSteps[tourStep]?.body}
+                            </p>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                            <input
+                                type="checkbox"
+                                checked={tourHideNext}
+                                onChange={(e) => setTourHideNext(e.target.checked)}
+                            />
+                            Don’t show this again
+                        </label>
+                        <div className="flex flex-wrap gap-3 justify-between">
+                            <button
+                                onClick={() => {
+                                    setShowTour(false)
+                                    if (tourHideNext) localStorage.setItem('shipcv_tour_seen', 'true')
+                                }}
+                                className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm text-[var(--text-secondary)]"
+                            >
+                                Close
+                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => {
+                                        const next = Math.max(0, tourStep - 1)
+                                        setTourStep(next)
+                                    }}
+                                    disabled={tourStep === 0}
+                                    className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm text-[var(--text-secondary)] disabled:opacity-50"
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        tourSteps[tourStep]?.action?.()
+                                    }}
+                                    className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm text-[var(--text-secondary)]"
+                                >
+                                    {tourSteps[tourStep]?.cta}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const next = tourStep + 1
+                                        if (next >= tourSteps.length) {
+                                            setShowTour(false)
+                                            localStorage.setItem('shipcv_tour_seen', 'true')
+                                            return
+                                        }
+                                        setTourStep(next)
+                                    }}
+                                    className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold"
+                                >
+                                    {tourStep === tourSteps.length - 1 ? 'Finish' : 'Next'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="mb-8">
                 <h1 className="text-4xl font-serif font-bold text-[var(--text-primary)] mb-2">
                     Welcome back, {session?.user?.name}!
@@ -243,7 +361,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
+                    <div id="target-role-card" className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
                         <div className="flex items-start justify-between mb-4">
                             <div>
                                 <h2 className="text-2xl font-serif font-semibold">Target Role</h2>
@@ -495,7 +613,7 @@ export default function DashboardPage() {
                                                 </span>
                                             )}
                                             {project.stars !== null && project.stars > 0 && (
-                                                <span>⭐ {project.stars}</span>
+                                                <span>Stars: {project.stars}</span>
                                             )}
                                             {project.forks !== null && project.forks > 0 && (
                                                 <span> {project.forks}</span>
@@ -545,7 +663,7 @@ export default function DashboardPage() {
                             <div className="bg-[var(--bg-card)] rounded-lg p-6 border border-[var(--border-light)] shadow-sm">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-12 h-12 rounded-full bg-[var(--orange-light)] flex items-center justify-center">
-                            <span className="text-sm font-semibold">Settings</span>
+                                <span className="text-sm font-semibold">Manage Connections</span>
                                     </div>
                                     <div>
                                         <h3 className="font-serif font-semibold text-lg">Manage Platforms</h3>
