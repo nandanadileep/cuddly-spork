@@ -32,6 +32,9 @@ model User {
   education           Education[]
   workExperience      WorkExperience[]
   analysisDraft       AnalysisDraft?
+  extracurriculars    Extracurricular[]
+  awards              Award[]
+  publications        Publication[]
   
   @@map("users")
 }
@@ -105,6 +108,7 @@ model Education {
   institution  String
   degree       String
   field        String?
+  location     String?
   start_date   DateTime?
   end_date     DateTime?
   is_current   Boolean   @default(false)
@@ -137,6 +141,58 @@ model WorkExperience {
   @@map("work_experience")
 }
 
+model Extracurricular {
+  id           String    @id @default(cuid())
+  user_id      String
+  title        String
+  organization String?
+  location     String?
+  start_date   DateTime?
+  end_date     DateTime?
+  is_current   Boolean   @default(false)
+  description  String?   @db.Text
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("extracurriculars")
+}
+
+model Award {
+  id           String    @id @default(cuid())
+  user_id      String
+  title        String
+  issuer       String?
+  awarded_at   DateTime?
+  description  String?   @db.Text
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("awards")
+}
+
+model Publication {
+  id           String    @id @default(cuid())
+  user_id      String
+  title        String
+  venue        String?
+  published_at DateTime?
+  url          String?
+  description  String?   @db.Text
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("publications")
+}
+
 model AnalysisDraft {
   id                         String   @id @default(cuid())
   user_id                    String   @unique
@@ -145,6 +201,7 @@ model AnalysisDraft {
   project_bullets_jsonb      Json?
   skills_jsonb               Json?
   manual_skills_jsonb        Json?
+  excluded_skills_jsonb      Json?
   template_id                String   @default("modern")
   created_at                 DateTime @default(now())
   updated_at                 DateTime @updatedAt
