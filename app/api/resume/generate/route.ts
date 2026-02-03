@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
             manualProjects,
             skills,
             manualSkills,
+            excludedSkills,
             projectBullets,
         } = body || {}
 
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
 
         const selectedIds = selectedProjectIds || draft?.selected_project_ids_jsonb || []
         const manual = manualProjects || draft?.manual_projects_jsonb || []
+        const resolvedExcludedSkills = excludedSkills || draft?.excluded_skills_jsonb || []
         const allSkills = [
             ...(skills || draft?.skills_jsonb || []),
             ...(manualSkills || draft?.manual_skills_jsonb || []),
@@ -96,6 +98,21 @@ export async function POST(req: NextRequest) {
             orderBy: [{ start_date: 'desc' }],
         })
 
+        const extracurriculars = await prisma.extracurricular.findMany({
+            where: { user_id: userRecord.id },
+            orderBy: [{ start_date: 'desc' }],
+        })
+
+        const awards = await prisma.award.findMany({
+            where: { user_id: userRecord.id },
+            orderBy: [{ awarded_at: 'desc' }],
+        })
+
+        const publications = await prisma.publication.findMany({
+            where: { user_id: userRecord.id },
+            orderBy: [{ published_at: 'desc' }],
+        })
+
         const formatDate = (value?: Date | null) => {
             if (!value) return ''
             return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(value)
@@ -113,16 +130,21 @@ export async function POST(req: NextRequest) {
                 name: project.name,
                 description: project.description || '',
                 url: project.url,
+                technologies: Array.isArray(project.technologies_jsonb) ? project.technologies_jsonb as string[] : [],
                 bulletPoints: (bulletsMap[project.id] || project.ai_analysis_jsonb?.bulletPoints || []).slice(0, 4),
             })),
             ...(manual as any[]).map((project) => ({
                 name: project.name,
                 description: project.description,
+                technologies: Array.isArray(project.technologies) ? project.technologies : [],
                 bulletPoints: (project.notes || []).slice(0, 4),
             })),
         ]
 
-        const uniqueSkills = Array.from(new Set(allSkills)).filter(Boolean)
+        const excludedSet = new Set((resolvedExcludedSkills || []).map((item: string) => item.toLowerCase()))
+        const uniqueSkills = Array.from(new Set(allSkills))
+            .filter(Boolean)
+            .filter((item) => !excludedSet.has(String(item).toLowerCase()))
 
         const payload = {
             name: user.name || 'Untitled Resume',
@@ -147,7 +169,34 @@ export async function POST(req: NextRequest) {
             education: education.map(item => ({
                 institution: item.institution,
                 degree: [item.degree, item.field].filter(Boolean).join(', '),
+                location: item.location || '',
                 dateRange: formatDateRange(item.start_date, item.end_date, item.is_current),
+                bulletPoints: item.description
+                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
+                    : [],
+            })),
+            extracurriculars: extracurriculars.map(item => ({
+                title: item.title,
+                organization: item.organization || '',
+                location: item.location || '',
+                dateRange: formatDateRange(item.start_date, item.end_date, item.is_current),
+                bulletPoints: item.description
+                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
+                    : [],
+            })),
+            awards: awards.map(item => ({
+                title: item.title,
+                issuer: item.issuer || '',
+                date: formatDate(item.awarded_at),
+                bulletPoints: item.description
+                    ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
+                    : [],
+            })),
+            publications: publications.map(item => ({
+                title: item.title,
+                venue: item.venue || '',
+                date: formatDate(item.published_at),
+                url: item.url || null,
                 bulletPoints: item.description
                     ? item.description.split('\n').map(line => line.trim()).filter(Boolean)
                     : [],
