@@ -34,6 +34,9 @@ export default function ResumeBuilderPage() {
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>([])
     const [draft, setDraft] = useState<AnalysisDraft | null>(null)
+    const [manualProjects, setManualProjects] = useState<ManualProject[]>([])
+    const [projectBullets, setProjectBullets] = useState<Record<string, string[]>>({})
+    const [templateId, setTemplateId] = useState('modern')
     const [isLoading, setIsLoading] = useState(true)
 
     const fetchProjects = () => {
@@ -54,7 +57,14 @@ export default function ResumeBuilderPage() {
                 fetchProjects(),
                 fetch('/api/analysis-draft')
                     .then(res => res.json())
-                    .then(data => setDraft(data?.draft || null)),
+                    .then(data => {
+                        if (data?.draft) {
+                            setDraft(data.draft)
+                            setManualProjects(data.draft.manualProjects || [])
+                            setProjectBullets(data.draft.projectBullets || {})
+                            setTemplateId(data.draft.templateId || 'modern')
+                        }
+                    }),
             ]).finally(() => setIsLoading(false))
         }
     }, [status])
