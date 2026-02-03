@@ -26,7 +26,7 @@ export default function DashboardLayout({
                         <div className="flex items-center gap-12">
                             <Link href="/dashboard" className="flex items-center gap-2 group">
                                 <span className="text-2xl group-hover:scale-110 transition-transform">📄</span>
-                                <span className="text-xl font-serif font-bold tracking-tight text-[var(--text-primary)]">GitHire</span>
+                                <span className="text-xl font-serif font-bold tracking-tight text-[var(--text-primary)]">ShipCV</span>
                             </Link>
 
                             {/* Navigation Links */}
