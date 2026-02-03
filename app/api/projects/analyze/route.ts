@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         // NOTE: In a real app, you'd decrypt the token. For this demo, we'll assume it's available or use public access.
         const githubToken = githubConnection?.access_token_encrypted // Assuming stored raw or decrypted elsewhere for now
 
-        const githubClient = githubToken ? new GitHubClient(githubToken) : null
+        const githubClient = new GitHubClient(githubToken || undefined)
 
         // 3. Fetch projects to analyze
         const projects = await prisma.project.findMany({
@@ -58,10 +58,25 @@ export async function POST(req: NextRequest) {
 
         for (const project of projects) {
             try {
+                const alreadyAnalyzedForRole =
+                    (project.analyzed_for_role || null) === (targetRole || null) &&
+                    project.ai_analysis_jsonb &&
+                    project.ai_score !== null
+
+                if (alreadyAnalyzedForRole) {
+                    results.push({
+                        id: project.id,
+                        success: true,
+                        score: project.ai_score,
+                        cached: true
+                    })
+                    continue
+                }
+
                 let readmeContent = ''
 
                 // 4. Fetch README from GitHub if possible
-                if (project.platform === 'github' && githubClient) {
+                if (project.platform === 'github') {
                     const urlParts = project.url.split('/')
                     const owner = urlParts[urlParts.length - 2]
                     const repoName = urlParts[urlParts.length - 1]
@@ -84,12 +99,17 @@ export async function POST(req: NextRequest) {
                     jobKeywords: jobAnalysis?.keywords
                 })
 
+                const analysisWithContext = {
+                    ...analysis,
+                    readme_excerpt: readmeContent ? readmeContent.slice(0, 2000) : null
+                }
+
                 // 6. Update Database
                 const updatedProject = await prisma.project.update({
                     where: { id: project.id },
                     data: {
                         ai_score: analysis.score,
-                        ai_analysis_jsonb: analysis as any,
+                        ai_analysis_jsonb: analysisWithContext as any,
                         analyzed_for_role: targetRole
                     }
                 })

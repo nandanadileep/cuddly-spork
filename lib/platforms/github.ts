@@ -17,15 +17,18 @@ export interface GitHubRepo {
 }
 
 export class GitHubClient {
-    private accessToken: string
+    private accessToken?: string
 
-    constructor(accessToken: string) {
+    constructor(accessToken?: string) {
         this.accessToken = accessToken
     }
 
     async fetchUserRepositories(): Promise<PlatformProject[]> {
         try {
             // Use affiliation=owner to only get repos the user owns (not starred, collaborator, or org member repos)
+            if (!this.accessToken) {
+                throw new Error('GitHub access token is required to fetch user repositories')
+            }
             const response = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner', {
                 headers: {
                     Authorization: `Bearer ${this.accessToken}`,
@@ -67,7 +70,7 @@ export class GitHubClient {
     async fetchRepositoryDetails(owner: string, repo: string): Promise<GitHubRepo> {
         const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
             headers: {
-                Authorization: `Bearer ${this.accessToken}`,
+                ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
                 Accept: 'application/vnd.github.v3+json',
             },
         })
@@ -83,7 +86,7 @@ export class GitHubClient {
         try {
             const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
                 headers: {
-                    Authorization: `Bearer ${this.accessToken}`,
+                    ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
                     Accept: 'application/vnd.github.v3+json',
                 },
             })
