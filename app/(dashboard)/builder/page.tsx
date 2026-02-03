@@ -255,7 +255,7 @@ export default function ResumeBuilderPage() {
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    {bullets.map((bullet, index) => (
+                                                    {bullets.map((bullet: string, index: number) => (
                                                         <div key={`${project.id}-${index}`} className="flex items-start gap-2">
                                                             <input
                                                                 value={bullet}
