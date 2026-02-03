@@ -291,7 +291,7 @@ export default function ResumeBuilderPage() {
                                                                 </button>
                                                                 <button
                                                                     onClick={() => {
-                                                                        const next = bullets.filter((_, i) => i !== index)
+                                                                        const next = bullets.filter((_: string, i: number) => i !== index)
                                                                         updateProjectBullets(project.id, next.length ? next : [''])
                                                                     }}
                                                                     className="px-2 py-1 text-xs rounded border border-[var(--border-light)] text-red-600"
