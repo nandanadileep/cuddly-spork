@@ -139,8 +139,10 @@ model AnalysisDraft {
   user_id                    String   @unique
   selected_project_ids_jsonb Json?
   manual_projects_jsonb      Json?
+  project_bullets_jsonb      Json?
   skills_jsonb               Json?
   manual_skills_jsonb        Json?
+  template_id                String   @default("modern")
   created_at                 DateTime @default(now())
   updated_at                 DateTime @updatedAt
 
