@@ -11,7 +11,7 @@ const newsreader = Newsreader({
 })
 
 export const metadata: Metadata = {
-    title: 'GitHire - Elegant Resume Builder',
+    title: 'ShipCV - Elegant Resume Builder',
     description: 'Turn your code into a professional resume.',
 }
 
