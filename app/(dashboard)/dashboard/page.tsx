@@ -37,6 +37,7 @@ export default function DashboardPage() {
     const [isRoleLoading, setIsRoleLoading] = useState(true)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [isAutoSelecting, setIsAutoSelecting] = useState(false)
+    const [analysisProgress, setAnalysisProgress] = useState<{ total: number; current: number; failed: number } | null>(null)
     const [roleMode, setRoleMode] = useState<'title' | 'description'>('title')
     const [jobTitleInput, setJobTitleInput] = useState('')
     const [jobDescriptionInput, setJobDescriptionInput] = useState('')
@@ -81,16 +82,23 @@ export default function DashboardPage() {
     const handleAnalyzeAll = async () => {
         if (projects.length === 0) return
         setIsAnalyzing(true)
+        setAnalysisProgress({ total: projects.length, current: 0, failed: 0 })
         try {
-            const res = await fetch('/api/projects/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectIds: projects.map(p => p.id) })
-            })
-            if (res.ok) {
-                await fetchProjects()
-                alert('Analysis complete!')
+            let failedCount = 0
+            for (let i = 0; i < projects.length; i += 1) {
+                const project = projects[i]
+                const res = await fetch('/api/projects/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectIds: [project.id] })
+                })
+                if (!res.ok) {
+                    failedCount += 1
+                }
+                setAnalysisProgress({ total: projects.length, current: i + 1, failed: failedCount })
             }
+            await fetchProjects()
+            alert('Analysis complete!')
         } catch (error) {
             console.error('Analysis error:', error)
         } finally {
@@ -318,23 +326,6 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                 )}
-                                {jobDescription.keywords && jobDescription.keywords.length > 0 && (
-                                    <div>
-                                        <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
-                                            Keywords
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {jobDescription.keywords.slice(0, 8).map((keyword, i) => (
-                                                <span
-                                                    key={`${keyword}-${i}`}
-                                                    className="px-2 py-1 text-xs rounded-full bg-[var(--bg-warm)] text-[var(--text-secondary)] border border-[var(--border-light)]"
-                                                >
-                                                    {keyword}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </>
                         ) : (
                             <p className="text-sm text-[var(--text-secondary)]">
@@ -373,7 +364,9 @@ export default function DashboardPage() {
                                         disabled={isAnalyzing || projects.length === 0}
                                         className="px-4 py-2 bg-white border border-[var(--border-light)] text-[var(--text-primary)] rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
                                     >
-                                        {isAnalyzing ? 'Analyzing...' : 'Analyze Projects'} ✨
+                                        {isAnalyzing && analysisProgress
+                                            ? `Analyzing ${analysisProgress.current}/${analysisProgress.total}` 
+                                            : 'Analyze Projects'} ✨
                                     </button>
                                     <button
                                         onClick={handleAutoSelect}
@@ -384,6 +377,22 @@ export default function DashboardPage() {
                                     </button>
                                 </div>
                             </div>
+                            {isAnalyzing && analysisProgress && (
+                                <div className="space-y-2">
+                                    <div className="h-2 rounded-full bg-[var(--bg-warm)] overflow-hidden">
+                                        <div
+                                            className="h-full bg-[var(--orange-primary)] transition-all"
+                                            style={{
+                                                width: `${Math.round((analysisProgress.current / analysisProgress.total) * 100)}%`,
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="text-xs text-[var(--text-secondary)]">
+                                        {analysisProgress.current} of {analysisProgress.total} analyzed
+                                        {analysisProgress.failed > 0 ? ` • ${analysisProgress.failed} failed` : ''}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {projects.map(project => (

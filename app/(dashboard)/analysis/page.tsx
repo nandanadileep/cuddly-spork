@@ -35,6 +35,7 @@ export default function AnalysisFlowPage() {
     const [manualProjects, setManualProjects] = useState<ManualProject[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
+    const [analysisProgress, setAnalysisProgress] = useState<{ total: number; current: number; failed: number } | null>(null)
     const [skills, setSkills] = useState<string[]>([])
     const [manualSkills, setManualSkills] = useState<string[]>([])
     const [skillInput, setSkillInput] = useState('')
@@ -140,16 +141,22 @@ export default function AnalysisFlowPage() {
         if (apiProjectIds.length === 0) return
 
         setIsAnalyzing(true)
+        setAnalysisProgress({ total: apiProjectIds.length, current: 0, failed: 0 })
         try {
-            const res = await fetch('/api/projects/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectIds: apiProjectIds }),
-            })
-
-            if (res.ok) {
-                await fetchProjects()
+            let failedCount = 0
+            for (let i = 0; i < apiProjectIds.length; i += 1) {
+                const projectId = apiProjectIds[i]
+                const res = await fetch('/api/projects/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectIds: [projectId] }),
+                })
+                if (!res.ok) {
+                    failedCount += 1
+                }
+                setAnalysisProgress({ total: apiProjectIds.length, current: i + 1, failed: failedCount })
             }
+            await fetchProjects()
         } catch (error) {
             console.error('Analysis error:', error)
         } finally {
@@ -354,9 +361,27 @@ export default function AnalysisFlowPage() {
                                 disabled={isAnalyzing || combinedSelectedProjects.apiProjects.length === 0}
                                 className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50"
                             >
-                                {isAnalyzing ? 'Analyzing...' : 'Analyze Selected Projects'}
+                                {isAnalyzing && analysisProgress
+                                    ? `Analyzing ${analysisProgress.current}/${analysisProgress.total}`
+                                    : 'Analyze Selected Projects'}
                             </button>
                         </div>
+                        {isAnalyzing && analysisProgress && (
+                            <div className="mt-4 space-y-2">
+                                <div className="h-2 rounded-full bg-[var(--bg-warm)] overflow-hidden">
+                                    <div
+                                        className="h-full bg-[var(--orange-primary)] transition-all"
+                                        style={{
+                                            width: `${Math.round((analysisProgress.current / analysisProgress.total) * 100)}%`,
+                                        }}
+                                    />
+                                </div>
+                                <div className="text-xs text-[var(--text-secondary)]">
+                                    {analysisProgress.current} of {analysisProgress.total} analyzed
+                                    {analysisProgress.failed > 0 ? ` • ${analysisProgress.failed} failed` : ''}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
