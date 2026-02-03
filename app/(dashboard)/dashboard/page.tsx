@@ -30,7 +30,7 @@ interface JobDescriptionData {
 }
 
 export default function DashboardPage() {
-    const { data: session, status } = useSession()
+    const { data: session, status, update } = useSession()
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -155,6 +155,10 @@ export default function DashboardPage() {
             if (response.ok) {
                 setTargetRole(result.targetRole || computedRole)
                 setJobDescription(result.jobDescription || null)
+                await update({
+                    targetRole: result.targetRole || computedRole,
+                    jobDescription: result.jobDescription || null,
+                } as any)
             } else {
                 setRoleError(result.error || 'Failed to update target role')
             }
