@@ -118,6 +118,14 @@ export default function ResumeBuilderPage() {
         saveDraft({ manualProjects: nextManual })
     }
 
+    const templates = [
+        { id: 'modern', name: 'Modern', description: 'Clean headings with bold emphasis.' },
+        { id: 'classic', name: 'Classic', description: 'Traditional serif styling.' },
+        { id: 'minimal', name: 'Minimal', description: 'Compact and understated.' },
+        { id: 'bold', name: 'Bold', description: 'Strong section hierarchy.' },
+        { id: 'compact', name: 'Compact', description: 'Dense layout for longer resumes.' },
+    ]
+
     if (status === 'loading' || isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -159,12 +167,36 @@ export default function ResumeBuilderPage() {
                     </button>
                 </div>
             ) : (
-                <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
-                    <h2 className="text-xl font-serif font-semibold mb-2">Draft Loaded</h2>
-                    <p className="text-sm text-[var(--text-secondary)]">
-                        {selectedProjects.length} selected projects and {draft.manualProjects.length} manual projects are ready.
-                    </p>
-                </div>
+                <>
+                    <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
+                        <h2 className="text-xl font-serif font-semibold mb-4">Choose a Template</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                            {templates.map(template => (
+                                <button
+                                    key={template.id}
+                                    onClick={() => {
+                                        setTemplateId(template.id)
+                                        saveDraft({ templateId: template.id })
+                                    }}
+                                    className={`text-left rounded-xl border p-4 transition-all ${templateId === template.id
+                                            ? 'border-[var(--orange-primary)] bg-[var(--orange-light)]'
+                                            : 'border-[var(--border-light)] bg-[var(--bg-card)] hover:shadow-sm'
+                                        }`}
+                                >
+                                    <div className="font-semibold text-[var(--text-primary)]">{template.name}</div>
+                                    <div className="text-xs text-[var(--text-secondary)]">{template.description}</div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
+                        <h2 className="text-xl font-serif font-semibold mb-2">Draft Loaded</h2>
+                        <p className="text-sm text-[var(--text-secondary)]">
+                            {selectedProjects.length} selected projects and {draft.manualProjects.length} manual projects are ready.
+                        </p>
+                    </div>
+                </>
             )}
         </div>
     )
