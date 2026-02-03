@@ -1,31 +1,68 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
+interface Project {
+    id: string
+    name: string
+    description: string | null
+    technologies_jsonb?: string[] | null
+    ai_analysis_jsonb?: any
+}
+
+interface ManualProject {
+    id: string
+    name: string
+    description: string
+    technologies: string[]
+    notes: string[]
+}
+
 interface AnalysisDraft {
     selectedProjectIds: string[]
-    manualProjects: any[]
+    manualProjects: ManualProject[]
+    projectBullets: Record<string, string[]>
     skills: string[]
     manualSkills: string[]
+    templateId: string
 }
 
 export default function ResumeBuilderPage() {
     const { status } = useSession()
     const router = useRouter()
+    const [projects, setProjects] = useState<Project[]>([])
     const [draft, setDraft] = useState<AnalysisDraft | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+
+    const fetchProjects = () => {
+        return fetch('/api/projects')
+            .then(res => res.json())
+            .then(data => {
+                if (data.projects) {
+                    setProjects(data.projects)
+                }
+            })
+            .catch(err => console.error('Failed to fetch projects:', err))
+    }
 
     useEffect(() => {
         if (status === 'authenticated') {
             setIsLoading(true)
-            fetch('/api/analysis-draft')
-                .then(res => res.json())
-                .then(data => setDraft(data?.draft || null))
-                .finally(() => setIsLoading(false))
+            Promise.all([
+                fetchProjects(),
+                fetch('/api/analysis-draft')
+                    .then(res => res.json())
+                    .then(data => setDraft(data?.draft || null)),
+            ]).finally(() => setIsLoading(false))
         }
     }, [status])
+
+    const selectedProjects = useMemo(() => {
+        if (!draft) return []
+        return projects.filter(project => draft.selectedProjectIds.includes(project.id))
+    }, [projects, draft])
 
     if (status === 'loading' || isLoading) {
         return (
@@ -71,7 +108,7 @@ export default function ResumeBuilderPage() {
                 <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
                     <h2 className="text-xl font-serif font-semibold mb-2">Draft Loaded</h2>
                     <p className="text-sm text-[var(--text-secondary)]">
-                        Continue to edit bullet points and pick a template.
+                        {selectedProjects.length} selected projects and {draft.manualProjects.length} manual projects are ready.
                     </p>
                 </div>
             )}
