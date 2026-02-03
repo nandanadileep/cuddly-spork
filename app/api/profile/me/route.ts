@@ -18,6 +18,15 @@ export async function GET() {
                 },
                 workExperience: {
                     orderBy: { start_date: 'desc' }
+                },
+                extracurriculars: {
+                    orderBy: { start_date: 'desc' }
+                },
+                awards: {
+                    orderBy: { awarded_at: 'desc' }
+                },
+                publications: {
+                    orderBy: { published_at: 'desc' }
                 }
             }
         });
