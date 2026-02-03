@@ -29,8 +29,8 @@
     /* Warm Grey */
 
     /* Typography */
-    --font-serif: "Newsreader", "Georgia", "Times New Roman", serif;
-    --font-sans: "Inter", system-ui, sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino", "Georgia", "Times New Roman", serif;
+    --font-sans: "Avenir Next", "Avenir", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
 
     /* Borders & Shadows */
     --border-light: #E6E1DB;
@@ -48,5 +48,6 @@
 body {
     background: var(--bg-light);
     color: var(--text-primary);
+    font-family: var(--font-sans);
     transition: background 0.3s ease, color 0.3s ease;
 }
