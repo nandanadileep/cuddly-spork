@@ -7,22 +7,33 @@ export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions)
 
-        if (!session?.user?.id) {
+        if (!session?.user?.id && !session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const { limit = 3 } = await req.json()
+        const userId = session.user.id || null
+        const userEmail = session.user.email || null
+        const userRecord = userId
+            ? await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })
+            : userEmail
+                ? await prisma.user.findUnique({ where: { email: userEmail }, select: { id: true } })
+                : null
+
+        if (!userRecord?.id) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        }
 
         // 1. Deselect all currently selected projects for this user
         await prisma.project.updateMany({
-            where: { user_id: session.user.id },
+            where: { user_id: userRecord.id },
             data: { is_selected: false }
         })
 
         // 2. Get the top N projects by AI score
         const topProjects = await prisma.project.findMany({
             where: {
-                user_id: session.user.id,
+                user_id: userRecord.id,
                 ai_score: { not: null }
             },
             orderBy: { ai_score: 'desc' },

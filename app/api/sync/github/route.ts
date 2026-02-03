@@ -63,6 +63,23 @@ export async function POST(req: NextRequest) {
             })
 
             if (existingProject) {
+                const existingTechnologies = Array.isArray(existingProject.technologies_jsonb)
+                    ? [...(existingProject.technologies_jsonb as string[])].sort()
+                    : []
+                const nextTechnologies = [...technologies].sort()
+
+                const isUnchanged =
+                    existingProject.name === repo.name &&
+                    (existingProject.description || '').trim() === description &&
+                    (existingProject.stars || 0) === (repo.stargazers_count || 0) &&
+                    (existingProject.forks || 0) === (repo.forks_count || 0) &&
+                    (existingProject.language || '') === (repo.language || '') &&
+                    JSON.stringify(existingTechnologies) === JSON.stringify(nextTechnologies)
+
+                if (isUnchanged) {
+                    continue
+                }
+
                 // Update existing project
                 await prisma.project.update({
                     where: { id: existingProject.id },
@@ -74,6 +91,9 @@ export async function POST(req: NextRequest) {
                         forks: repo.forks_count,
                         language: repo.language,
                         technologies_jsonb: technologies,
+                        ai_score: null,
+                        ai_analysis_jsonb: null,
+                        analyzed_for_role: null,
                         updated_at: new Date()
                     }
                 })
