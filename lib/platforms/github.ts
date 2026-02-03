@@ -105,6 +105,49 @@ export class GitHubClient {
         }
     }
 
+    async fetchLanguages(owner: string, repo: string): Promise<string[]> {
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`, {
+                headers: {
+                    ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
+                    Accept: 'application/vnd.github.v3+json',
+                },
+            })
+
+            if (response.status === 404) return []
+            if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`)
+
+            const data = await response.json()
+            return Object.keys(data || {})
+        } catch (error) {
+            console.error(`Error fetching languages for ${owner}/${repo}:`, error)
+            return []
+        }
+    }
+
+    async fetchFile(owner: string, repo: string, path: string): Promise<string | null> {
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, {
+                headers: {
+                    ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
+                    Accept: 'application/vnd.github.v3+json',
+                },
+            })
+
+            if (response.status === 404) return null
+            if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`)
+
+            const data = await response.json()
+            if (data?.content && data?.encoding === 'base64') {
+                return Buffer.from(data.content, 'base64').toString('utf-8')
+            }
+            return null
+        } catch (error) {
+            console.error(`Error fetching file ${owner}/${repo}/${path}:`, error)
+            return null
+        }
+    }
+
     static async getUserInfo(accessToken: string): Promise<{ login: string; email: string | null; name: string | null }> {
         const response = await fetch('https://api.github.com/user', {
             headers: {
