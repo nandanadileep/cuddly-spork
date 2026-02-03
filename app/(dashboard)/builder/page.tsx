@@ -74,6 +74,50 @@ export default function ResumeBuilderPage() {
         return projects.filter(project => draft.selectedProjectIds.includes(project.id))
     }, [projects, draft])
 
+    const resolveProjectBullets = (project: Project) => {
+        if (projectBullets[project.id]) return projectBullets[project.id]
+        if (project.ai_analysis_jsonb?.bulletPoints?.length) return project.ai_analysis_jsonb.bulletPoints
+        return ['']
+    }
+
+    const saveDraft = async (overrides?: Partial<AnalysisDraft>) => {
+        if (!draft) return
+        const payload: AnalysisDraft = {
+            selectedProjectIds: draft.selectedProjectIds,
+            manualProjects,
+            projectBullets,
+            skills: draft.skills,
+            manualSkills: draft.manualSkills,
+            templateId,
+            ...overrides,
+        }
+
+        try {
+            await fetch('/api/analysis-draft', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            setDraft(payload)
+        } catch (error) {
+            console.error('Failed to save draft:', error)
+        }
+    }
+
+    const updateProjectBullets = (projectId: string, nextBullets: string[]) => {
+        const nextMap = { ...projectBullets, [projectId]: nextBullets }
+        setProjectBullets(nextMap)
+        saveDraft({ projectBullets: nextMap })
+    }
+
+    const updateManualProjectNotes = (projectId: string, nextNotes: string[]) => {
+        const nextManual = manualProjects.map(project => (
+            project.id === projectId ? { ...project, notes: nextNotes } : project
+        ))
+        setManualProjects(nextManual)
+        saveDraft({ manualProjects: nextManual })
+    }
+
     if (status === 'loading' || isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
