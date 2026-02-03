@@ -1,4 +1,4 @@
-# GitHire - Setup Guide
+# ShipCV - Setup Guide
 
 ## 1. PostgreSQL Database Setup
 
@@ -36,7 +36,7 @@ Fill in the GitHub OAuth form like this:
 
 **Application name:**
 ```
-GitHire (Development)
+ShipCV (Development)
 ```
 
 **Homepage URL:**

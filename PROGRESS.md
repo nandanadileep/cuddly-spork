@@ -1,4 +1,4 @@
-# GitHire - Phase 1 & 2 Complete! 🎉
+# ShipCV - Phase 1 & 2 Complete! 🎉
 
 ## ✅ What's Been Built
 

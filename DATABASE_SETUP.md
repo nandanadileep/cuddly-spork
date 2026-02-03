@@ -1,4 +1,4 @@
-# GitHire Database Setup
+# ShipCV Database Setup
 
 ## Option 1: Local PostgreSQL (Recommended for Development)
 
