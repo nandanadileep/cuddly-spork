@@ -21,8 +21,10 @@ export async function GET() {
                 ? {
                     selectedProjectIds: draft.selected_project_ids_jsonb || [],
                     manualProjects: draft.manual_projects_jsonb || [],
+                    projectBullets: draft.project_bullets_jsonb || {},
                     skills: draft.skills_jsonb || [],
                     manualSkills: draft.manual_skills_jsonb || [],
+                    templateId: draft.template_id || 'modern',
                 }
                 : null,
         })
@@ -41,12 +43,22 @@ export async function PUT(req: NextRequest) {
         }
 
         const body = await req.json()
-        const {
-            selectedProjectIds = [],
-            manualProjects = [],
-            skills = [],
-            manualSkills = [],
-        } = body || {}
+        const existingDraft = await prisma.analysisDraft.findUnique({
+            where: { user_id: session.user.id },
+        })
+
+        const selectedProjectIds =
+            body && 'selectedProjectIds' in body ? body.selectedProjectIds : (existingDraft?.selected_project_ids_jsonb || [])
+        const manualProjects =
+            body && 'manualProjects' in body ? body.manualProjects : (existingDraft?.manual_projects_jsonb || [])
+        const projectBullets =
+            body && 'projectBullets' in body ? body.projectBullets : (existingDraft?.project_bullets_jsonb || {})
+        const skills =
+            body && 'skills' in body ? body.skills : (existingDraft?.skills_jsonb || [])
+        const manualSkills =
+            body && 'manualSkills' in body ? body.manualSkills : (existingDraft?.manual_skills_jsonb || [])
+        const templateId =
+            body && 'templateId' in body ? body.templateId : (existingDraft?.template_id || 'modern')
 
         const draft = await prisma.analysisDraft.upsert({
             where: { user_id: session.user.id },
@@ -54,14 +66,18 @@ export async function PUT(req: NextRequest) {
                 user_id: session.user.id,
                 selected_project_ids_jsonb: selectedProjectIds,
                 manual_projects_jsonb: manualProjects,
+                project_bullets_jsonb: projectBullets,
                 skills_jsonb: skills,
                 manual_skills_jsonb: manualSkills,
+                template_id: templateId,
             },
             update: {
                 selected_project_ids_jsonb: selectedProjectIds,
                 manual_projects_jsonb: manualProjects,
+                project_bullets_jsonb: projectBullets,
                 skills_jsonb: skills,
                 manual_skills_jsonb: manualSkills,
+                template_id: templateId,
             },
         })
 
@@ -70,8 +86,10 @@ export async function PUT(req: NextRequest) {
             draft: {
                 selectedProjectIds: draft.selected_project_ids_jsonb || [],
                 manualProjects: draft.manual_projects_jsonb || [],
+                projectBullets: draft.project_bullets_jsonb || {},
                 skills: draft.skills_jsonb || [],
                 manualSkills: draft.manual_skills_jsonb || [],
+                templateId: draft.template_id || 'modern',
             },
         })
     } catch (error) {
