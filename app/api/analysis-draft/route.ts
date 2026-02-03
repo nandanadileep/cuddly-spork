@@ -24,6 +24,7 @@ export async function GET() {
                     projectBullets: draft.project_bullets_jsonb || {},
                     skills: draft.skills_jsonb || [],
                     manualSkills: draft.manual_skills_jsonb || [],
+                    excludedSkills: draft.excluded_skills_jsonb || [],
                     templateId: draft.template_id || 'modern',
                 }
                 : null,
@@ -57,6 +58,8 @@ export async function PUT(req: NextRequest) {
             body && 'skills' in body ? body.skills : (existingDraft?.skills_jsonb || [])
         const manualSkills =
             body && 'manualSkills' in body ? body.manualSkills : (existingDraft?.manual_skills_jsonb || [])
+        const excludedSkills =
+            body && 'excludedSkills' in body ? body.excludedSkills : (existingDraft?.excluded_skills_jsonb || [])
         const templateId =
             body && 'templateId' in body ? body.templateId : (existingDraft?.template_id || 'modern')
 
@@ -69,6 +72,7 @@ export async function PUT(req: NextRequest) {
                 project_bullets_jsonb: projectBullets,
                 skills_jsonb: skills,
                 manual_skills_jsonb: manualSkills,
+                excluded_skills_jsonb: excludedSkills,
                 template_id: templateId,
             },
             update: {
@@ -77,6 +81,7 @@ export async function PUT(req: NextRequest) {
                 project_bullets_jsonb: projectBullets,
                 skills_jsonb: skills,
                 manual_skills_jsonb: manualSkills,
+                excluded_skills_jsonb: excludedSkills,
                 template_id: templateId,
             },
         })
@@ -89,6 +94,7 @@ export async function PUT(req: NextRequest) {
                 projectBullets: draft.project_bullets_jsonb || {},
                 skills: draft.skills_jsonb || [],
                 manualSkills: draft.manual_skills_jsonb || [],
+                excludedSkills: draft.excluded_skills_jsonb || [],
                 templateId: draft.template_id || 'modern',
             },
         })

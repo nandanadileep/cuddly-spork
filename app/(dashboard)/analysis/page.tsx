@@ -33,12 +33,15 @@ export default function AnalysisFlowPage() {
     const [projects, setProjects] = useState<Project[]>([])
     const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
     const [manualProjects, setManualProjects] = useState<ManualProject[]>([])
+    const [urlDetectedPlatform, setUrlDetectedPlatform] = useState<string | null>(null)
+    const [urlNeedsDetails, setUrlNeedsDetails] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [analysisProgress, setAnalysisProgress] = useState<{ total: number; current: number; failed: number } | null>(null)
     const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
     const [skills, setSkills] = useState<string[]>([])
     const [manualSkills, setManualSkills] = useState<string[]>([])
+    const [excludedSkills, setExcludedSkills] = useState<string[]>([])
     const [skillInput, setSkillInput] = useState('')
     const [manualProjectInput, setManualProjectInput] = useState({
         name: '',
@@ -51,6 +54,121 @@ export default function AnalysisFlowPage() {
     const [skillsMessage, setSkillsMessage] = useState<string | null>(null)
     const [isFetchingUrl, setIsFetchingUrl] = useState(false)
     const [urlMessage, setUrlMessage] = useState<string | null>(null)
+
+    const keywordSkills = [
+        // Languages
+        'JavaScript', 'TypeScript', 'Python', 'Java', 'Go', 'Rust', 'C++', 'C#', 'C', 'Swift', 'Kotlin', 'Scala',
+        'Ruby', 'PHP', 'Elixir', 'Erlang', 'Haskell', 'Clojure', 'R', 'MATLAB', 'Dart', 'Lua', 'Perl',
+        'Bash', 'PowerShell', 'SQL',
+        // Frontend
+        'HTML', 'CSS', 'Sass', 'Less', 'Tailwind', 'Bootstrap', 'Material UI', 'Chakra UI', 'Ant Design',
+        'React', 'Next.js', 'Vue', 'Nuxt', 'Angular', 'Svelte', 'SvelteKit', 'Remix', 'Gatsby', 'SolidJS',
+        'Redux', 'Zustand', 'MobX', 'Recoil', 'React Query', 'SWR',
+        // Backend
+        'Node.js', 'Express', 'NestJS', 'Fastify', 'Koa', 'Hapi',
+        'Django', 'Flask', 'FastAPI', 'Spring', 'Spring Boot', 'Quarkus', 'Micronaut',
+        'ASP.NET', '.NET', 'Rails', 'Laravel', 'Phoenix',
+        // Data / ML
+        'Pandas', 'NumPy', 'SciPy', 'Scikit-learn', 'TensorFlow', 'PyTorch', 'Keras', 'XGBoost',
+        'LightGBM', 'CatBoost', 'OpenCV', 'Hugging Face', 'LangChain',
+        'LLM', 'ChatGPT', 'OpenAI', 'RAG', 'Vector DB', 'Embeddings',
+        // Datastores
+        'PostgreSQL', 'MySQL', 'MariaDB', 'SQLite', 'MongoDB', 'DynamoDB', 'Cassandra',
+        'Redis', 'Elasticsearch', 'OpenSearch', 'ClickHouse', 'BigQuery', 'Snowflake',
+        // Cloud / DevOps
+        'AWS', 'GCP', 'Azure', 'Terraform', 'CloudFormation', 'Pulumi',
+        // AWS Services
+        'Lambda', 'S3', 'EC2', 'ECS', 'EKS', 'Fargate', 'RDS', 'DynamoDB', 'Aurora', 'Redshift',
+        'CloudFront', 'Route 53', 'API Gateway', 'SQS', 'SNS', 'EventBridge', 'Step Functions',
+        'CloudWatch', 'CloudTrail', 'IAM', 'KMS', 'Secrets Manager', 'Cognito',
+        'SageMaker', 'Bedrock', 'Glue', 'Athena', 'EMR', 'ElastiCache', 'OpenSearch',
+        'AppSync', 'Amplify', 'Elastic Beanstalk', 'CodeBuild', 'CodePipeline', 'CodeDeploy',
+        // GCP Services
+        'BigQuery', 'Cloud Run', 'Cloud Functions', 'Compute Engine', 'GKE', 'Cloud Storage',
+        'Cloud SQL', 'Spanner', 'Firestore', 'Pub/Sub', 'Dataflow', 'Dataproc',
+        'Cloud Build', 'Cloud Scheduler', 'Cloud Tasks', 'Secret Manager',
+        'Vertex AI', 'Bigtable', 'Looker', 'Cloud Logging', 'Cloud Monitoring',
+        // Azure Services
+        'Azure Functions', 'App Service', 'AKS', 'Blob Storage', 'Cosmos DB',
+        'SQL Database', 'Event Hubs', 'Service Bus', 'Azure DevOps', 'Azure ML',
+        'Key Vault', 'Azure Monitor', 'App Insights',
+        'Docker', 'Kubernetes', 'Helm', 'ArgoCD', 'GitHub Actions', 'GitLab CI', 'CircleCI', 'Jenkins',
+        'Prometheus', 'Grafana', 'Datadog', 'New Relic', 'Sentry', 'ELK', 'OpenTelemetry',
+        // APIs / Protocols
+        'REST', 'GraphQL', 'gRPC', 'WebSocket', 'OAuth', 'JWT',
+        // Mobile
+        'React Native', 'Flutter', 'iOS', 'Android',
+        // Testing
+        'Jest', 'Vitest', 'Cypress', 'Playwright', 'Puppeteer', 'PyTest', 'JUnit',
+        // Tools
+        'Git', 'Linux', 'Nginx', 'Apache', 'Kafka', 'RabbitMQ', 'Redis Streams'
+    ]
+
+    const normalizeTechList = (value: any): string[] => {
+        if (Array.isArray(value)) {
+            return value.filter((item) => typeof item === 'string')
+        }
+        if (value && typeof value === 'object' && Array.isArray(value.items)) {
+            return value.items.filter((item: any) => typeof item === 'string')
+        }
+        return []
+    }
+
+    const deriveSkillsFromProjects = (apiProjects: Project[], manual: ManualProject[]) => {
+        const derivedSkills = new Set<string>()
+        const matchKeywords = (text: string) => {
+            const lower = text.toLowerCase()
+            keywordSkills.forEach((skill) => {
+                if (lower.includes(skill.toLowerCase())) {
+                    derivedSkills.add(skill)
+                }
+            })
+        }
+
+        apiProjects.forEach((project) => {
+            if (project.language) derivedSkills.add(project.language)
+            const techs = normalizeTechList((project as any).technologies_jsonb)
+            techs.forEach((tech: any) => typeof tech === 'string' && derivedSkills.add(tech))
+            const aiTechs = project.ai_analysis_jsonb?.techStack || []
+            aiTechs.forEach((tech: any) => typeof tech === 'string' && derivedSkills.add(tech))
+            if (project.name) matchKeywords(project.name)
+            if (project.description) matchKeywords(project.description)
+            if (project.ai_analysis_jsonb?.summary) matchKeywords(project.ai_analysis_jsonb.summary)
+            if (project.ai_analysis_jsonb?.readme_excerpt) matchKeywords(project.ai_analysis_jsonb.readme_excerpt)
+            if (Array.isArray(project.ai_analysis_jsonb?.strengths)) {
+                project.ai_analysis_jsonb.strengths.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
+            }
+            if (Array.isArray(project.ai_analysis_jsonb?.improvements)) {
+                project.ai_analysis_jsonb.improvements.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
+            }
+            if (Array.isArray(project.ai_analysis_jsonb?.bulletPoints)) {
+                project.ai_analysis_jsonb.bulletPoints.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
+            }
+        })
+
+        manual.forEach((project) => {
+            if (project.name) matchKeywords(project.name)
+            if (project.description) matchKeywords(project.description)
+            project.technologies.forEach((tech) => derivedSkills.add(tech))
+        })
+
+        return Array.from(derivedSkills)
+    }
+
+    const applyExcludedSkills = (items: string[]) => {
+        if (excludedSkills.length === 0) return items
+        const excluded = new Set(excludedSkills.map(item => item.toLowerCase()))
+        return items.filter(item => !excluded.has(item.toLowerCase()))
+    }
+
+    const areSkillsEqual = (a: string[], b: string[]) => {
+        if (a.length !== b.length) return false
+        const setA = new Set(a.map(item => item.toLowerCase()))
+        for (const item of b) {
+            if (!setA.has(item.toLowerCase())) return false
+        }
+        return true
+    }
 
     const fetchProjects = () => {
         return fetch('/api/projects')
@@ -73,6 +191,7 @@ export default function AnalysisFlowPage() {
                     setManualProjects(data.draft.manualProjects || [])
                     setSkills(Array.isArray(data.draft.skills) ? data.draft.skills.filter((item: any) => typeof item === 'string') : [])
                     setManualSkills(Array.isArray(data.draft.manualSkills) ? data.draft.manualSkills.filter((item: any) => typeof item === 'string') : [])
+                    setExcludedSkills(Array.isArray(data.draft.excludedSkills) ? data.draft.excludedSkills.filter((item: any) => typeof item === 'string') : [])
                 }
             })
             .catch(err => console.error('Failed to fetch analysis draft:', err))
@@ -113,6 +232,21 @@ export default function AnalysisFlowPage() {
 
         autoSelect()
     }, [status, projects, selectedProjectIds])
+
+    useEffect(() => {
+        if (step !== 3) return
+        if (selectedProjectIds.length === 0) return
+
+        const apiSelected = projects.filter(project => selectedProjectIds.includes(project.id))
+        const manualSelected = manualProjects.filter(project => selectedProjectIds.includes(project.id))
+        const derived = applyExcludedSkills(deriveSkillsFromProjects(apiSelected, manualSelected))
+        if (derived.length === 0) return
+        if (areSkillsEqual(derived, skills)) return
+
+        setSkills(derived)
+        saveDraft({ skills: derived })
+        setSkillsMessage('Skills generated from selected projects.')
+    }, [step, selectedProjectIds, projects, manualProjects, skills, excludedSkills])
 
     const toggleProjectSelection = (projectId: string) => {
         const next = selectedProjectIds.includes(projectId)
@@ -165,15 +299,47 @@ export default function AnalysisFlowPage() {
             })
             const data = await res.json()
             if (!res.ok) {
-                setUrlMessage(data?.error || 'Failed to fetch URL')
+                const fallbackTitle = manualProjectInput.name || manualProjectInput.url
+                try {
+                    await fetch('/api/projects/manual', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            url: manualProjectInput.url.trim(),
+                            title: fallbackTitle,
+                            description: manualProjectInput.description || '',
+                            keywords: manualProjectInput.technologies ? manualProjectInput.technologies.split(',').map(item => item.trim()).filter(Boolean) : [],
+                            platform: 'custom',
+                        }),
+                    })
+                } catch {
+                    // ignore
+                }
+                setUrlDetectedPlatform(null)
+                setUrlNeedsDetails(true)
+                setUrlMessage('Could not fetch details. URL saved — please fill the fields manually.')
                 return
             }
+            await fetch('/api/projects/manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: data.url,
+                    title: data.title,
+                    description: data.description,
+                    keywords: data.keywords,
+                    platform: data.platform,
+                }),
+            })
             setManualProjectInput(prev => ({
                 ...prev,
+                url: data.url || prev.url,
                 name: prev.name || data.title || '',
                 description: prev.description || data.description || '',
                 technologies: prev.technologies || (Array.isArray(data.keywords) ? data.keywords.join(', ') : ''),
             }))
+            setUrlDetectedPlatform(data.platform || null)
+            setUrlNeedsDetails(false)
             setUrlMessage('Details pulled from URL.')
         } catch (error) {
             console.error('Fetch URL error:', error)
@@ -188,12 +354,14 @@ export default function AnalysisFlowPage() {
         manualProjects: ManualProject[]
         skills: string[]
         manualSkills: string[]
+        excludedSkills: string[]
     }>) => {
         const payload = {
             selectedProjectIds,
             manualProjects,
             skills,
             manualSkills,
+            excludedSkills,
             ...overrides,
         }
 
@@ -258,69 +426,8 @@ export default function AnalysisFlowPage() {
 
             const latestProjects = (refreshed as any)?.projects || projects
             const selectedProjects = latestProjects.filter((project: Project) => apiProjectIds.includes(project.id))
-            const derivedSkills = new Set<string>()
-            const keywordSkills = [
-                // Languages
-                'JavaScript', 'TypeScript', 'Python', 'Java', 'Go', 'Rust', 'C++', 'C#', 'C', 'Swift', 'Kotlin', 'Scala',
-                'Ruby', 'PHP', 'Elixir', 'Erlang', 'Haskell', 'Clojure', 'R', 'MATLAB', 'Dart', 'Lua', 'Perl',
-                'Bash', 'PowerShell', 'SQL',
-                // Frontend
-                'HTML', 'CSS', 'Sass', 'Less', 'Tailwind', 'Bootstrap', 'Material UI', 'Chakra UI', 'Ant Design',
-                'React', 'Next.js', 'Vue', 'Nuxt', 'Angular', 'Svelte', 'SvelteKit', 'Remix', 'Gatsby', 'SolidJS',
-                'Redux', 'Zustand', 'MobX', 'Recoil', 'React Query', 'SWR',
-                // Backend
-                'Node.js', 'Express', 'NestJS', 'Fastify', 'Koa', 'Hapi',
-                'Django', 'Flask', 'FastAPI', 'Spring', 'Spring Boot', 'Quarkus', 'Micronaut',
-                'ASP.NET', '.NET', 'Rails', 'Laravel', 'Phoenix',
-                // Data / ML
-                'Pandas', 'NumPy', 'SciPy', 'Scikit-learn', 'TensorFlow', 'PyTorch', 'Keras', 'XGBoost',
-                'LightGBM', 'CatBoost', 'OpenCV', 'Hugging Face', 'LangChain',
-                'LLM', 'ChatGPT', 'OpenAI', 'RAG', 'Vector DB', 'Embeddings',
-                // Datastores
-                'PostgreSQL', 'MySQL', 'MariaDB', 'SQLite', 'MongoDB', 'DynamoDB', 'Cassandra',
-                'Redis', 'Elasticsearch', 'OpenSearch', 'ClickHouse', 'BigQuery', 'Snowflake',
-                // Cloud / DevOps
-                'AWS', 'GCP', 'Azure', 'Terraform', 'CloudFormation', 'Pulumi',
-                'Docker', 'Kubernetes', 'Helm', 'ArgoCD', 'GitHub Actions', 'GitLab CI', 'CircleCI', 'Jenkins',
-                'Prometheus', 'Grafana', 'Datadog', 'New Relic', 'Sentry', 'ELK', 'OpenTelemetry',
-                // APIs / Protocols
-                'REST', 'GraphQL', 'gRPC', 'WebSocket', 'OAuth', 'JWT',
-                // Mobile
-                'React Native', 'Flutter', 'iOS', 'Android',
-                // Testing
-                'Jest', 'Vitest', 'Cypress', 'Playwright', 'Puppeteer', 'PyTest', 'JUnit',
-                // Tools
-                'Git', 'Linux', 'Nginx', 'Apache', 'Kafka', 'RabbitMQ', 'Redis Streams'
-            ]
-            const matchKeywords = (text: string) => {
-                const lower = text.toLowerCase()
-                keywordSkills.forEach((skill) => {
-                    if (lower.includes(skill.toLowerCase())) {
-                        derivedSkills.add(skill)
-                    }
-                })
-            }
-            selectedProjects.forEach((project: Project) => {
-                if (project.language) derivedSkills.add(project.language)
-                const techs = Array.isArray((project as any).technologies_jsonb) ? (project as any).technologies_jsonb : []
-                techs.forEach((tech: any) => typeof tech === 'string' && derivedSkills.add(tech))
-                const aiTechs = project.ai_analysis_jsonb?.techStack || []
-                aiTechs.forEach((tech: any) => typeof tech === 'string' && derivedSkills.add(tech))
-                if (project.name) matchKeywords(project.name)
-                if (project.description) matchKeywords(project.description)
-                if (project.ai_analysis_jsonb?.summary) matchKeywords(project.ai_analysis_jsonb.summary)
-                if (project.ai_analysis_jsonb?.readme_excerpt) matchKeywords(project.ai_analysis_jsonb.readme_excerpt)
-                if (Array.isArray(project.ai_analysis_jsonb?.strengths)) {
-                    project.ai_analysis_jsonb.strengths.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
-                }
-                if (Array.isArray(project.ai_analysis_jsonb?.improvements)) {
-                    project.ai_analysis_jsonb.improvements.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
-                }
-                if (Array.isArray(project.ai_analysis_jsonb?.bulletPoints)) {
-                    project.ai_analysis_jsonb.bulletPoints.forEach((item: any) => typeof item === 'string' && matchKeywords(item))
-                }
-            })
-            const nextSkills = Array.from(derivedSkills)
+            const manualSelected = manualProjects.filter(project => selectedProjectIds.includes(project.id))
+            const nextSkills = applyExcludedSkills(deriveSkillsFromProjects(selectedProjects, manualSelected))
             if (nextSkills.length > 0) {
                 setSkills(nextSkills)
                 await saveDraft({ skills: nextSkills })
@@ -342,6 +449,20 @@ export default function AnalysisFlowPage() {
         setManualSkills(next)
         saveDraft({ manualSkills: next })
         setSkillInput('')
+    }
+
+    const handleRemoveSkill = (skill: string) => {
+        const nextExcluded = excludedSkills.includes(skill) ? excludedSkills : [...excludedSkills, skill]
+        const nextSkills = skills.filter(item => item !== skill)
+        setExcludedSkills(nextExcluded)
+        setSkills(nextSkills)
+        saveDraft({ skills: nextSkills, excludedSkills: nextExcluded })
+    }
+
+    const handleRestoreSkill = (skill: string) => {
+        const nextExcluded = excludedSkills.filter(item => item !== skill)
+        setExcludedSkills(nextExcluded)
+        saveDraft({ excludedSkills: nextExcluded })
     }
 
     const combinedSelectedProjects = useMemo(() => {
@@ -462,6 +583,20 @@ export default function AnalysisFlowPage() {
                                         {isFetchingUrl ? 'Fetching...' : 'Fetch'}
                                     </button>
                                 </div>
+                                {(urlDetectedPlatform || urlNeedsDetails) && (
+                                    <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                                        {urlDetectedPlatform && (
+                                            <span className="px-2 py-1 rounded-full bg-[var(--orange-light)] text-[var(--text-primary)]">
+                                                {urlDetectedPlatform.toUpperCase()}
+                                            </span>
+                                        )}
+                                        {urlNeedsDetails && (
+                                            <span className="px-2 py-1 rounded-full bg-[var(--bg-warm)] border border-[var(--border-light)]">
+                                                Needs details
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                                 {urlMessage && (
                                     <div className="text-xs text-[var(--text-secondary)]">
                                         {urlMessage}
@@ -683,18 +818,42 @@ export default function AnalysisFlowPage() {
                             {skills.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {skills.map((skill, i) => (
-                                        <span
+                                        <button
                                             key={`${skill}-${i}`}
-                                            className="px-3 py-1 rounded-full bg-[var(--orange-light)] text-sm text-[var(--text-primary)]"
+                                            onClick={() => handleRemoveSkill(skill)}
+                                            className="px-3 py-1 rounded-full bg-[var(--orange-light)] text-sm text-[var(--text-primary)] hover:bg-[var(--bg-warm)]"
+                                            title="Remove skill"
                                         >
-                                            {skill}
-                                        </span>
+                                            {skill} ×
+                                        </button>
                                     ))}
                                 </div>
                             ) : (
                                 <p className="text-sm text-[var(--text-secondary)]">
-                                    Run extraction to populate skills from your projects and experience.
+                                    Skills will appear here after analysis, or we will auto-generate them from your selected projects.
                                 </p>
+                            )}
+                            {skills.length > 0 && (
+                                <p className="text-xs text-[var(--text-secondary)] mt-2">
+                                    Click a skill to remove it.
+                                </p>
+                            )}
+                            {excludedSkills.length > 0 && (
+                                <div className="mt-3">
+                                    <div className="text-xs text-[var(--text-secondary)] mb-2">Removed skills</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {excludedSkills.map((skill, i) => (
+                                            <button
+                                                key={`${skill}-removed-${i}`}
+                                                onClick={() => handleRestoreSkill(skill)}
+                                                className="px-3 py-1 rounded-full bg-[var(--bg-warm)] border border-[var(--border-light)] text-sm text-[var(--text-secondary)] hover:bg-[var(--orange-light)]"
+                                                title="Restore skill"
+                                            >
+                                                {skill} +
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         </div>
 
