@@ -52,6 +52,4 @@ ShipCV is a resume builder that turns your projects, experience, and profile dat
    npm run dev
    ```
 
-## Why This Project Matters
-
-ShipCV is for people who care about how their work is represented. The details matter: the alignment, the wording, the credibility of the claims. The work here was less about “just generating a resume” and more about respecting the reality that a resume often decides whether someone gets a chance. The best feedback we received was that the output felt better than expected — that’s the bar we’re trying to keep raising.
+This app might not get you a job but it will definitely get you started. 
