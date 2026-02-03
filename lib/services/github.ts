@@ -41,7 +41,7 @@ export async function fetchGitHubRepos(username: string): Promise<FetchReposResu
             const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
-                    'User-Agent': 'GitHire-App'
+                    'User-Agent': 'ShipCV-App'
                 }
             })
 
