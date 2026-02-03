@@ -41,6 +41,18 @@ export async function POST(req: NextRequest) {
 
         for (const repo of repos) {
             const technologies = extractTechnologies(repo)
+            const description = (repo.description || '').trim()
+            const isEmptyProject =
+                !repo.name ||
+                (description.length === 0 &&
+                    !repo.language &&
+                    (repo.stargazers_count || 0) === 0 &&
+                    (repo.forks_count || 0) === 0 &&
+                    technologies.length === 0)
+
+            if (isEmptyProject) {
+                continue
+            }
 
             const existingProject = await prisma.project.findFirst({
                 where: {
@@ -56,7 +68,7 @@ export async function POST(req: NextRequest) {
                     where: { id: existingProject.id },
                     data: {
                         name: repo.name,
-                        description: repo.description,
+                        description,
                         url: repo.html_url,
                         stars: repo.stargazers_count,
                         forks: repo.forks_count,
@@ -74,7 +86,7 @@ export async function POST(req: NextRequest) {
                         platform: 'github',
                         external_id: repo.id.toString(),
                         name: repo.name,
-                        description: repo.description,
+                        description,
                         url: repo.html_url,
                         stars: repo.stargazers_count,
                         forks: repo.forks_count,
