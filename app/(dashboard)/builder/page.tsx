@@ -39,6 +39,7 @@ export default function ResumeBuilderPage() {
     const [templateId, setTemplateId] = useState('modern')
     const [isGenerating, setIsGenerating] = useState(false)
     const [latexContent, setLatexContent] = useState('')
+    const [latexDraft, setLatexDraft] = useState('')
     const [pdfUrl, setPdfUrl] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
@@ -141,7 +142,9 @@ export default function ResumeBuilderPage() {
             })
             const data = await res.json()
             if (res.ok) {
-                setLatexContent(data.latexContent || '')
+                const latex = data.latexContent || ''
+                setLatexContent(latex)
+                setLatexDraft(latex)
                 if (data.pdfBase64) {
                     const bytes = Uint8Array.from(atob(data.pdfBase64), c => c.charCodeAt(0))
                     const blob = new Blob([bytes], { type: 'application/pdf' })
@@ -425,10 +428,32 @@ export default function ResumeBuilderPage() {
                                 )}
                                 {latexContent && (
                                     <textarea
-                                        readOnly
-                                        value={latexContent}
+                                        value={latexDraft}
+                                        onChange={(e) => setLatexDraft(e.target.value)}
                                         className="w-full min-h-[200px] px-3 py-2 rounded-lg border border-[var(--border-light)] bg-[var(--bg-warm)] text-xs font-mono"
                                     />
+                                )}
+                                {latexContent && (
+                                    <button
+                                        onClick={async () => {
+                                            if (!latexDraft.trim()) return
+                                            const res = await fetch('/api/resume/compile', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ latex: latexDraft }),
+                                            })
+                                            const data = await res.json()
+                                            if (res.ok && data.pdfBase64) {
+                                                const bytes = Uint8Array.from(atob(data.pdfBase64), c => c.charCodeAt(0))
+                                                const blob = new Blob([bytes], { type: 'application/pdf' })
+                                                const url = URL.createObjectURL(blob)
+                                                setPdfUrl(url)
+                                            }
+                                        }}
+                                        className="w-full px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                                    >
+                                        Compile Edited LaTeX
+                                    </button>
                                 )}
                             </div>
                         </div>
