@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
                 target_role: target_role,
                 job_description_jsonb: {
                     raw_jd: job_description || '',
-                    analysis: analysis,
+                    analysis: analysis as unknown as Record<string, unknown>,
                     last_updated: new Date().toISOString()
                 }
             }
