@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateJobDescription } from '@/lib/openai'
+import { Prisma } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions)
@@ -19,6 +20,9 @@ export async function POST(req: NextRequest) {
 
         // 1. Generate/Cache the job description analysis
         const analysis = await generateJobDescription(target_role)
+        const analysisJson = analysis
+            ? (JSON.parse(JSON.stringify(analysis)) as Prisma.InputJsonValue)
+            : null
 
         // 2. Update user profile
         const user = await prisma.user.update({
@@ -27,7 +31,7 @@ export async function POST(req: NextRequest) {
                 target_role: target_role,
                 job_description_jsonb: {
                     raw_jd: job_description || '',
-                    analysis: analysis as unknown as Record<string, unknown>,
+                    analysis: analysisJson,
                     last_updated: new Date().toISOString()
                 }
             }
