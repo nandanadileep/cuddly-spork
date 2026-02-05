@@ -132,10 +132,13 @@ export default function ResumeBuilderPage() {
         saveDraft({ manualProjects: nextManual })
     }
 
+    const [generateError, setGenerateError] = useState('')
+
     const handleGenerate = async () => {
         if (!draft) return
         setIsGenerating(true)
         setPdfUrl(null)
+        setGenerateError('')
         try {
             await saveDraft()
             const res = await fetch('/api/resume/generate', {
@@ -161,9 +164,12 @@ export default function ResumeBuilderPage() {
                     const url = URL.createObjectURL(blob)
                     setPdfUrl(url)
                 }
+            } else {
+                setGenerateError(data.error || 'Failed to generate resume')
             }
         } catch (error) {
             console.error('Resume generation error:', error)
+            setGenerateError('Failed to generate resume')
         } finally {
             setIsGenerating(false)
         }
