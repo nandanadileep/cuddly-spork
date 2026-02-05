@@ -125,13 +125,24 @@ export async function POST(req: NextRequest) {
             return startText || endText || ''
         }
 
+        const extractBulletPoints = (value: unknown): string[] => {
+            const bullets = (value as any)?.bulletPoints
+            if (!Array.isArray(bullets)) return []
+            return bullets.filter((item) => typeof item === 'string')
+        }
+
         const formattedProjects = [
             ...projects.map(project => ({
                 name: project.name,
                 description: project.description || '',
                 url: project.url,
                 technologies: Array.isArray(project.technologies_jsonb) ? project.technologies_jsonb as string[] : [],
-                bulletPoints: (bulletsMap[project.id] || project.ai_analysis_jsonb?.bulletPoints || []).slice(0, 4),
+                bulletPoints: (() => {
+                    const override = (bulletsMap as any)?.[project.id]
+                    const fallback = extractBulletPoints(project.ai_analysis_jsonb)
+                    const resolved = Array.isArray(override) ? override : fallback
+                    return resolved.slice(0, 4)
+                })(),
             })),
             ...(manual as any[]).map((project) => ({
                 name: project.name,
