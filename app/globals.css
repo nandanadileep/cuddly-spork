@@ -4,11 +4,10 @@
 
 :root {
     /* Anthropic-inspired "Elegant" Palette */
-    /* Primary: Warm Clay / Muted Bronze */
-    --orange-primary: #D97757;
-    --orange-hover: #C46749;
-    --orange-light: #F2E8E4;
-    /* Very subtle warm tint */
+    /* Primary: Sage Green */
+    --orange-primary: #689071;
+    --orange-hover: #7AA082;
+    --orange-light: #E7F0EA;
 
     /* Accents */
     --github-green: #3F7A5E;

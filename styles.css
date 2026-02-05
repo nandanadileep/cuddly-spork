@@ -1,8 +1,8 @@
 :root {
     /* Visily-inspired Color Palette */
-    --orange-primary: #FF5C00;
-    --orange-hover: #FF7A2E;
-    --orange-light: #FFF4ED;
+    --orange-primary: #689071;
+    --orange-hover: #7AA082;
+    --orange-light: #E7F0EA;
     --github-green: #22C55E;
     --green-light: #DCFCE7;
 
@@ -24,7 +24,7 @@
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
-    --shadow-glow: 0 0 20px rgba(255, 92, 0, 0.3);
+    --shadow-glow: 0 0 20px rgba(104, 144, 113, 0.3);
 
     /* Spacing */
     --radius: 12px;
