@@ -76,6 +76,33 @@ export default function SettingsPage() {
 
             if (response.ok) {
                 alert('Settings saved successfully!')
+                const githubInputs = platforms.filter(p => p.id === 'github')
+                if (githubInputs.length > 0) {
+                    const normalizeGithubUsername = (value: string) => {
+                        const trimmed = value.trim()
+                        try {
+                            const withProtocol = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`
+                            const url = new URL(withProtocol)
+                            if (url.hostname.includes('github.com')) {
+                                const parts = url.pathname.split('/').filter(Boolean)
+                                if (parts[0]) return parts[0]
+                            }
+                        } catch {
+                            // fall through
+                        }
+                        return trimmed.replace(/^@/, '').split('/')[0]
+                    }
+
+                    for (const gh of githubInputs) {
+                        const username = normalizeGithubUsername(gh.url)
+                        if (!username) continue
+                        await fetch('/api/sync/github', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username })
+                        })
+                    }
+                }
                 // Refresh connections
                 const data = await fetch('/api/user/connections').then(r => r.json())
                 if (data.connections) {
