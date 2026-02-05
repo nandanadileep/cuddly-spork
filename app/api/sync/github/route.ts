@@ -38,8 +38,23 @@ export async function POST(req: NextRequest) {
         // Store repos in database
         let created = 0
         let updated = 0
+        let removed = 0
 
         for (const repo of repos) {
+            if (repo.fork) {
+                const existingFork = await prisma.project.findFirst({
+                    where: {
+                        user_id: session.user.id,
+                        platform: 'github',
+                        external_id: repo.id.toString()
+                    }
+                })
+                if (existingFork) {
+                    await prisma.project.delete({ where: { id: existingFork.id } })
+                    removed++
+                }
+                continue
+            }
             const technologies = extractTechnologies(repo)
             const description = (repo.description || '').trim()
             const isEmptyProject =
@@ -136,7 +151,8 @@ export async function POST(req: NextRequest) {
             stats: {
                 total: repos.length,
                 created,
-                updated
+                updated,
+                removed
             }
         })
     } catch (error) {

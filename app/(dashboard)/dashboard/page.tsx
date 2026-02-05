@@ -24,6 +24,8 @@ interface JobDescriptionData {
     requiredSkills?: string[]
     preferredSkills?: string[]
     responsibilities?: string[]
+    tools?: string[]
+    metrics?: string[]
     keywords?: string[]
     experienceLevel?: string
     industry?: string[]
@@ -467,23 +469,90 @@ export default function DashboardPage() {
                                 <p className="text-sm text-[var(--text-secondary)] mb-4">
                                     {jobDescription.summary}
                                 </p>
-                                {jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0 && (
-                                    <div className="mb-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0 && (
+                                        <div>
+                                            <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
+                                                Required Skills
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {jobDescription.requiredSkills.map((skill, i) => (
+                                                    <span
+                                                        key={`${skill}-${i}`}
+                                                        className="px-2 py-1 text-xs rounded-full bg-[var(--orange-light)] text-[var(--text-primary)]"
+                                                    >
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {jobDescription.preferredSkills && jobDescription.preferredSkills.length > 0 && (
+                                        <div>
+                                            <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
+                                                Preferred Skills
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {jobDescription.preferredSkills.map((skill, i) => (
+                                                    <span
+                                                        key={`${skill}-${i}`}
+                                                        className="px-2 py-1 text-xs rounded-full bg-[var(--bg-warm)] border border-[var(--border-light)] text-[var(--text-secondary)]"
+                                                    >
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {jobDescription.responsibilities && jobDescription.responsibilities.length > 0 && (
+                                    <div className="mt-4">
                                         <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
-                                            Required Skills
+                                            Responsibilities
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {jobDescription.requiredSkills.slice(0, 8).map((skill, i) => (
-                                                <span
-                                                    key={`${skill}-${i}`}
-                                                    className="px-2 py-1 text-xs rounded-full bg-[var(--orange-light)] text-[var(--text-primary)]"
-                                                >
-                                                    {skill}
-                                                </span>
+                                        <ul className="text-sm text-[var(--text-secondary)] list-disc ml-5 space-y-1 marker:text-[var(--orange-primary)]">
+                                            {jobDescription.responsibilities.map((item, i) => (
+                                                <li key={`${item}-${i}`}>{item}</li>
                                             ))}
-                                        </div>
+                                        </ul>
                                     </div>
                                 )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                    {jobDescription.tools && jobDescription.tools.length > 0 && (
+                                        <div>
+                                            <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
+                                                Tools
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {jobDescription.tools.map((tool, i) => (
+                                                    <span
+                                                        key={`${tool}-${i}`}
+                                                        className="px-2 py-1 text-xs rounded-full bg-[var(--bg-warm)] border border-[var(--border-light)] text-[var(--text-secondary)]"
+                                                    >
+                                                        {tool}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {jobDescription.metrics && jobDescription.metrics.length > 0 && (
+                                        <div>
+                                            <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
+                                                Metrics
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {jobDescription.metrics.map((metric, i) => (
+                                                    <span
+                                                        key={`${metric}-${i}`}
+                                                        className="px-2 py-1 text-xs rounded-full bg-[var(--bg-card)] border border-[var(--border-light)] text-[var(--text-secondary)]"
+                                                    >
+                                                        {metric}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         ) : (
                             <p className="text-sm text-[var(--text-secondary)]">

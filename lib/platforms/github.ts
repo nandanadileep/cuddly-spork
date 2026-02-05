@@ -18,9 +18,34 @@ export interface GitHubRepo {
 
 export class GitHubClient {
     private accessToken?: string
+    private rateLimitExceeded = false
+    private rateLimitReset?: number
 
     constructor(accessToken?: string) {
         this.accessToken = accessToken
+    }
+
+    private setRateLimitFromResponse(response: Response) {
+        if (response.status !== 403) return
+        const remaining = parseInt(response.headers.get('x-ratelimit-remaining') || '0', 10)
+        const reset = parseInt(response.headers.get('x-ratelimit-reset') || '0', 10)
+        if (remaining === 0) {
+            this.rateLimitExceeded = true
+            this.rateLimitReset = reset || undefined
+            console.warn('[GitHubClient] Rate limit exceeded.', reset ? `Reset at ${new Date(reset * 1000).toISOString()}` : '')
+        }
+    }
+
+    private shouldSkipForRateLimit(): boolean {
+        if (!this.rateLimitExceeded) return false
+        if (!this.rateLimitReset) return true
+        const now = Math.floor(Date.now() / 1000)
+        if (now >= this.rateLimitReset) {
+            this.rateLimitExceeded = false
+            this.rateLimitReset = undefined
+            return false
+        }
+        return true
     }
 
     async fetchUserRepositories(): Promise<PlatformProject[]> {
@@ -68,6 +93,9 @@ export class GitHubClient {
     }
 
     async fetchRepositoryDetails(owner: string, repo: string): Promise<GitHubRepo> {
+        if (this.shouldSkipForRateLimit()) {
+            throw new Error('GitHub API rate limit exceeded')
+        }
         const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
             headers: {
                 ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
@@ -75,6 +103,7 @@ export class GitHubClient {
             },
         })
 
+        this.setRateLimitFromResponse(response)
         if (!response.ok) {
             throw new Error(`GitHub API error: ${response.statusText}`)
         }
@@ -84,6 +113,7 @@ export class GitHubClient {
 
     async fetchReadme(owner: string, repo: string): Promise<string | null> {
         try {
+            if (this.shouldSkipForRateLimit()) return null
             const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
                 headers: {
                     ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
@@ -91,8 +121,12 @@ export class GitHubClient {
                 },
             })
 
+            this.setRateLimitFromResponse(response)
             if (response.status === 404) return null
-            if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`)
+            if (!response.ok) {
+                if (response.status === 403 && this.rateLimitExceeded) return null
+                throw new Error(`GitHub API error: ${response.statusText}`)
+            }
 
             const data = await response.json()
             if (data.content && data.encoding === 'base64') {
@@ -107,6 +141,7 @@ export class GitHubClient {
 
     async fetchLanguages(owner: string, repo: string): Promise<string[]> {
         try {
+            if (this.shouldSkipForRateLimit()) return []
             const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`, {
                 headers: {
                     ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
@@ -114,8 +149,12 @@ export class GitHubClient {
                 },
             })
 
+            this.setRateLimitFromResponse(response)
             if (response.status === 404) return []
-            if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`)
+            if (!response.ok) {
+                if (response.status === 403 && this.rateLimitExceeded) return []
+                throw new Error(`GitHub API error: ${response.statusText}`)
+            }
 
             const data = await response.json()
             return Object.keys(data || {})
@@ -127,6 +166,7 @@ export class GitHubClient {
 
     async fetchFile(owner: string, repo: string, path: string): Promise<string | null> {
         try {
+            if (this.shouldSkipForRateLimit()) return null
             const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, {
                 headers: {
                     ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
@@ -134,8 +174,12 @@ export class GitHubClient {
                 },
             })
 
+            this.setRateLimitFromResponse(response)
             if (response.status === 404) return null
-            if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`)
+            if (!response.ok) {
+                if (response.status === 403 && this.rateLimitExceeded) return null
+                throw new Error(`GitHub API error: ${response.statusText}`)
+            }
 
             const data = await response.json()
             if (data?.content && data?.encoding === 'base64') {

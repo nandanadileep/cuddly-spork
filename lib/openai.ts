@@ -277,6 +277,8 @@ export interface GeneratedJobDescription {
     requiredSkills: string[]
     preferredSkills: string[]
     responsibilities: string[]
+    tools: string[]
+    metrics: string[]
     keywords: string[]
     experienceLevel: string
     industry: string[]
@@ -289,14 +291,17 @@ const ROLE_PRESETS: Record<string, GeneratedJobDescription> = {
     'sde': {
         title: 'Software Development Engineer',
         summary: 'Build and maintain scalable software systems across backend and frontend services.',
-        requiredSkills: ['Data Structures', 'Algorithms', 'System Design', 'APIs', 'Git'],
-        preferredSkills: ['Cloud', 'CI/CD', 'Observability'],
+        requiredSkills: ['Data Structures', 'Algorithms', 'System Design', 'APIs', 'Git', 'Databases', 'Testing'],
+        preferredSkills: ['Cloud', 'CI/CD', 'Observability', 'Caching'],
         responsibilities: [
             'Design and implement software features',
             'Write reliable tests and maintain code quality',
             'Collaborate with cross-functional teams',
             'Participate in code reviews and architecture discussions',
+            'Own services end-to-end in production',
         ],
+        tools: ['Git', 'CI/CD', 'Cloud Platforms', 'Monitoring'],
+        metrics: ['Latency', 'Error Rate', 'Uptime', 'Deployment Frequency'],
         keywords: ['software', 'backend', 'frontend', 'scalable', 'services', 'apis', 'testing', 'design'],
         experienceLevel: 'Mid',
         industry: ['technology'],
@@ -304,14 +309,18 @@ const ROLE_PRESETS: Record<string, GeneratedJobDescription> = {
     'ai engineer': {
         title: 'AI Engineer',
         summary: 'Build AI-powered systems, integrate models, and deploy AI services into products.',
-        requiredSkills: ['Machine Learning', 'Python', 'Model Deployment', 'APIs', 'Data Pipelines'],
-        preferredSkills: ['LLMs', 'MLOps', 'Vector Databases'],
+        requiredSkills: ['Machine Learning', 'Python', 'Model Deployment', 'APIs', 'Data Pipelines', 'Feature Engineering', 'Model Evaluation'],
+        preferredSkills: ['LLMs', 'MLOps', 'Vector Databases', 'Prompt Engineering'],
         responsibilities: [
             'Develop and deploy AI models and services',
             'Integrate AI systems into product workflows',
             'Evaluate model performance and reliability',
             'Collaborate with product and engineering teams',
+            'Automate data ingestion and model retraining',
+            'Implement monitoring and alerting for AI systems',
         ],
+        tools: ['PyTorch/TensorFlow', 'Docker', 'Kubernetes', 'Vector DBs'],
+        metrics: ['Model Accuracy', 'Latency', 'Cost per Inference', 'Drift'],
         keywords: ['ai', 'ml', 'models', 'inference', 'deployment', 'pipelines', 'evaluation'],
         experienceLevel: 'Mid',
         industry: ['technology'],
@@ -319,14 +328,17 @@ const ROLE_PRESETS: Record<string, GeneratedJobDescription> = {
     'ml engineer': {
         title: 'Machine Learning Engineer',
         summary: 'Design and deploy ML models with robust pipelines, monitoring, and performance tuning.',
-        requiredSkills: ['Machine Learning', 'Python', 'Feature Engineering', 'Model Training', 'MLOps'],
-        preferredSkills: ['Kubernetes', 'Monitoring', 'Experiment Tracking'],
+        requiredSkills: ['Machine Learning', 'Python', 'Feature Engineering', 'Model Training', 'MLOps', 'Data Pipelines', 'Model Evaluation'],
+        preferredSkills: ['Kubernetes', 'Monitoring', 'Experiment Tracking', 'Distributed Training'],
         responsibilities: [
             'Build ML training and inference pipelines',
             'Optimize model performance and scalability',
             'Monitor and maintain models in production',
             'Collaborate with data and product teams',
+            'Design experiments and validate model improvements',
         ],
+        tools: ['MLflow', 'Airflow', 'Docker', 'Kubernetes'],
+        metrics: ['AUC/Accuracy', 'Latency', 'Data Drift', 'Model Uptime'],
         keywords: ['ml', 'training', 'features', 'pipelines', 'monitoring', 'deployment'],
         experienceLevel: 'Mid',
         industry: ['technology'],
@@ -334,14 +346,17 @@ const ROLE_PRESETS: Record<string, GeneratedJobDescription> = {
     'data analyst': {
         title: 'Data Analyst',
         summary: 'Analyze data to generate insights, dashboards, and recommendations for stakeholders.',
-        requiredSkills: ['SQL', 'Data Visualization', 'Statistics', 'Excel', 'Analytics'],
-        preferredSkills: ['Python', 'BI Tools', 'A/B Testing'],
+        requiredSkills: ['SQL', 'Data Visualization', 'Statistics', 'Excel', 'Analytics', 'Data Modeling'],
+        preferredSkills: ['Python', 'BI Tools', 'A/B Testing', 'Data Warehousing'],
         responsibilities: [
             'Build dashboards and reports',
             'Analyze business metrics and trends',
             'Support decision-making with insights',
             'Ensure data quality and consistency',
+            'Define KPIs and reporting standards',
         ],
+        tools: ['SQL', 'Tableau/Looker', 'Excel', 'Python'],
+        metrics: ['Conversion Rate', 'Retention', 'Revenue Impact', 'Data Quality'],
         keywords: ['data', 'analysis', 'dashboard', 'metrics', 'insights', 'sql'],
         experienceLevel: 'Mid',
         industry: ['technology'],
@@ -349,14 +364,17 @@ const ROLE_PRESETS: Record<string, GeneratedJobDescription> = {
     'product designer': {
         title: 'Product Designer',
         summary: 'Design user-centric product experiences with strong UX and visual design craft.',
-        requiredSkills: ['UX Design', 'UI Design', 'Prototyping', 'User Research', 'Design Systems'],
-        preferredSkills: ['Figma', 'Accessibility', 'Usability Testing'],
+        requiredSkills: ['UX Design', 'UI Design', 'Prototyping', 'User Research', 'Design Systems', 'Interaction Design'],
+        preferredSkills: ['Figma', 'Accessibility', 'Usability Testing', 'Design Ops'],
         responsibilities: [
             'Design end-to-end product flows',
             'Collaborate with product and engineering',
             'Conduct user research and testing',
             'Maintain design systems and standards',
+            'Translate insights into product improvements',
         ],
+        tools: ['Figma', 'FigJam', 'UserTesting', 'Design Systems'],
+        metrics: ['Task Success', 'Conversion', 'Usability Score', 'Time on Task'],
         keywords: ['ux', 'ui', 'prototyping', 'research', 'design systems', 'accessibility'],
         experienceLevel: 'Mid',
         industry: ['technology'],
@@ -410,6 +428,8 @@ Return a JSON object with the following structure:
     "requiredSkills": ["skill1", "skill2", ...] // 5-10 must-have technical skills
     "preferredSkills": ["skill1", "skill2", ...] // 3-5 nice-to-have skills
     "responsibilities": ["responsibility1", ...] // 5-8 key job responsibilities
+    "tools": ["tool1", "tool2", ...] // 5-8 tools/platforms/frameworks commonly used
+    "metrics": ["metric1", "metric2", ...] // 4-6 metrics/KPIs used to evaluate success
     "keywords": ["keyword1", ...] // 10-15 keywords for matching projects
     "experienceLevel": "Junior/Mid/Senior/Lead/Staff/Principal",
     "industry": ["tech", "fintech", etc.] // relevant industries
@@ -444,6 +464,8 @@ Return a JSON object with the following structure:
         description.requiredSkills = description.requiredSkills || []
         description.preferredSkills = description.preferredSkills || []
         description.responsibilities = description.responsibilities || []
+        description.tools = description.tools || []
+        description.metrics = description.metrics || []
         description.keywords = description.keywords || []
         description.industry = description.industry || []
 
@@ -457,6 +479,8 @@ Return a JSON object with the following structure:
             requiredSkills: [],
             preferredSkills: [],
             responsibilities: [],
+            tools: [],
+            metrics: [],
             keywords: roleTitle.toLowerCase().split(' '),
             experienceLevel: 'Mid',
             industry: ['technology'],

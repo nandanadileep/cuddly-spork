@@ -1,5 +1,18 @@
 import { IconType } from 'react-icons'
 import {
+    MdCode,
+    MdPalette,
+    MdWeb,
+    MdInventory2,
+    MdEditNote,
+    MdScience,
+    MdSportsEsports,
+    MdGroups,
+    MdRocketLaunch,
+    MdVideoLibrary,
+    MdEmojiEvents,
+} from 'react-icons/md'
+import {
     SiGithub, SiGitlab, SiBitbucket, SiSourceforge,
     SiDribbble, SiBehance, SiFramer, SiFigma, SiArtstation, SiAwwwards,
     SiCodepen, SiCodesandbox, SiStackblitz, SiJsfiddle, SiReplit, SiGlitch,
@@ -22,14 +35,14 @@ export interface Platform {
 
 export interface PlatformCategory {
     name: string
-    icon: string
+    icon: IconType
     platforms: Platform[]
 }
 
 export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     {
         name: 'Code Repositories',
-        icon: '',
+        icon: MdCode,
         platforms: [
             { id: 'github', name: 'GitHub', icon: SiGithub, color: '#181717' },
             { id: 'gitlab', name: 'GitLab', icon: SiGitlab, color: '#FC6D26' },
@@ -39,7 +52,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Design & Creative',
-        icon: '',
+        icon: MdPalette,
         platforms: [
             { id: 'dribbble', name: 'Dribbble', icon: SiDribbble, color: '#EA4C89' },
             { id: 'behance', name: 'Behance', icon: SiBehance, color: '#1769FF' },
@@ -51,7 +64,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Frontend Playgrounds',
-        icon: '⚡',
+        icon: MdWeb,
         platforms: [
             { id: 'codepen', name: 'CodePen', icon: SiCodepen, color: '#000000' },
             { id: 'codesandbox', name: 'CodeSandbox', icon: SiCodesandbox, color: '#151515' },
@@ -63,7 +76,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Package Registries',
-        icon: '',
+        icon: MdInventory2,
         platforms: [
             { id: 'npm', name: 'npm', icon: SiNpm, color: '#CB3837' },
             { id: 'pypi', name: 'PyPI', icon: SiPypi, color: '#3775A9' },
@@ -75,7 +88,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Technical Writing',
-        icon: '✍️',
+        icon: MdEditNote,
         platforms: [
             { id: 'medium', name: 'Medium', icon: SiMedium, color: '#000000' },
             { id: 'devto', name: 'Dev.to', icon: SiDevdotto, color: '#0A0A0A' },
@@ -87,7 +100,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Data Science & ML',
-        icon: '',
+        icon: MdScience,
         platforms: [
             { id: 'kaggle', name: 'Kaggle', icon: SiKaggle, color: '#20BEFF' },
             { id: 'huggingface', name: 'Hugging Face', icon: SiHuggingface, color: '#FFD21E' },
@@ -96,7 +109,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Game Development',
-        icon: '',
+        icon: MdSportsEsports,
         platforms: [
             { id: 'itchio', name: 'itch.io', icon: SiItchdotio, color: '#FA5C5C' },
             { id: 'unity', name: 'Unity', icon: SiUnity, color: '#000000' },
@@ -104,7 +117,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Professional Networks',
-        icon: '',
+        icon: MdGroups,
         platforms: [
             { id: 'twitter', name: 'Twitter/X', icon: SiX, color: '#000000' },
             { id: 'wellfound', name: 'Wellfound', icon: SiWellfound, color: '#CC2127' },
@@ -112,7 +125,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Product Launches',
-        icon: '',
+        icon: MdRocketLaunch,
         platforms: [
             { id: 'producthunt', name: 'Product Hunt', icon: SiProducthunt, color: '#DA552F' },
             { id: 'indiehackers', name: 'Indie Hackers', icon: SiIndiehackers, color: '#0E2439' },
@@ -120,7 +133,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Content Creation',
-        icon: '',
+        icon: MdVideoLibrary,
         platforms: [
             { id: 'youtube', name: 'YouTube', icon: SiYoutube, color: '#FF0000' },
             { id: 'vimeo', name: 'Vimeo', icon: SiVimeo, color: '#1AB7EA' },
@@ -130,7 +143,7 @@ export const PLATFORM_CATEGORIES: PlatformCategory[] = [
     },
     {
         name: 'Competitive Coding',
-        icon: '',
+        icon: MdEmojiEvents,
         platforms: [
             { id: 'leetcode', name: 'LeetCode', icon: SiLeetcode, color: '#FFA116' },
             { id: 'hackerrank', name: 'HackerRank', icon: SiHackerrank, color: '#00EA64' },

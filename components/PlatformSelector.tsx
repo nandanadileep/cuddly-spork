@@ -30,9 +30,7 @@ export default function PlatformSelector({
                         className="w-full px-6 py-4 flex items-center justify-between hover:bg-[var(--bg-light)] transition-colors group"
                     >
                         <div className="flex items-center gap-3">
-                            <span className="text-xl opacity-70 group-hover:opacity-100 transition-opacity">
-                                {category.icon}
-                            </span>
+                            <category.icon className="text-xl opacity-70 group-hover:opacity-100 transition-opacity" />
                             <span className="font-medium text-[var(--text-primary)]">
                                 {category.name}
                             </span>

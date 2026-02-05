@@ -60,6 +60,8 @@ export async function PATCH(request: NextRequest) {
                     requiredSkills: [],
                     preferredSkills: [],
                     responsibilities: [],
+                    tools: [],
+                    metrics: [],
                     keywords: targetRole.toLowerCase().split(' '),
                     experienceLevel: 'Mid',
                     industry: ['technology'],

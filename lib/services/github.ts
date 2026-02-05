@@ -13,6 +13,7 @@ interface GitHubRepo {
     created_at: string
     updated_at: string
     pushed_at: string
+    fork?: boolean
 }
 
 interface FetchReposResult {

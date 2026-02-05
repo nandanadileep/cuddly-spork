@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         })
 
         // NOTE: In a real app, you'd decrypt the token. For this demo, we'll assume it's available or use public access.
-        const githubToken = githubConnection?.access_token_encrypted // Assuming stored raw or decrypted elsewhere for now
+        const githubToken = githubConnection?.access_token_encrypted || process.env.GITHUB_TOKEN // fallback to env token
 
         const githubClient = new GitHubClient(githubToken || undefined)
 
