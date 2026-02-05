@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 const normalizeDevtoUsername = (value: string) => {
     const trimmed = value.trim()
@@ -57,9 +58,9 @@ export async function POST(req: NextRequest) {
                 stars: post.public_reactions_count || 0,
                 forks: null,
                 language: 'Article',
-                technologies_jsonb: Array.isArray(post.tag_list) ? post.tag_list : [],
+                technologies_jsonb: Array.isArray(post.tag_list) ? (post.tag_list as string[]) : ([] as string[]),
                 ai_score: null,
-                ai_analysis_jsonb: null,
+                ai_analysis_jsonb: Prisma.DbNull,
                 analyzed_for_role: null,
             }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 const normalizeHandle = (value: string) => {
     const trimmed = value.trim()
@@ -58,9 +59,9 @@ export async function POST(req: NextRequest) {
             stars: user.rating || 0,
             forks: null,
             language: 'Competitive Coding',
-            technologies_jsonb: [user.rank, user.maxRank].filter(Boolean),
+            technologies_jsonb: [user.rank, user.maxRank].filter(Boolean) as string[],
             ai_score: null,
-            ai_analysis_jsonb: null,
+            ai_analysis_jsonb: Prisma.DbNull,
             analyzed_for_role: null,
         }
 

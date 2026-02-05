@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { fetchRssFeed } from '@/lib/services/rss'
+import { Prisma } from '@prisma/client'
 
 const buildSubstackFeedUrl = (value: string) => {
     const trimmed = value.trim().replace(/\/$/, '')
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
                 language: 'Article',
                 technologies_jsonb: item.categories,
                 ai_score: null,
-                ai_analysis_jsonb: null,
+                ai_analysis_jsonb: Prisma.DbNull,
                 analyzed_for_role: null,
             }
 

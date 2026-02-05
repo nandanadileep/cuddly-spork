@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 const normalizeHfUsername = (value: string) => {
     const trimmed = value.trim()
@@ -85,9 +86,9 @@ export async function POST(req: NextRequest) {
                 stars: 0,
                 forks: null,
                 language: item.type,
-                technologies_jsonb: Array.isArray(item.tags) ? item.tags : [],
+                technologies_jsonb: Array.isArray(item.tags) ? (item.tags as string[]) : ([] as string[]),
                 ai_score: null,
-                ai_analysis_jsonb: null,
+                ai_analysis_jsonb: Prisma.DbNull,
                 analyzed_for_role: null,
             }
 
