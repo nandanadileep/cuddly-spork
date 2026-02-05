@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
         }
 
         const { username } = await req.json()
+        const hasEnvToken = Boolean(process.env.GITHUB_TOKEN)
+        console.log('[GitHub Sync] Env token present:', hasEnvToken)
 
         const normalizeGithubUsername = (value: string) => {
             const trimmed = value.trim()
