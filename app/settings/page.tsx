@@ -235,7 +235,7 @@ export default function SettingsPage() {
                                             {platform.name}
                                         </label>
                                         <p className="text-[11px] text-[var(--text-secondary)] mb-2">
-                                            Fetches: {platform.fetches.join(', ')}
+                                            Fetches: {platform.fetches.join(', ')} · {platform.sync === 'manual' ? 'Manual only' : 'Auto-sync available'}
                                         </p>
                                         <input
                                             type="text"
@@ -260,26 +260,41 @@ function ConnectionCard({ connection, onSyncComplete }: { connection: Connection
     const [syncing, setSyncing] = useState(false)
 
     if (!platform) return null
+    const canSync = platform.sync === 'public' || platform.sync === 'oauth'
 
     const handleSync = async () => {
+        if (!canSync) return
         setSyncing(true)
         try {
-            if (connection.platform === 'github') {
-                const response = await fetch('/api/sync/github', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: connection.metadata_jsonb?.manual_url || connection.username })
-                })
+            const syncEndpoint: Record<string, string> = {
+                github: '/api/sync/github',
+                gitlab: '/api/sync/gitlab',
+                bitbucket: '/api/sync/bitbucket',
+                devto: '/api/sync/devto',
+                medium: '/api/sync/medium',
+                substack: '/api/sync/substack',
+                huggingface: '/api/sync/huggingface',
+                codeforces: '/api/sync/codeforces',
+            }
+            const endpoint = syncEndpoint[connection.platform]
+            if (!endpoint) {
+                alert('Sync not available for this platform yet')
+                return
+            }
 
-                if (response.ok) {
-                    const result = await response.json()
-                    alert(`Synced ${result.stats?.total || 0} repositories!`)
-                    onSyncComplete()
-                } else {
-                    alert('Sync failed')
-                }
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: connection.metadata_jsonb?.manual_url || connection.username })
+            })
+
+            if (response.ok) {
+                const result = await response.json()
+                alert(`Synced ${result.stats?.total || 0} items!`)
+                onSyncComplete()
             } else {
-                alert('Sync not implemented for this platform yet')
+                const data = await response.json().catch(() => ({}))
+                alert(data.error || 'Sync failed')
             }
         } catch (error) {
             console.error('Sync error:', error)
@@ -300,10 +315,10 @@ function ConnectionCard({ connection, onSyncComplete }: { connection: Connection
             </div>
             <button
                 onClick={handleSync}
-                disabled={syncing}
+                disabled={syncing || !canSync}
                 className="px-3 py-1 text-xs bg-[var(--orange-primary)] text-white rounded font-medium hover:bg-[var(--orange-hover)] transition-colors disabled:opacity-50"
             >
-                {syncing ? 'Syncing...' : 'Sync'}
+                {canSync ? (syncing ? 'Syncing...' : 'Sync') : 'Manual'}
             </button>
         </div>
     )

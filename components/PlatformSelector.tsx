@@ -76,6 +76,9 @@ export default function PlatformSelector({
                                             <span className="text-[10px] text-[var(--text-secondary)] text-center leading-tight">
                                                 {platform.fetches.join(', ')}
                                             </span>
+                                            <span className={`text-[10px] uppercase tracking-wider ${platform.sync === 'manual' ? 'text-[var(--text-secondary)]' : 'text-[var(--orange-primary)]'}`}>
+                                                {platform.sync === 'manual' ? 'Manual' : 'Auto-sync'}
+                                            </span>
                                         </button>
                                     )
                                 })}
