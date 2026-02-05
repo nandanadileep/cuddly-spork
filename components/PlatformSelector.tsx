@@ -73,6 +73,9 @@ export default function PlatformSelector({
                                             <span className={`text-xs ${isSelected ? 'font-medium text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                                                 {platform.name}
                                             </span>
+                                            <span className="text-[10px] text-[var(--text-secondary)] text-center leading-tight">
+                                                {platform.fetches.join(', ')}
+                                            </span>
                                         </button>
                                     )
                                 })}

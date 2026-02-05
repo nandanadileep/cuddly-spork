@@ -234,6 +234,9 @@ export default function SettingsPage() {
                                         <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-1 block">
                                             {platform.name}
                                         </label>
+                                        <p className="text-[11px] text-[var(--text-secondary)] mb-2">
+                                            Fetches: {platform.fetches.join(', ')}
+                                        </p>
                                         <input
                                             type="text"
                                             placeholder="Your profile URL or username"
