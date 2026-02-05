@@ -38,6 +38,8 @@ export default function ResumeBuilderPage() {
     const [projectBullets, setProjectBullets] = useState<Record<string, string[]>>({})
     const [templateId, setTemplateId] = useState('modern')
     const [isGenerating, setIsGenerating] = useState(false)
+    const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+    const [isDownloadingDoc, setIsDownloadingDoc] = useState(false)
     const [latexContent, setLatexContent] = useState('')
     const [latexDraft, setLatexDraft] = useState('')
     const [pdfUrl, setPdfUrl] = useState<string | null>(null)
@@ -172,6 +174,45 @@ export default function ResumeBuilderPage() {
             setGenerateError('Failed to generate resume')
         } finally {
             setIsGenerating(false)
+        }
+    }
+
+    const handleDownloadPdf = async () => {
+        if (!draft) return
+        setGenerateError('')
+        setIsDownloadingPdf(true)
+        try {
+            await saveDraft()
+            const res = await fetch('/api/resume/export-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    templateId,
+                    selectedProjectIds: draft.selectedProjectIds,
+                    manualProjects,
+                    skills: draft.skills,
+                    manualSkills: draft.manualSkills,
+                    projectBullets,
+                }),
+            })
+            if (!res.ok) {
+                const data = await res.json()
+                setGenerateError(data.error || 'Failed to download PDF')
+                return
+            }
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `resume-${new Date().toISOString().slice(0, 10)}.pdf`
+            a.click()
+            URL.revokeObjectURL(url)
+            fetchQuota()
+        } catch (error) {
+            console.error('PDF export error:', error)
+            setGenerateError('Failed to download PDF')
+        } finally {
+            setIsDownloadingPdf(false)
         }
     }
 
