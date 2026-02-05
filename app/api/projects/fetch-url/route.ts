@@ -86,7 +86,8 @@ export async function POST(req: NextRequest) {
         const url = new URL(urlString)
         const githubData = await tryFetchGithubRepo(url)
         if (githubData) {
-            return NextResponse.json({ success: true, url: normalizeUrl(url), platform: 'github', ...githubData })
+            const { platform: _platform, ...rest } = githubData
+            return NextResponse.json({ success: true, url: normalizeUrl(url), platform: 'github', ...rest })
         }
 
         const response = await fetch(url.toString(), {
