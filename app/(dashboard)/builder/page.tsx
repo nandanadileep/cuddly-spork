@@ -42,6 +42,7 @@ export default function ResumeBuilderPage() {
     const [latexDraft, setLatexDraft] = useState('')
     const [pdfUrl, setPdfUrl] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [quota, setQuota] = useState<{ count: number; limit: number; remaining: number } | null>(null)
 
     const fetchProjects = () => {
         return fetch('/api/projects')
@@ -53,6 +54,14 @@ export default function ResumeBuilderPage() {
             })
             .catch(err => console.error('Failed to fetch projects:', err))
     }
+
+    const fetchQuota = () =>
+        fetch('/api/resume/quota')
+            .then(res => res.json())
+            .then(data => {
+                if (data.count !== undefined) setQuota({ count: data.count, limit: data.limit, remaining: data.remaining })
+            })
+            .catch(() => {})
 
     useEffect(() => {
         if (status === 'authenticated') {
@@ -69,6 +78,7 @@ export default function ResumeBuilderPage() {
                             setTemplateId(data.draft.templateId || 'modern')
                         }
                     }),
+                fetchQuota(),
             ]).finally(() => setIsLoading(false))
         }
     }, [status])
