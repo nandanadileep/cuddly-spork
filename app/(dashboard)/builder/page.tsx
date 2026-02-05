@@ -503,23 +503,52 @@ export default function ResumeBuilderPage() {
                                 <div>
                                     <h2 className="text-xl font-serif font-semibold mb-2">Generate Resume</h2>
                                     <p className="text-sm text-[var(--text-secondary)]">
-                                        Produce LaTeX and a downloadable PDF with your edits.
+                                        Produce LaTeX and a downloadable PDF or DOC with your edits.
                                     </p>
+                                    {quota !== null && (
+                                        <p className="text-xs text-[var(--text-secondary)] mt-2">
+                                            Resumes: {quota.count} of {quota.limit} used
+                                        </p>
+                                    )}
                                 </div>
+                                {generateError && (
+                                    <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                        {generateError}
+                                    </div>
+                                )}
                                 <button
                                     onClick={handleGenerate}
-                                    disabled={isGenerating}
-                                    className="w-full px-4 py-3 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50"
+                                    disabled={isGenerating || (quota !== null && quota.remaining <= 0)}
+                                    className="w-full px-4 py-3 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isGenerating ? 'Generating...' : 'Generate LaTeX & PDF'}
                                 </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleDownloadPdf}
+                                        disabled={isDownloadingPdf || (quota !== null && quota.remaining <= 0)}
+                                        className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isDownloadingPdf ? 'Downloading...' : 'Download as PDF'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleDownloadDoc}
+                                        disabled={isDownloadingDoc || (quota !== null && quota.remaining <= 0)}
+                                        className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isDownloadingDoc ? 'Downloading...' : 'Download as DOC'}
+                                    </button>
+                                </div>
                                 {pdfUrl && (
                                     <a
                                         href={pdfUrl}
-                                        download="resume.pdf"
+                                        target="_blank"
+                                        rel="noreferrer"
                                         className="block text-center px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
                                     >
-                                        Download PDF
+                                        Preview generated PDF
                                     </a>
                                 )}
                                 {latexContent && (
