@@ -216,6 +216,45 @@ export default function ResumeBuilderPage() {
         }
     }
 
+    const handleDownloadDoc = async () => {
+        if (!draft) return
+        setGenerateError('')
+        setIsDownloadingDoc(true)
+        try {
+            await saveDraft()
+            const res = await fetch('/api/resume/export-doc', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    templateId,
+                    selectedProjectIds: draft.selectedProjectIds,
+                    manualProjects,
+                    skills: draft.skills,
+                    manualSkills: draft.manualSkills,
+                    projectBullets,
+                }),
+            })
+            if (!res.ok) {
+                const data = await res.json()
+                setGenerateError(data.error || 'Failed to download DOC')
+                return
+            }
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `resume-${new Date().toISOString().slice(0, 10)}.docx`
+            a.click()
+            URL.revokeObjectURL(url)
+            fetchQuota()
+        } catch (error) {
+            console.error('DOC export error:', error)
+            setGenerateError('Failed to download DOC')
+        } finally {
+            setIsDownloadingDoc(false)
+        }
+    }
+
     const templates = [
         { id: 'modern', name: 'Modern', description: 'Clean headings with bold emphasis.' },
         { id: 'classic', name: 'Classic', description: 'Traditional serif styling.' },
