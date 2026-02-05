@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
     try {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
         console.log('Onboarding request:', { linkedinUrl, targetRole, platforms })
 
         // 0. Generate AI Analysis for target role if provided
-        let jobDescriptionJsonb = null
+        let jobDescriptionJsonb: Prisma.InputJsonValue | null = null
         if (targetRole) {
             try {
                 const { generateJobDescription } = await import('@/lib/openai')
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
                     raw_jd: '',
                     analysis: analysis,
                     last_updated: new Date().toISOString()
-                }
+                } as unknown as Prisma.InputJsonValue
             } catch (error) {
                 console.error('Failed to generate job description in onboarding:', error)
             }
