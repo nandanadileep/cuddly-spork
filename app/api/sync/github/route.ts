@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
                 },
                 select: { username: true, metadata_jsonb: true }
             })
-            rawUsername = connection?.metadata_jsonb?.manual_url || connection?.username || ''
+            const manualUrl = (connection?.metadata_jsonb as { manual_url?: string } | null | undefined)?.manual_url
+            rawUsername = manualUrl || connection?.username || ''
         }
 
         if (!rawUsername) {
