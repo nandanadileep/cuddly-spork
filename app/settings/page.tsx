@@ -268,7 +268,7 @@ function ConnectionCard({ connection, onSyncComplete }: { connection: Connection
                 const response = await fetch('/api/sync/github', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: connection.username })
+                    body: JSON.stringify({ username: connection.metadata_jsonb?.manual_url || connection.username })
                 })
 
                 if (response.ok) {

@@ -14,10 +14,6 @@ export async function POST(req: NextRequest) {
 
         const { username } = await req.json()
 
-        if (!username) {
-            return NextResponse.json({ error: 'Username required' }, { status: 400 })
-        }
-
         const normalizeGithubUsername = (value: string) => {
             const trimmed = value.trim()
             try {
@@ -33,7 +29,28 @@ export async function POST(req: NextRequest) {
             return trimmed.replace(/^@/, '').split('/')[0]
         }
 
-        const normalizedUsername = normalizeGithubUsername(username)
+        let rawUsername = username
+        if (!rawUsername) {
+            const connection = await prisma.platformConnection.findUnique({
+                where: {
+                    user_id_platform: {
+                        user_id: session.user.id,
+                        platform: 'github'
+                    }
+                },
+                select: { username: true, metadata_jsonb: true }
+            })
+            rawUsername = connection?.metadata_jsonb?.manual_url || connection?.username || ''
+        }
+
+        if (!rawUsername) {
+            return NextResponse.json({ error: 'GitHub username required' }, { status: 400 })
+        }
+
+        const normalizedUsername = normalizeGithubUsername(rawUsername)
+        if (!normalizedUsername) {
+            return NextResponse.json({ error: 'Invalid GitHub username or URL' }, { status: 400 })
+        }
 
         console.log(`[GitHub Sync] Starting sync for user ${session.user.id}, username: ${normalizedUsername}`)
 
