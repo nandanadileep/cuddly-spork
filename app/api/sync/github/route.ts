@@ -18,10 +18,27 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Username required' }, { status: 400 })
         }
 
-        console.log(`[GitHub Sync] Starting sync for user ${session.user.id}, username: ${username}`)
+        const normalizeGithubUsername = (value: string) => {
+            const trimmed = value.trim()
+            try {
+                const withProtocol = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`
+                const url = new URL(withProtocol)
+                if (url.hostname.includes('github.com')) {
+                    const parts = url.pathname.split('/').filter(Boolean)
+                    if (parts[0]) return parts[0]
+                }
+            } catch {
+                // fall through
+            }
+            return trimmed.replace(/^@/, '').split('/')[0]
+        }
+
+        const normalizedUsername = normalizeGithubUsername(username)
+
+        console.log(`[GitHub Sync] Starting sync for user ${session.user.id}, username: ${normalizedUsername}`)
 
         // Fetch repos from GitHub
-        const result = await fetchGitHubRepos(username)
+        const result = await fetchGitHubRepos(normalizedUsername)
 
         if (!result.success) {
             console.error('[GitHub Sync] Failed:', result.error)

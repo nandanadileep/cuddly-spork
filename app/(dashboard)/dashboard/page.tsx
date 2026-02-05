@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { MdCheckCircle, MdLink } from 'react-icons/md'
 
 interface Project {
     id: string
@@ -719,8 +720,8 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="bg-[var(--bg-card)] rounded-lg p-6 border border-[var(--border-light)] shadow-sm">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-[var(--green-light)] flex items-center justify-center">
-                                <span className="text-sm font-semibold">Selected</span>
+                                    <div className="w-12 h-12 rounded-lg bg-[var(--green-light)] flex items-center justify-center text-[var(--github-green)]">
+                                        <MdCheckCircle className="text-2xl" />
                                     </div>
                                     <div>
                                         <h3 className="font-serif font-semibold text-lg">Onboarding Complete</h3>
@@ -731,8 +732,8 @@ export default function DashboardPage() {
 
                             <div className="bg-[var(--bg-card)] rounded-lg p-6 border border-[var(--border-light)] shadow-sm">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-[var(--orange-light)] flex items-center justify-center">
-                                <span className="text-sm font-semibold">Manage Connections</span>
+                                    <div className="w-12 h-12 rounded-lg bg-[var(--orange-light)] flex items-center justify-center text-[var(--orange-primary)]">
+                                        <MdLink className="text-2xl" />
                                     </div>
                                     <div>
                                         <h3 className="font-serif font-semibold text-lg">Manage Platforms</h3>

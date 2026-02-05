@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import PlatformSelector from '@/components/PlatformSelector'
 import { getPlatformById } from '@/lib/constants/platforms'
 
@@ -15,6 +16,7 @@ interface Connection {
 
 export default function SettingsPage() {
     const { data: session } = useSession()
+    const router = useRouter()
 
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
     const [platformUrls, setPlatformUrls] = useState<Record<string, string>>({})
@@ -33,7 +35,7 @@ export default function SettingsPage() {
                     const connectedIds = data.connections.map((c: Connection) => c.platform)
                     const urls: Record<string, string> = {}
                     data.connections.forEach((c: Connection) => {
-                        urls[c.platform] = c.username
+                        urls[c.platform] = c.metadata_jsonb?.manual_url || c.username
                     })
                     setSelectedPlatforms(connectedIds)
                     setPlatformUrls(urls)
@@ -100,9 +102,17 @@ export default function SettingsPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
-            <div className="border-b border-[var(--border-light)] pb-6">
-                <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)]">Settings</h1>
-                <p className="text-[var(--text-secondary)] mt-2">Manage your connected accounts and profile preferences.</p>
+            <div className="border-b border-[var(--border-light)] pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)]">Settings</h1>
+                    <p className="text-[var(--text-secondary)] mt-2">Manage your connected accounts and profile preferences.</p>
+                </div>
+                <button
+                    onClick={() => router.push('/dashboard')}
+                    className="px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                >
+                    Back to Dashboard
+                </button>
             </div>
 
             {/* Profile Section */}
@@ -137,11 +147,11 @@ export default function SettingsPage() {
                             <span>Connected Platforms ({connections.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {connections.map(conn => (
-                            <ConnectionCard
-                                key={conn.id}
-                                connection={conn}
-                                onSyncComplete={() => {
+                    {connections.map(conn => (
+                        <ConnectionCard
+                            key={conn.id}
+                            connection={conn}
+                            onSyncComplete={() => {
                                     // Refresh connections
                                     fetch('/api/user/connections')
                                         .then(r => r.json())
@@ -255,7 +265,7 @@ function ConnectionCard({ connection, onSyncComplete }: { connection: Connection
             <div className="flex-1 min-w-0">
                 <div className="font-medium text-sm">{platform.name}</div>
                 <div className="text-xs text-[var(--text-secondary)] truncate">
-                    {connection.username}
+                    {connection.metadata_jsonb?.manual_url || connection.username}
                 </div>
             </div>
             <button
@@ -263,7 +273,7 @@ function ConnectionCard({ connection, onSyncComplete }: { connection: Connection
                 disabled={syncing}
                 className="px-3 py-1 text-xs bg-[var(--orange-primary)] text-white rounded font-medium hover:bg-[var(--orange-hover)] transition-colors disabled:opacity-50"
             >
-                {syncing ? '...' : ''}
+                {syncing ? 'Syncing...' : 'Sync'}
             </button>
         </div>
     )

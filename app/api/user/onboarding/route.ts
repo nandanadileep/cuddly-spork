@@ -63,11 +63,26 @@ export async function POST(req: NextRequest) {
         // Currently our schema for PlatformConnection expects 'platform' and 'username'/'access_token'
         // We can store manual links. 
 
+        const normalizePlatformInput = (platformId: string, value: string) => {
+            const trimmed = value.trim()
+            if (platformId !== 'github') return { username: trimmed, manualUrl: trimmed }
+            try {
+                const withProtocol = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`
+                const url = new URL(withProtocol)
+                if (url.hostname.includes('github.com')) {
+                    const parts = url.pathname.split('/').filter(Boolean)
+                    if (parts[0]) return { username: parts[0], manualUrl: trimmed }
+                }
+            } catch {
+                // fall through
+            }
+            return { username: trimmed.replace(/^@/, '').split('/')[0], manualUrl: trimmed }
+        }
+
         if (Array.isArray(platforms) && platforms.length > 0) {
             for (const p of platforms) {
                 if (p?.url && p?.id) {
-                    // If it's a full URL, try to extract username, or store URL in metadata
-                    // For manual links, we'll store the URL as metadata or username if possible
+                    const normalized = normalizePlatformInput(p.id, p.url)
 
                     await prisma.platformConnection.upsert({
                         where: {
@@ -79,13 +94,13 @@ export async function POST(req: NextRequest) {
                         create: {
                             user_id: userRecord.id,
                             platform: p.id,
-                            username: p.url, // Store raw input for manual
-                            metadata_jsonb: { manual_url: p.url },
+                            username: normalized.username,
+                            metadata_jsonb: { manual_url: normalized.manualUrl },
                             last_synced: new Date(),
                         },
                         update: {
-                            username: p.url,
-                            metadata_jsonb: { manual_url: p.url },
+                            username: normalized.username,
+                            metadata_jsonb: { manual_url: normalized.manualUrl },
                         },
                     })
                 }
