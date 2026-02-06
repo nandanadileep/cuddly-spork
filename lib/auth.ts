@@ -127,7 +127,6 @@ export const authOptions: NextAuthOptions = {
             if (session?.user) {
                 session.user.id = token.sub || user?.id || '';
                 session.user.targetRole = (token as any).targetRole || null;
-                session.user.jobDescription = (token as any).jobDescription || null;
             }
             return session;
         },
@@ -135,18 +134,16 @@ export const authOptions: NextAuthOptions = {
             if (user && token.email) {
                 const dbUser = await prisma.user.findUnique({
                     where: { email: token.email },
-                    select: { id: true, target_role: true, job_description_jsonb: true },
+                    select: { id: true, target_role: true },
                 });
                 if (dbUser) {
                     token.sub = dbUser.id;
                     (token as any).targetRole = dbUser.target_role || null;
-                    (token as any).jobDescription = dbUser.job_description_jsonb || null;
                 }
             }
 
             if (trigger === 'update' && session) {
                 (token as any).targetRole = (session as any).targetRole ?? (token as any).targetRole ?? null;
-                (token as any).jobDescription = (session as any).jobDescription ?? (token as any).jobDescription ?? null;
             }
 
             // Store GitHub access token if OAuth login
