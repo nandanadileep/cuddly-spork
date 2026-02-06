@@ -52,6 +52,12 @@ interface ResumePreview {
     }
 }
 
+type ResumeGenerationError = {
+    message: string
+    details?: string
+    hint?: string
+}
+
 export default function ResumeBuilderPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
@@ -191,13 +197,13 @@ export default function ResumeBuilderPage() {
         saveDraft({ manualProjects: nextManual })
     }
 
-    const [generateError, setGenerateError] = useState('')
+    const [generateError, setGenerateError] = useState<ResumeGenerationError | null>(null)
 
     const handleGenerate = async () => {
         if (!draft) return
         setIsGenerating(true)
         setPdfUrl(null)
-        setGenerateError('')
+        setGenerateError(null)
         try {
             await saveDraft()
             const res = await fetch('/api/resume/generate', {
@@ -224,11 +230,15 @@ export default function ResumeBuilderPage() {
                     setPdfUrl(url)
                 }
             } else {
-                setGenerateError(data.error || 'Failed to generate resume')
+                setGenerateError({
+                    message: data.error || 'Failed to generate resume',
+                    details: data.details || undefined,
+                    hint: data.hint || undefined,
+                })
             }
         } catch (error) {
             console.error('Resume generation error:', error)
-            setGenerateError('Failed to generate resume')
+            setGenerateError({ message: 'Failed to generate resume' })
         } finally {
             setIsGenerating(false)
         }
@@ -236,7 +246,7 @@ export default function ResumeBuilderPage() {
 
     const handleDownloadPdf = async () => {
         if (!draft) return
-        setGenerateError('')
+        setGenerateError(null)
         setIsDownloadingPdf(true)
         try {
             await saveDraft()
@@ -253,8 +263,12 @@ export default function ResumeBuilderPage() {
                 }),
             })
             if (!res.ok) {
-                const data = await res.json()
-                setGenerateError(data.error || 'Failed to download PDF')
+                const data = await res.json().catch(() => ({}))
+                setGenerateError({
+                    message: data.error || 'Failed to download PDF',
+                    details: data.details || undefined,
+                    hint: data.hint || undefined,
+                })
                 return
             }
             const blob = await res.blob()
@@ -267,7 +281,7 @@ export default function ResumeBuilderPage() {
             fetchQuota()
         } catch (error) {
             console.error('PDF export error:', error)
-            setGenerateError('Failed to download PDF')
+            setGenerateError({ message: 'Failed to download PDF' })
         } finally {
             setIsDownloadingPdf(false)
         }
@@ -275,7 +289,7 @@ export default function ResumeBuilderPage() {
 
     const handleDownloadDoc = async () => {
         if (!draft) return
-        setGenerateError('')
+        setGenerateError(null)
         setIsDownloadingDoc(true)
         try {
             await saveDraft()
@@ -292,8 +306,12 @@ export default function ResumeBuilderPage() {
                 }),
             })
             if (!res.ok) {
-                const data = await res.json()
-                setGenerateError(data.error || 'Failed to download DOC')
+                const data = await res.json().catch(() => ({}))
+                setGenerateError({
+                    message: data.error || 'Failed to download DOC',
+                    details: data.details || undefined,
+                    hint: data.hint || undefined,
+                })
                 return
             }
             const blob = await res.blob()
@@ -306,7 +324,7 @@ export default function ResumeBuilderPage() {
             fetchQuota()
         } catch (error) {
             console.error('DOC export error:', error)
-            setGenerateError('Failed to download DOC')
+            setGenerateError({ message: 'Failed to download DOC' })
         } finally {
             setIsDownloadingDoc(false)
         }
@@ -757,7 +775,13 @@ export default function ResumeBuilderPage() {
                                 </div>
                                 {generateError && (
                                     <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                                        {generateError}
+                                        <div className="font-semibold">{generateError.message}</div>
+                                        {generateError.details && (
+                                            <div className="text-xs text-red-700 mt-1">{generateError.details}</div>
+                                        )}
+                                        {generateError.hint && (
+                                            <div className="text-xs text-red-700 mt-1">{generateError.hint}</div>
+                                        )}
                                     </div>
                                 )}
                                 <button
@@ -817,6 +841,12 @@ export default function ResumeBuilderPage() {
                                                 const blob = new Blob([bytes], { type: 'application/pdf' })
                                                 const url = URL.createObjectURL(blob)
                                                 setPdfUrl(url)
+                                            } else if (!res.ok) {
+                                                setGenerateError({
+                                                    message: data.error || 'Failed to compile LaTeX',
+                                                    details: data.details || undefined,
+                                                    hint: data.hint || undefined,
+                                                })
                                             }
                                         }}
                                         className="w-full px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
