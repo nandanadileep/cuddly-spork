@@ -3,11 +3,9 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
     const router = useRouter()
-    const searchParams = useSearchParams()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -28,7 +26,11 @@ export default function LoginPage() {
             if (result?.error) {
                 setError('Invalid email or password')
             } else {
-                const callbackUrl = searchParams?.get('callbackUrl')
+                // Avoid useSearchParams() so /login can be prerendered in production builds.
+                const callbackUrl =
+                    typeof window !== 'undefined'
+                        ? new URLSearchParams(window.location.search).get('callbackUrl')
+                        : null
                 router.push(callbackUrl || '/dashboard')
             }
         } catch (err) {
