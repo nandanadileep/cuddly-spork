@@ -17,9 +17,16 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const sessionUserId = (session?.user as any)?.id as string | undefined
+        const sessionEmail = session?.user?.email
+        if (!sessionUserId && !sessionEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+        const user = sessionUserId
+            ? await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true } })
+            : await prisma.user.findFirst({
+                where: { email: { equals: String(sessionEmail).trim().toLowerCase(), mode: 'insensitive' } },
+                select: { id: true },
+            });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         const body = await req.json();
@@ -47,6 +54,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(newExperience);
     } catch (error) {
+        console.error('Experience POST Error:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
@@ -54,18 +62,26 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const sessionUserId = (session?.user as any)?.id as string | undefined
+        const sessionEmail = session?.user?.email
+        if (!sessionUserId && !sessionEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
+        const user = sessionUserId
+            ? await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true } })
+            : await prisma.user.findFirst({
+                where: { email: { equals: String(sessionEmail).trim().toLowerCase(), mode: 'insensitive' } },
+                select: { id: true },
+            });
+        if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
         // Verify ownership
         const experience = await prisma.workExperience.findUnique({ where: { id } });
-        const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-
-        if (!experience || experience.user_id !== user?.id) {
+        if (!experience || experience.user_id !== user.id) {
             return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
         }
 
@@ -73,6 +89,7 @@ export async function DELETE(req: NextRequest) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
+        console.error('Experience DELETE Error:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
@@ -80,9 +97,16 @@ export async function DELETE(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const sessionUserId = (session?.user as any)?.id as string | undefined
+        const sessionEmail = session?.user?.email
+        if (!sessionUserId && !sessionEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+        const user = sessionUserId
+            ? await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true } })
+            : await prisma.user.findFirst({
+                where: { email: { equals: String(sessionEmail).trim().toLowerCase(), mode: 'insensitive' } },
+                select: { id: true },
+            });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
         const { searchParams } = new URL(req.url);
