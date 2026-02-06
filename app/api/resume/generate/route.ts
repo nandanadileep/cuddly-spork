@@ -267,23 +267,8 @@ export async function POST(req: NextRequest) {
 
         const pdfBuffer = Buffer.from(await latexResponse.arrayBuffer())
 
-        const resume = await prisma.resume.create({
-            data: {
-                user_id: userRecord.id,
-                title: `Resume Draft - ${new Date().toISOString().slice(0, 10)}`,
-                target_role: user.target_role || null,
-                template_id: resolvedTemplateId,
-                latex_content: latexPayload.template,
-                pdf_url: null,
-                selected_projects_jsonb: selectedIds,
-                skills_jsonb: uniqueSkills,
-            },
-            select: { id: true },
-        })
-
         return NextResponse.json({
             success: true,
-            resumeId: resume.id,
             latexContent: latexPayload.template,
             pdfBase64: pdfBuffer.toString('base64'),
         })
