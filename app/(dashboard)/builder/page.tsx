@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { MdCheckCircle, MdCode, MdErrorOutline, MdFolder, MdPersonOutline, MdSchool, MdWorkOutline } from 'react-icons/md'
 
 interface Project {
     id: string
@@ -29,6 +30,28 @@ interface AnalysisDraft {
     templateId: string
 }
 
+interface ResumePreview {
+    user: {
+        name: string | null
+        email: string
+        phone: string | null
+        location: string | null
+        website: string | null
+        linkedinUrl: string | null
+        targetRole: string | null
+    }
+    counts: {
+        education: number
+        experience: number
+        extracurriculars: number
+        awards: number
+        publications: number
+    }
+    links: {
+        githubUrl: string | null
+    }
+}
+
 export default function ResumeBuilderPage() {
     const { status } = useSession()
     const router = useRouter()
@@ -45,6 +68,7 @@ export default function ResumeBuilderPage() {
     const [pdfUrl, setPdfUrl] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [quota, setQuota] = useState<{ count: number; limit: number; remaining: number } | null>(null)
+    const [resumePreview, setResumePreview] = useState<ResumePreview | null>(null)
 
     const fetchProjects = () => {
         return fetch('/api/projects')
@@ -64,6 +88,20 @@ export default function ResumeBuilderPage() {
                 if (data.count !== undefined) setQuota({ count: data.count, limit: data.limit, remaining: data.remaining })
             })
             .catch(() => {})
+
+    const fetchResumePreview = () =>
+        fetch('/api/resume/preview')
+            .then(res => res.json())
+            .then(data => {
+                if (data?.success) {
+                    setResumePreview({
+                        user: data.user,
+                        counts: data.counts,
+                        links: data.links,
+                    })
+                }
+            })
+            .catch(err => console.error('Failed to fetch resume preview:', err))
 
     const clearResumeHistory = async () => {
         if (!confirm('Clear your resume download history? This will reset your download quota.')) return
@@ -97,6 +135,7 @@ export default function ResumeBuilderPage() {
                         }
                     }),
                 fetchQuota(),
+                fetchResumePreview(),
             ]).finally(() => setIsLoading(false))
         }
     }, [status])
@@ -513,6 +552,123 @@ export default function ResumeBuilderPage() {
                                         </span>
                                     ))}
                                 </div>
+                            </div>
+
+                            <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
+                                <div>
+                                    <h2 className="text-xl font-serif font-semibold mb-2">Resume Contents</h2>
+                                    <p className="text-sm text-[var(--text-secondary)]">
+                                        Before you download, review what will appear in your resume.
+                                    </p>
+                                </div>
+
+                                {(() => {
+                                    const selectedProjectsCount = draft.selectedProjectIds.length + manualProjects.length
+                                    const skillsCount = (draft.skills || []).length + (draft.manualSkills || []).length
+
+                                    if (!resumePreview) {
+                                        return (
+                                            <div className="pt-2 flex items-center justify-between gap-3">
+                                                <div className="text-sm text-[var(--text-secondary)]">Loading profile sections...</div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fetchResumePreview()}
+                                                    className="px-3 py-1.5 rounded-lg border border-[var(--border-light)] text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                                                >
+                                                    Refresh
+                                                </button>
+                                            </div>
+                                        )
+                                    }
+
+                                    const missingContact: string[] = []
+                                    if (!resumePreview?.user?.name) missingContact.push('name')
+                                    if (!resumePreview?.user?.phone) missingContact.push('phone')
+                                    if (!resumePreview?.user?.location) missingContact.push('location')
+                                    if (!resumePreview?.user?.website) missingContact.push('website')
+                                    if (!resumePreview?.user?.linkedinUrl) missingContact.push('LinkedIn')
+                                    if (!resumePreview?.links?.githubUrl) missingContact.push('GitHub')
+
+                                    const rows = [
+                                        {
+                                            key: 'contact',
+                                            label: 'Contact info',
+                                            icon: MdPersonOutline,
+                                            ok: missingContact.length === 0,
+                                            detail: missingContact.length ? `Missing: ${missingContact.join(', ')}` : 'Looks good',
+                                        },
+                                        {
+                                            key: 'experience',
+                                            label: 'Work experience',
+                                            icon: MdWorkOutline,
+                                            ok: (resumePreview?.counts?.experience || 0) > 0,
+                                            detail: `${resumePreview?.counts?.experience || 0} entries`,
+                                        },
+                                        {
+                                            key: 'education',
+                                            label: 'Education',
+                                            icon: MdSchool,
+                                            ok: (resumePreview?.counts?.education || 0) > 0,
+                                            detail: `${resumePreview?.counts?.education || 0} entries`,
+                                        },
+                                        {
+                                            key: 'projects',
+                                            label: 'Projects',
+                                            icon: MdFolder,
+                                            ok: selectedProjectsCount > 0,
+                                            detail: `${selectedProjectsCount} selected`,
+                                        },
+                                        {
+                                            key: 'skills',
+                                            label: 'Skills',
+                                            icon: MdCode,
+                                            ok: skillsCount > 0,
+                                            detail: `${skillsCount} listed`,
+                                        },
+                                    ]
+
+                                    return (
+                                        <>
+                                            <div className="space-y-3">
+                                                {rows.map((row) => (
+                                                    <div key={row.key} className="flex items-start justify-between gap-4">
+                                                        <div className="flex items-start gap-3">
+                                                            <row.icon className="text-xl text-[var(--text-secondary)] mt-0.5" />
+                                                            <div>
+                                                                <div className="font-semibold text-[var(--text-primary)]">{row.label}</div>
+                                                                <div className="text-xs text-[var(--text-secondary)]">{row.detail}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-0.5">
+                                                            {row.ok ? (
+                                                                <MdCheckCircle className="text-xl text-[var(--github-green)]" />
+                                                            ) : (
+                                                                <MdErrorOutline className="text-xl text-[var(--orange-primary)]" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <div className="pt-4 border-t border-[var(--border-light)] flex flex-col sm:flex-row gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => router.push('/profile')}
+                                                    className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                                                >
+                                                    Edit Profile (Education/Work)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fetchResumePreview()}
+                                                    className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                                                >
+                                                    Refresh
+                                                </button>
+                                            </div>
+                                        </>
+                                    )
+                                })()}
                             </div>
 
                             <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
