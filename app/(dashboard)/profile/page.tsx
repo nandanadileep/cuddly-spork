@@ -214,24 +214,25 @@ export default function ProfilePage() {
         }
     };
 
-    const handleUpdateWork = async () => {
-        if (!editingWorkId) return;
-        try {
-            const res = await fetch(`/api/profile/experience?id=${editingWorkId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editWork),
-            });
-            if (res.ok) {
-                setEditingWorkId(null);
-                fetchProfile();
-            } else {
-                alert('Failed to update experience');
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
+	    const handleUpdateWork = async () => {
+	        if (!editingWorkId) return;
+	        try {
+	            const res = await fetch(`/api/profile/experience?id=${editingWorkId}`, {
+	                method: 'PATCH',
+	                headers: { 'Content-Type': 'application/json' },
+	                body: JSON.stringify(editWork),
+	            });
+	            if (res.ok) {
+	                setEditingWorkId(null);
+	                fetchProfile();
+	            } else {
+	                const data = await res.json().catch(() => ({}));
+	                alert(data.error || 'Failed to update experience');
+	            }
+	        } catch (error) {
+	            console.error(error);
+	        }
+	    };
 
     const handleDeleteWork = async (id: string) => {
         if (!confirm('Are you sure you want to delete this experience?')) return;
