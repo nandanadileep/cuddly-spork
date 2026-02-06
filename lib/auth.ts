@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from 'next-auth';
 import GithubProvider from 'next-auth/providers/github';
+import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/utils';
@@ -9,6 +10,14 @@ export const authOptions: NextAuthOptions = {
     // This also keeps cookie names stable even if NEXTAUTH_URL is misconfigured.
     useSecureCookies: process.env.NODE_ENV === 'production',
     providers: [
+        ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+            ? [
+                GoogleProvider({
+                    clientId: process.env.GOOGLE_CLIENT_ID,
+                    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                }),
+            ]
+            : []),
         ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
             ? [
                 GithubProvider({
@@ -83,6 +92,29 @@ export const authOptions: NextAuthOptions = {
                                 openai_credits: 20, // Give new users 20 credits (2 free analyses)
                             },
                         });
+                    }
+                } catch (error) {
+                    console.error('Error creating user:', error);
+                    return false;
+                }
+            }
+
+            if (account?.provider === 'google' && user.email) {
+                try {
+                    const normalizedEmail = user.email.trim().toLowerCase()
+                    const existingUser = await prisma.user.findFirst({
+                        where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+                        select: { id: true },
+                    })
+
+                    if (!existingUser) {
+                        await prisma.user.create({
+                            data: {
+                                email: normalizedEmail,
+                                name: user.name || profile?.name || 'Google User',
+                                openai_credits: 20,
+                            },
+                        })
                     }
                 } catch (error) {
                     console.error('Error creating user:', error);
