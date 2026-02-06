@@ -44,6 +44,7 @@ export default function AnalysisFlowPage() {
     const [manualSkills, setManualSkills] = useState<string[]>([])
     const [excludedSkills, setExcludedSkills] = useState<string[]>([])
     const [skillInput, setSkillInput] = useState('')
+    const [isAddingSkill, setIsAddingSkill] = useState(false)
     const [manualProjectInput, setManualProjectInput] = useState({
         name: '',
         description: '',
@@ -451,14 +452,19 @@ export default function AnalysisFlowPage() {
         }
     }
 
-    const handleAddManualSkill = () => {
+    const handleAddManualSkill = async () => {
         const trimmed = skillInput.trim()
         if (!trimmed) return
         if (manualSkills.includes(trimmed)) return
         const next = [...manualSkills, trimmed]
         setManualSkills(next)
-        saveDraft({ manualSkills: next })
         setSkillInput('')
+        setIsAddingSkill(true)
+        try {
+            await saveDraft({ manualSkills: next })
+        } finally {
+            setIsAddingSkill(false)
+        }
     }
 
     const handleRemoveSkill = (skill: string) => {
@@ -879,11 +885,17 @@ export default function AnalysisFlowPage() {
                                 />
                                 <button
                                     onClick={handleAddManualSkill}
-                                    className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)]"
+                                    disabled={isAddingSkill}
+                                    className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Add
+                                    {isAddingSkill ? 'Adding...' : 'Add'}
                                 </button>
                             </div>
+                            {isAddingSkill && (
+                                <div className="text-xs text-[var(--text-secondary)] -mt-2 mb-4">
+                                    Saving skill...
+                                </div>
+                            )}
                             {manualSkills.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {manualSkills.map(skill => (
