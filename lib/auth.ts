@@ -31,17 +31,18 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 try {
+                    const normalizedEmail = String(credentials.email).trim().toLowerCase()
                     const user = await prisma.user.findUnique({
-                        where: { email: credentials.email },
+                        where: { email: normalizedEmail },
                     });
 
                     if (!user || !user.password_hash) {
-                        console.log('User not found or no password hash for:', credentials.email);
+                        console.log('User not found or no password hash for:', normalizedEmail);
                         return null;
                     }
 
                     const isValid = await verifyPassword(credentials.password, user.password_hash);
-                    console.log('Login attempt for:', credentials.email, 'Valid:', isValid);
+                    console.log('Login attempt for:', normalizedEmail, 'Valid:', isValid);
 
                     if (!isValid) {
                         return null;
@@ -157,6 +158,6 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: 'jwt',
     },
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
     debug: true,
 };
