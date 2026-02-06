@@ -33,9 +33,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Prisma
-/prisma/migrations/*
-!/prisma/migrations/.gitkeep
-
 # Old UI files
 /old-ui
