@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -26,7 +28,8 @@ export default function LoginPage() {
             if (result?.error) {
                 setError('Invalid email or password')
             } else {
-                router.push('/dashboard')
+                const callbackUrl = searchParams?.get('callbackUrl')
+                router.push(callbackUrl || '/dashboard')
             }
         } catch (err) {
             setError('An error occurred. Please try again.')
