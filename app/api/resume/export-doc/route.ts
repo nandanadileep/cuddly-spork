@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
             })),
             education: education.map(item => ({
                 institution: item.institution,
-                degree: [item.degree, item.field].filter(Boolean).join(', '),
+                degree: `${[item.degree, item.field].filter(Boolean).join(', ')}${item.cgpa ? ` | CGPA: ${item.cgpa}` : ''}`,
                 location: item.location || '',
                 dateRange: formatDateRange(item.start_date, item.end_date, item.is_current),
                 bulletPoints: (() => {
