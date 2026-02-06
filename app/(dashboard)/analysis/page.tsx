@@ -628,7 +628,7 @@ export default function AnalysisFlowPage() {
                                     type="submit"
                                     className="w-full px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)]"
                                 >
-                                    Add Manual Project
+                                    Add Projects Manually
                                 </button>
                             </form>
                         </div>
