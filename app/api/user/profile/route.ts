@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const { linkedinUrl } = await req.json()
+        const { linkedinUrl, websiteUrl, phone, location } = await req.json()
 
         // Validation (basic)
         if (linkedinUrl && !linkedinUrl.includes('linkedin.com/in/')) {
@@ -21,11 +21,33 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        const normalizeUrlOrNull = (value: unknown) => {
+            if (typeof value !== 'string') return undefined
+            const trimmed = value.trim()
+            if (!trimmed) return null
+            try {
+                const normalized = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+                    ? trimmed
+                    : `https://${trimmed}`
+                return new URL(normalized).toString()
+            } catch {
+                return undefined
+            }
+        }
+
+        const nextWebsite = normalizeUrlOrNull(websiteUrl)
+        if (websiteUrl && nextWebsite === undefined) {
+            return NextResponse.json({ error: 'Invalid website URL' }, { status: 400 })
+        }
+
         // Update user
         const user = await prisma.user.update({
             where: { id: session.user.id },
             data: {
                 linkedin_url: linkedinUrl || null,
+                website: nextWebsite,
+                phone: typeof phone === 'string' ? phone.trim() || null : undefined,
+                location: typeof location === 'string' ? location.trim() || null : undefined,
             },
         })
 
@@ -33,6 +55,9 @@ export async function POST(req: NextRequest) {
             success: true,
             user: {
                 linkedinUrl: user.linkedin_url,
+                websiteUrl: user.website,
+                phone: user.phone,
+                location: user.location,
             },
         })
     } catch (error) {
@@ -56,6 +81,9 @@ export async function GET(req: NextRequest) {
             where: { id: session.user.id },
             select: {
                 linkedin_url: true,
+                website: true,
+                phone: true,
+                location: true,
                 name: true,
                 email: true,
                 onboarding_completed: true
@@ -65,6 +93,9 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             user: {
                 linkedinUrl: user?.linkedin_url,
+                websiteUrl: user?.website,
+                phone: user?.phone,
+                location: user?.location,
                 name: user?.name,
                 email: user?.email,
                 onboardingCompleted: user?.onboarding_completed
