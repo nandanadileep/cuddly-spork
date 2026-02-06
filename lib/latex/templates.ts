@@ -61,6 +61,7 @@ const basePreamble = `\\documentclass[letterpaper,11pt]{article}
 \\usepackage[hidelinks]{hyperref}
 \\usepackage{tabularx}
 \\usepackage{fontawesome5}
+\\usepackage{textcomp}
 \\pagenumbering{gobble}
 \\raggedbottom
 \\raggedright
@@ -134,9 +135,44 @@ const templateStyles: Record<TemplateId, string> = {
 `,
 }
 
-const escapeLatex = (input: string) =>
-    input
-        .replace(/\\/g, '\\\\')
+const normalizeLatexText = (input: string) => {
+    let value = String(input ?? '')
+
+    // Normalize common Unicode punctuation that often breaks LaTeX compilers.
+    value = value
+        .replace(/\u00A0/g, ' ') // nbsp
+        .replace(/[‘’]/g, "'")
+        .replace(/[“”]/g, '"')
+        .replace(/[‐‑‒–—−]/g, '-') // hyphen/dash/minus variants
+        .replace(/[•]/g, '-') // bullet
+        .replace(/[·]/g, '-') // middle dot
+        .replace(/…/g, '...')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\t/g, ' ')
+
+    // Remove control chars + astral plane chars (emoji etc) that can break pdflatex.
+    value = value
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+        .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+
+    // Strip diacritics to keep things ASCII-friendly for LaTeX.
+    try {
+        value = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    } catch {
+        // Ignore normalization errors (very old runtimes).
+    }
+
+    return value
+}
+
+const escapeLatex = (input: string) => {
+    const normalized = normalizeLatexText(input)
+    const backslashToken = '__LATEX_BACKSLASH__'
+
+    // Escape in a safe order. Backslashes become a real backslash character, not a newline command.
+    return normalized
+        .replace(/\\/g, backslashToken)
         .replace(/&/g, '\\&')
         .replace(/%/g, '\\%')
         .replace(/\$/g, '\\$')
@@ -146,6 +182,8 @@ const escapeLatex = (input: string) =>
         .replace(/}/g, '\\}')
         .replace(/\^/g, '\\^{}')
         .replace(/~/g, '\\~{}')
+        .replace(new RegExp(backslashToken, 'g'), '\\textbackslash{}')
+}
 
 const normalizeUrl = (input: string) => {
     const trimmed = String(input || '').trim()
