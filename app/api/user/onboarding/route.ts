@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json()
-        const { linkedinUrl, targetRole, platforms = [] } = body
+        const { linkedinUrl, targetRole, websiteUrl, platforms = [] } = body
 
-        console.log('Onboarding request:', { linkedinUrl, targetRole, platforms })
+        console.log('Onboarding request:', { linkedinUrl, targetRole, websiteUrl, platforms })
 
         // 0. Generate AI Analysis for target role if provided
         let jobDescriptionJsonb: Prisma.InputJsonValue | null = null
@@ -49,6 +49,21 @@ export async function POST(req: NextRequest) {
         const userUpdate: Prisma.UserUpdateInput = { onboarding_completed: true }
         if (typeof linkedinUrl === 'string') {
             userUpdate.linkedin_url = linkedinUrl.trim() || null
+        }
+        if (typeof websiteUrl === 'string') {
+            const trimmed = websiteUrl.trim()
+            if (!trimmed) {
+                userUpdate.website = null
+            } else {
+                try {
+                    const normalized = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+                        ? trimmed
+                        : `https://${trimmed}`
+                    userUpdate.website = new URL(normalized).toString()
+                } catch {
+                    // Ignore invalid URLs instead of failing onboarding.
+                }
+            }
         }
         if (typeof targetRole === 'string') {
             userUpdate.target_role = targetRole.trim() || null
