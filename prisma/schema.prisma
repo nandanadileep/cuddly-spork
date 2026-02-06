@@ -110,6 +110,7 @@ model Education {
   institution  String
   degree       String
   field        String?
+  cgpa         String?
   location     String?
   start_date   DateTime?
   end_date     DateTime?
