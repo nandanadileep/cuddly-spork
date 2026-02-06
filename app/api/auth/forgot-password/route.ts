@@ -9,8 +9,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email: email.trim().toLowerCase() },
+        const normalizedEmail = email.trim().toLowerCase()
+        const user = await prisma.user.findFirst({
+            where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
         })
 
         // Always return success so we don't leak whether the email exists
