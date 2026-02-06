@@ -206,7 +206,19 @@ const toTitleCase = (value: string) =>
 const buildProjectsSection = (projects: ResumePayload['projects']) =>
     projects
         .map(project => {
-            const bullets = project.bulletPoints
+            const rawBullets = Array.isArray(project.bulletPoints) ? project.bulletPoints : []
+            const bulletItems = rawBullets
+                .filter((item) => typeof item === 'string')
+                .map((item) => item.trim())
+                .filter(Boolean)
+
+            // If no bullets exist, fall back to the description so LaTeX doesn't error on an empty itemize.
+            const fallbackDescription = String(project.description || '').trim()
+            const bulletSource = bulletItems.length > 0
+                ? bulletItems
+                : (fallbackDescription ? [fallbackDescription] : [])
+
+            const bullets = bulletSource
                 .map(point => `\\item ${escapeLatex(point)}`)
                 .join('\n')
             const techs = Array.isArray(project.technologies)
@@ -218,7 +230,10 @@ const buildProjectsSection = (projects: ResumePayload['projects']) =>
             const link = project.url
                 ? `\\href{${escapeLatex(project.url)}}{\\faGithub\\ GitHub}`
                 : ''
-            return `\\resumeProjectHeading{\\textbf{${escapeLatex(toTitleCase(project.name))}}${techLine}}{${link}}\n\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd\n`
+            const bulletBlock = bullets
+                ? `\\resumeItemListStart\n${bullets}\n\\resumeItemListEnd`
+                : ''
+            return `\\resumeProjectHeading{\\textbf{${escapeLatex(toTitleCase(project.name))}}${techLine}}{${link}}\n${bulletBlock}\n`
         })
         .join('\n')
 
