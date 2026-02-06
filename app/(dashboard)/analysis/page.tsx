@@ -32,6 +32,7 @@ export default function AnalysisFlowPage() {
     const [step, setStep] = useState<1 | 2 | 3>(1)
     const [projects, setProjects] = useState<Project[]>([])
     const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
+    const [draftStatus, setDraftStatus] = useState<'unknown' | 'exists' | 'missing'>('unknown')
     const [manualProjects, setManualProjects] = useState<ManualProject[]>([])
     const [urlDetectedPlatform, setUrlDetectedPlatform] = useState<string | null>(null)
     const [urlNeedsDetails, setUrlNeedsDetails] = useState(false)
@@ -187,14 +188,21 @@ export default function AnalysisFlowPage() {
             .then(res => res.json())
             .then(data => {
                 if (data?.draft) {
+                    setDraftStatus('exists')
                     setSelectedProjectIds(data.draft.selectedProjectIds || [])
                     setManualProjects(data.draft.manualProjects || [])
                     setSkills(Array.isArray(data.draft.skills) ? data.draft.skills.filter((item: any) => typeof item === 'string') : [])
                     setManualSkills(Array.isArray(data.draft.manualSkills) ? data.draft.manualSkills.filter((item: any) => typeof item === 'string') : [])
                     setExcludedSkills(Array.isArray(data.draft.excludedSkills) ? data.draft.excludedSkills.filter((item: any) => typeof item === 'string') : [])
+                } else {
+                    // Only auto-select for users with no draft. If a user clears selection, keep it cleared.
+                    setDraftStatus('missing')
                 }
             })
-            .catch(err => console.error('Failed to fetch analysis draft:', err))
+            .catch(err => {
+                console.error('Failed to fetch analysis draft:', err)
+                setDraftStatus('unknown')
+            })
     }
 
     useEffect(() => {
@@ -207,6 +215,7 @@ export default function AnalysisFlowPage() {
     useEffect(() => {
         if (status !== 'authenticated') return
         if (projects.length === 0) return
+        if (draftStatus !== 'missing') return
         if (selectedProjectIds.length > 0) return
 
         const autoSelect = async () => {
@@ -220,6 +229,7 @@ export default function AnalysisFlowPage() {
                 const data = await res.json()
                 if (res.ok && data.projectIds) {
                     setSelectedProjectIds(data.projectIds)
+                    setDraftStatus('exists')
                     await fetchProjects()
                     await saveDraft({ selectedProjectIds: data.projectIds })
                 }
@@ -231,7 +241,7 @@ export default function AnalysisFlowPage() {
         }
 
         autoSelect()
-    }, [status, projects, selectedProjectIds])
+    }, [status, projects, selectedProjectIds, draftStatus])
 
     useEffect(() => {
         if (step !== 3) return
