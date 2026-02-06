@@ -6,6 +6,9 @@ export async function middleware(request: NextRequest) {
     const token = await getToken({
         req: request,
         secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+        // getToken() defaults secureCookie based on NEXTAUTH_URL, which is often mis-set on Vercel.
+        // Instead, infer it from the actual request protocol so cookie names match.
+        secureCookie: request.nextUrl.protocol === 'https:',
     })
 
     const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
