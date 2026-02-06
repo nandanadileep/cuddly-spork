@@ -147,6 +147,17 @@ const escapeLatex = (input: string) =>
         .replace(/\^/g, '\\^{}')
         .replace(/~/g, '\\~{}')
 
+const normalizeUrl = (input: string) => {
+    const trimmed = String(input || '').trim()
+    if (!trimmed) return ''
+    // If it already has a scheme (e.g. https:, http:, mailto:), keep it as-is.
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return trimmed
+    if (trimmed.startsWith('//')) return `https:${trimmed}`
+    return `https://${trimmed}`
+}
+
+const normalizePhoneForTel = (input: string) => String(input || '').replace(/[^+\d]/g, '')
+
 const toTitleCase = (value: string) =>
     value
         .replace(/[-_]+/g, ' ')
@@ -322,13 +333,19 @@ const buildSkillsSection = (skills: string[]) => {
 export const renderLatexTemplate = (templateId: TemplateId, payload: ResumePayload) => {
     const contactParts: string[] = []
     if (payload.phone) {
-        contactParts.push(escapeLatex(payload.phone))
+        const tel = normalizePhoneForTel(payload.phone)
+        contactParts.push(
+            tel
+                ? `\\href{tel:${escapeLatex(tel)}}{${escapeLatex(payload.phone)}}`
+                : escapeLatex(payload.phone)
+        )
     }
     if (payload.email) {
         contactParts.push(`\\href{mailto:${escapeLatex(payload.email)}}{${escapeLatex(payload.email)}}`)
     }
     if (payload.website) {
-        contactParts.push(`\\href{${escapeLatex(payload.website)}}{${escapeLatex(payload.website)}}`)
+        const websiteHref = normalizeUrl(payload.website)
+        contactParts.push(`\\href{${escapeLatex(websiteHref)}}{${escapeLatex(payload.website)}}`)
     }
     if (payload.linkedin) {
         contactParts.push(`\\href{${escapeLatex(payload.linkedin)}}{\\faLinkedin}`)

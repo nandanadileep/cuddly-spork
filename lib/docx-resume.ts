@@ -3,11 +3,24 @@ import {
     Packer,
     Paragraph,
     TextRun,
+    ExternalHyperlink,
     AlignmentType,
     HeadingLevel,
     convertInchesToTwip,
 } from 'docx'
 import type { ResumePayload } from '@/lib/latex/templates'
+
+function normalizeUrl(input: string): string {
+    const trimmed = String(input || '').trim()
+    if (!trimmed) return ''
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return trimmed
+    if (trimmed.startsWith('//')) return `https:${trimmed}`
+    return `https://${trimmed}`
+}
+
+function normalizePhoneForTel(input: string): string {
+    return String(input || '').replace(/[^+\d]/g, '')
+}
 
 function bulletParagraph(text: string): Paragraph {
     return new Paragraph({
@@ -34,14 +47,61 @@ function sectionHeading(text: string): Paragraph {
 }
 
 export async function buildDocxResume(payload: ResumePayload): Promise<Buffer> {
-    const contactParts: string[] = []
-    if (payload.email) contactParts.push(payload.email)
-    if (payload.phone) contactParts.push(payload.phone)
-    if (payload.location) contactParts.push(payload.location)
-    if (payload.website) contactParts.push(payload.website)
-    if (payload.linkedin) contactParts.push(payload.linkedin)
-    if (payload.github) contactParts.push(payload.github)
-    const contactLine = contactParts.join(' | ')
+    const contactChildren: Array<TextRun | ExternalHyperlink> = []
+    const pushSep = () => {
+        if (contactChildren.length > 0) contactChildren.push(new TextRun({ text: ' | ', size: 22 }))
+    }
+
+    if (payload.email) {
+        pushSep()
+        contactChildren.push(
+            new ExternalHyperlink({
+                link: `mailto:${payload.email}`,
+                children: [new TextRun({ text: payload.email, size: 22, style: 'Hyperlink' })],
+            })
+        )
+    }
+
+    if (payload.phone) {
+        const tel = normalizePhoneForTel(payload.phone)
+        pushSep()
+        if (tel) {
+            contactChildren.push(
+                new ExternalHyperlink({
+                    link: `tel:${tel}`,
+                    children: [new TextRun({ text: payload.phone, size: 22, style: 'Hyperlink' })],
+                })
+            )
+        } else {
+            contactChildren.push(new TextRun({ text: payload.phone, size: 22 }))
+        }
+    }
+
+    if (payload.location) {
+        pushSep()
+        contactChildren.push(new TextRun({ text: payload.location, size: 22 }))
+    }
+
+    if (payload.website) {
+        const websiteHref = normalizeUrl(payload.website)
+        pushSep()
+        contactChildren.push(
+            new ExternalHyperlink({
+                link: websiteHref,
+                children: [new TextRun({ text: payload.website, size: 22, style: 'Hyperlink' })],
+            })
+        )
+    }
+
+    if (payload.linkedin) {
+        pushSep()
+        contactChildren.push(new TextRun({ text: payload.linkedin, size: 22 }))
+    }
+
+    if (payload.github) {
+        pushSep()
+        contactChildren.push(new TextRun({ text: payload.github, size: 22 }))
+    }
 
     const children: Paragraph[] = []
 
@@ -73,10 +133,9 @@ export async function buildDocxResume(payload: ResumePayload): Promise<Buffer> {
             alignment: AlignmentType.CENTER,
             spacing: { after: 300 },
             children: [
-                new TextRun({
-                    text: contactLine || payload.email,
-                    size: 22,
-                }),
+                ...(contactChildren.length > 0
+                    ? contactChildren
+                    : [new TextRun({ text: payload.email, size: 22 })]),
             ],
         })
     )
