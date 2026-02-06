@@ -52,27 +52,42 @@ export default function OnboardingPage() {
         // Actually sync each platform
         const platformsToSync = linkedinUrl ? ['linkedin', ...selectedPlatforms] : selectedPlatforms
 
+        const syncEndpoint: Record<string, string> = {
+            github: '/api/sync/github',
+            gitlab: '/api/sync/gitlab',
+            bitbucket: '/api/sync/bitbucket',
+            devto: '/api/sync/devto',
+            medium: '/api/sync/medium',
+            substack: '/api/sync/substack',
+            huggingface: '/api/sync/huggingface',
+            codeforces: '/api/sync/codeforces',
+        }
+
         for (const platformId of platformsToSync) {
             setSyncProgress(prev => ({ ...prev, [platformId]: 'syncing' }))
 
             try {
-                if (platformId === 'github') {
-                    // Actually fetch GitHub repos
+                if (platformId === 'linkedin') {
+                    // Public-only LinkedIn sync isn't supported (scraping is flaky/blocked).
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                } else {
+                    const endpoint = syncEndpoint[platformId]
                     const username = platformUrls[platformId]
-                    if (username) {
-                        const response = await fetch('/api/sync/github', {
+
+                    if (endpoint && username) {
+                        const response = await fetch(endpoint, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ username })
+                            body: JSON.stringify({ username }),
                         })
 
                         if (!response.ok) {
-                            console.error('GitHub sync failed:', await response.text())
+                            console.error(`${platformId} sync failed:`, await response.text())
                         }
+                    } else {
+                        // Platform not implemented (yet) or no input provided.
+                        await new Promise(resolve => setTimeout(resolve, 250))
                     }
-                } else {
-                    // For other platforms, just wait (not implemented yet)
-                    await new Promise(resolve => setTimeout(resolve, 1000))
                 }
 
                 setSyncProgress(prev => ({ ...prev, [platformId]: 'complete' }))

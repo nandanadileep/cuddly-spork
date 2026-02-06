@@ -46,14 +46,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
+        const userUpdate: Prisma.UserUpdateInput = { onboarding_completed: true }
+        if (typeof linkedinUrl === 'string') {
+            userUpdate.linkedin_url = linkedinUrl.trim() || null
+        }
+        if (typeof targetRole === 'string') {
+            userUpdate.target_role = targetRole.trim() || null
+        }
+        if (jobDescriptionJsonb !== null) {
+            userUpdate.job_description_jsonb = jobDescriptionJsonb
+        }
+
         await prisma.user.update({
             where: { id: userRecord.id },
-            data: {
-                linkedin_url: linkedinUrl || null,
-                target_role: targetRole || null,
-                job_description_jsonb: jobDescriptionJsonb || undefined,
-                onboarding_completed: true,
-            },
+            data: userUpdate,
         })
 
         // 2. Save Manual Platform Connections
