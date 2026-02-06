@@ -9,6 +9,7 @@ interface Education {
     institution: string;
     degree: string;
     field?: string;
+    cgpa?: string;
     location?: string;
     start_date?: string;
     end_date?: string;
@@ -678,6 +679,7 @@ export default function ProfilePage() {
                                 <div className="p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg space-y-3">
                                     <input placeholder="School" className="w-full p-2 rounded border" value={newEdu.institution} onChange={e => setNewEdu({ ...newEdu, institution: e.target.value })} />
                                     <input placeholder="Degree" className="w-full p-2 rounded border" value={newEdu.degree} onChange={e => setNewEdu({ ...newEdu, degree: e.target.value })} />
+                                    <input placeholder="CGPA (optional)" className="w-full p-2 rounded border" value={newEdu.cgpa || ''} onChange={e => setNewEdu({ ...newEdu, cgpa: e.target.value })} />
                                     <input placeholder="Location" className="w-full p-2 rounded border" value={newEdu.location || ''} onChange={e => setNewEdu({ ...newEdu, location: e.target.value })} />
                                     <div className="flex gap-2 text-sm">
                                         <input type="date" className="p-1 border rounded" onChange={e => setNewEdu({ ...newEdu, start_date: e.target.value })} />
@@ -691,33 +693,40 @@ export default function ProfilePage() {
                             <div className="space-y-4">
                                 {education.map((edu) => (
                                     <div key={edu.id} className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-lg hover:border-[var(--orange-primary)] transition-colors group relative">
-                                        {editingEduId === edu.id ? (
-                                            <div className="space-y-3 p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg">
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Institution</label>
-                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.institution} onChange={e => setEditEdu({ ...editEdu, institution: e.target.value })} />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Degree</label>
-                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.degree} onChange={e => setEditEdu({ ...editEdu, degree: e.target.value })} />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Location</label>
-                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.location || ''} onChange={e => setEditEdu({ ...editEdu, location: e.target.value })} />
-                                                </div>
+	                                        {editingEduId === edu.id ? (
+	                                            <div className="space-y-3 p-4 bg-[var(--bg-light)] border border-[var(--border-light)] rounded-lg">
+	                                                <div className="space-y-2">
+	                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Institution</label>
+	                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.institution} onChange={e => setEditEdu({ ...editEdu, institution: e.target.value })} />
+	                                                </div>
+	                                                <div className="space-y-2">
+	                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Degree</label>
+	                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.degree} onChange={e => setEditEdu({ ...editEdu, degree: e.target.value })} />
+	                                                </div>
+	                                                <div className="space-y-2">
+	                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">CGPA (optional)</label>
+	                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.cgpa || ''} onChange={e => setEditEdu({ ...editEdu, cgpa: e.target.value })} />
+	                                                </div>
+	                                                <div className="space-y-2">
+	                                                    <label className="text-xs font-medium text-[var(--text-secondary)]">Location</label>
+	                                                    <input className="w-full p-2 border rounded text-sm" value={editEdu.location || ''} onChange={e => setEditEdu({ ...editEdu, location: e.target.value })} />
+	                                                </div>
                                                 <div className="flex justify-end gap-2 pt-2">
                                                     <button onClick={() => setEditingEduId(null)} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancel</button>
                                                     <button onClick={handleUpdateEdu} className="px-4 py-2 text-sm bg-[var(--orange-primary)] text-white rounded hover:opacity-90">Update</button>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <>
-                                                <div className="font-bold text-lg">{edu.institution}</div>
-                                                <div className="text-[var(--text-primary)]">{edu.degree}</div>
-                                                {edu.location && (
-                                                    <div className="text-sm text-[var(--text-secondary)]">{edu.location}</div>
-                                                )}
-                                                <div className="text-sm text-[var(--text-secondary)]">
+	                                            <>
+	                                                <div className="font-bold text-lg">{edu.institution}</div>
+	                                                <div className="text-[var(--text-primary)]">{edu.degree}</div>
+	                                                {edu.cgpa && (
+	                                                    <div className="text-sm text-[var(--text-secondary)]">CGPA: {edu.cgpa}</div>
+	                                                )}
+	                                                {edu.location && (
+	                                                    <div className="text-sm text-[var(--text-secondary)]">{edu.location}</div>
+	                                                )}
+	                                                <div className="text-sm text-[var(--text-secondary)]">
                                                     {formatDate(edu.start_date)} - {edu.is_current ? 'Present' : formatDate(edu.end_date)}
                                                 </div>
                                                 <div className="flex gap-2 mt-3">

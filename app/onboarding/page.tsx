@@ -33,6 +33,7 @@ export default function OnboardingPage() {
         institution: '',
         degree: '',
         field: '',
+        cgpa: '',
         location: '',
         start_date: '',
         end_date: '',
@@ -134,6 +135,7 @@ export default function OnboardingPage() {
                 institution: '',
                 degree: '',
                 field: '',
+                cgpa: '',
                 location: '',
                 start_date: '',
                 end_date: '',
@@ -437,17 +439,24 @@ export default function OnboardingPage() {
 	                                    value={newEducation.degree}
 	                                    onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
 	                                />
-	                                <input
-	                                    type="text"
-	                                    placeholder="Field (optional)"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                    value={newEducation.field}
-	                                    onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })}
-	                                />
-	                                <div className="flex gap-2">
-	                                    <input
-	                                        type="date"
-	                                        className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                    <input
+                                        type="text"
+                                        placeholder="Field (optional)"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                        value={newEducation.field}
+                                        onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="CGPA (optional)"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                        value={newEducation.cgpa}
+                                        onChange={(e) => setNewEducation({ ...newEducation, cgpa: e.target.value })}
+                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="date"
+                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
 	                                        value={newEducation.start_date}
 	                                        onChange={(e) => setNewEducation({ ...newEducation, start_date: e.target.value })}
 	                                    />
