@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { useEffect, useState } from 'react'
+import { getProviders, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { FcGoogle } from 'react-icons/fc'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -10,6 +11,15 @@ export default function LoginPage() {
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [providers, setProviders] = useState<Record<string, any> | null>(null)
+
+    useEffect(() => {
+        getProviders()
+            .then((p) => setProviders(p || null))
+            .catch(() => setProviders(null))
+    }, [])
+
+    const googleEnabled = Boolean(providers?.google)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -40,6 +50,14 @@ export default function LoginPage() {
         }
     }
 
+    const handleGoogle = () => {
+        const callbackUrl =
+            typeof window !== 'undefined'
+                ? new URLSearchParams(window.location.search).get('callbackUrl')
+                : null
+        signIn('google', { callbackUrl: callbackUrl || '/dashboard' })
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
             <div className="max-w-md w-full">
@@ -53,6 +71,29 @@ export default function LoginPage() {
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
                             {error}
                         </div>
+                    )}
+
+                    {googleEnabled && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={handleGoogle}
+                                className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-white font-semibold hover:bg-[var(--bg-warm)] transition-colors flex items-center justify-center gap-3"
+                            >
+                                <FcGoogle className="text-xl" />
+                                Continue with Google
+                            </button>
+                            <div className="relative my-5">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-[var(--border-light)]" />
+                                </div>
+                                <div className="relative flex justify-center">
+                                    <span className="px-3 text-xs text-[var(--text-secondary)] bg-[var(--bg-card)]">
+                                        or
+                                    </span>
+                                </div>
+                            </div>
+                        </>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
