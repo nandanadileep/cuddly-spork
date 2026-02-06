@@ -65,6 +65,22 @@ export default function ResumeBuilderPage() {
             })
             .catch(() => {})
 
+    const clearResumeHistory = async () => {
+        if (!confirm('Clear your resume download history? This will reset your download quota.')) return
+        try {
+            const res = await fetch('/api/resume/history', { method: 'DELETE' })
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                alert(data.error || 'Failed to clear history')
+                return
+            }
+            fetchQuota()
+        } catch (error) {
+            console.error('Failed to clear resume history:', error)
+            alert('Failed to clear history')
+        }
+    }
+
     useEffect(() => {
         if (status === 'authenticated') {
             setIsLoading(true)
@@ -506,9 +522,20 @@ export default function ResumeBuilderPage() {
                                         Produce LaTeX and a downloadable PDF or DOC with your edits.
                                     </p>
                                     {quota !== null && (
-                                        <p className="text-xs text-[var(--text-secondary)] mt-2">
-                                            Resumes: {quota.count} of {quota.limit} used
-                                        </p>
+                                        <div className="mt-2 flex items-center justify-between gap-3">
+                                            <p className="text-xs text-[var(--text-secondary)]">
+                                                Downloads: {quota.count} of {quota.limit} used
+                                            </p>
+                                            {quota.count > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={clearResumeHistory}
+                                                    className="text-xs font-semibold text-[var(--orange-primary)] hover:underline"
+                                                >
+                                                    Clear history
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                                 {generateError && (
