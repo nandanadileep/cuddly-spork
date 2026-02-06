@@ -8,6 +8,7 @@ const schema = z.object({
     institution: z.string().min(1),
     degree: z.string().min(1),
     field: z.string().optional(),
+    cgpa: z.string().optional(),
     location: z.string().optional(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
             institution: data.institution,
             degree: data.degree,
             field: data.field,
+            cgpa: data.cgpa?.trim() || null,
             location: data.location,
             is_current: data.is_current || false,
             description: data.description,
@@ -104,6 +106,10 @@ export async function PATCH(req: NextRequest) {
 
         const data = validation.data;
         const payload: any = { ...data };
+
+        if (data.cgpa !== undefined) {
+            payload.cgpa = data.cgpa?.trim() || null
+        }
 
         if (data.start_date !== undefined) {
             payload.start_date = data.start_date ? new Date(data.start_date) : null;
