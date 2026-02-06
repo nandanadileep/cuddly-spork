@@ -6,6 +6,29 @@ import { renderLatexTemplate, TemplateId } from '@/lib/latex/templates'
 
 const RESUME_LIMIT = 2
 
+const parseLatexLiteError = (raw: string) => {
+    let details = String(raw || '').trim()
+    try {
+        const parsed = JSON.parse(details)
+        const maybe = parsed?.error?.message || parsed?.message || details
+        details = String(maybe || '').trim()
+    } catch {
+        // keep raw
+    }
+    details = details.replace(/\s+/g, ' ').trim()
+
+    let hint = ''
+    if (/missing\\s*\\\\item|perhaps a missing\s*\\\\item/i.test(details)) {
+        hint = 'Tip: this usually happens when a section has no bullet points. Add a bullet (or remove the empty section) and try again.'
+    } else if (/undefined control sequence/i.test(details)) {
+        hint = 'Tip: remove backslashes or LaTeX commands from your text and try again.'
+    } else if (/runaway argument|file ended while scanning|extra \\}|missing \\}|missing \\{/i.test(details)) {
+        hint = 'Tip: remove unmatched braces like { or } from your text and try again.'
+    }
+
+    return { details, hint }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions)
@@ -236,7 +259,8 @@ export async function POST(req: NextRequest) {
         if (!latexResponse.ok) {
             const errorText = await latexResponse.text()
             console.error('[Resume Export PDF] LaTeXLite error:', errorText)
-            return NextResponse.json({ error: 'LaTeX compilation failed' }, { status: 502 })
+            const { details, hint } = parseLatexLiteError(errorText)
+            return NextResponse.json({ error: 'LaTeX compilation failed', details, hint }, { status: 502 })
         }
 
         const pdfBuffer = Buffer.from(await latexResponse.arrayBuffer())
