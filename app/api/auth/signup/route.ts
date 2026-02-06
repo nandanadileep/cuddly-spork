@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
         }
 
         const normalizedName = String(name).trim()
+        const normalizedEmail = String(email).trim().toLowerCase()
         if (normalizedName.split(/\s+/).length < 2) {
             return NextResponse.json(
                 { error: 'Please enter your full name (first and last).' },
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
 
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
-            where: { email },
+            where: { email: normalizedEmail },
         })
 
         if (existingUser) {
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
         const user = await prisma.user.create({
             data: {
                 name: normalizedName,
-                email,
+                email: normalizedEmail,
                 password_hash,
             },
             select: {
