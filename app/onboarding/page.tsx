@@ -289,13 +289,40 @@ export default function OnboardingPage() {
             <div className="bg-[var(--bg-card)] max-w-3xl w-full rounded-lg shadow-sm border border-[var(--border-light)] p-8 my-8">
 
                 {/* Progress */}
-                <div className="flex justify-between items-end mb-8 border-b border-[var(--border-light)] pb-4">
-                    <div>
+                <div className="sticky top-0 z-20 bg-[var(--bg-card)] border-b border-[var(--border-light)] pb-4 mb-8">
+                    <div className="flex justify-between items-end gap-4">
+                        <div>
                             <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)]">Welcome to ShipCV</h1>
                             <p className="text-[var(--text-secondary)] mt-1 font-sans">
                                 {step === totalSteps ? 'Setting up your profile...' : `Step ${step} of ${totalSteps - 1}`}
                             </p>
                         </div>
+
+	                        {step < totalSteps && (
+	                            <div className="flex items-center gap-2">
+	                                {step > 1 && (
+	                                    <button
+                                        type="button"
+                                        onClick={handleBack}
+                                        className="px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] transition-colors"
+                                    >
+                                        Back
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={step === 6 ? handleContinueToSync : handleNext}
+                                    disabled={step === 6 ? (isLoading || !targetRole) : false}
+                                    className={`px-5 py-2 rounded-md text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${step === 6
+                                        ? 'bg-[var(--github-green)] hover:opacity-90'
+                                        : 'bg-[var(--orange-primary)] hover:bg-[var(--orange-hover)]'
+                                        }`}
+                                >
+                                    {step === 6 ? (isLoading ? 'Saving...' : 'Start Syncing') : 'Continue'}
+                                </button>
+	                            </div>
+	                        )}
+	                    </div>
                     </div>
 
 	                {/* Step 1: LinkedIn */}
