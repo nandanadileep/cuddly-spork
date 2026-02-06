@@ -12,23 +12,34 @@ export async function GET() {
 
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
-            include: {
+            // Never return sensitive user fields (password_hash, reset tokens, etc) to the client.
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                linkedin_url: true,
+                website: true,
+                phone: true,
+                location: true,
+                target_role: true,
+                onboarding_completed: true,
+                job_description_jsonb: true,
                 education: {
-                    orderBy: { start_date: 'desc' }
+                    orderBy: { start_date: 'desc' },
                 },
                 workExperience: {
-                    orderBy: { start_date: 'desc' }
+                    orderBy: { start_date: 'desc' },
                 },
                 extracurriculars: {
-                    orderBy: { start_date: 'desc' }
+                    orderBy: { start_date: 'desc' },
                 },
                 awards: {
-                    orderBy: { awarded_at: 'desc' }
+                    orderBy: { awarded_at: 'desc' },
                 },
                 publications: {
-                    orderBy: { published_at: 'desc' }
-                }
-            }
+                    orderBy: { published_at: 'desc' },
+                },
+            },
         });
 
         if (!user) {
