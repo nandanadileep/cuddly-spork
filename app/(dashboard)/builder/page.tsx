@@ -347,6 +347,65 @@ export default function ResumeBuilderPage() {
                 </button>
             </div>
 
+            {draft && (
+                <div className="sticky top-20 z-40">
+                    <div className="bg-[var(--bg-card)]/95 backdrop-blur rounded-2xl p-4 border border-[var(--border-light)] shadow-sm">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)]">
+                                        Quick Actions
+                                    </div>
+                                    {quota !== null && (
+                                        <div className="text-xs text-[var(--text-secondary)] mt-1">
+                                            Downloads: {quota.count} of {quota.limit} used
+                                        </div>
+                                    )}
+                                </div>
+                                {quota !== null && quota.count > 0 && isHistoryClearAllowed && (
+                                    <button
+                                        type="button"
+                                        onClick={clearResumeHistory}
+                                        className="text-xs font-semibold text-[var(--orange-primary)] hover:underline"
+                                    >
+                                        Clear history
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating}
+                                    className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isGenerating ? 'Generating...' : 'Generate Preview'}
+                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleDownloadPdf}
+                                        disabled={isDownloadingPdf || (quota !== null && quota.remaining <= 0)}
+                                        className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isDownloadingPdf ? 'PDF...' : 'Download PDF'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleDownloadDoc}
+                                        disabled={isDownloadingDoc || (quota !== null && quota.remaining <= 0)}
+                                        className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isDownloadingDoc ? 'DOC...' : 'Download DOCX'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {!draft ? (
                 <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
                     <h2 className="text-xl font-serif font-semibold mb-2">No Draft Found</h2>
@@ -703,7 +762,7 @@ export default function ResumeBuilderPage() {
                                 )}
                                 <button
                                     onClick={handleGenerate}
-                                    disabled={isGenerating || (quota !== null && quota.remaining <= 0)}
+                                    disabled={isGenerating}
                                     className="w-full px-4 py-3 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isGenerating ? 'Generating...' : 'Generate LaTeX & PDF'}
