@@ -3,13 +3,13 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
 export async function middleware(request: NextRequest) {
-    const token = await getToken({
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
-        // getToken() defaults secureCookie based on NEXTAUTH_URL, which is often mis-set on Vercel.
-        // Instead, infer it from the actual request protocol so cookie names match.
-        secureCookie: request.nextUrl.protocol === 'https:',
-    })
+    const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+
+    // getToken() defaults secureCookie based on NEXTAUTH_URL, which is often mis-set on Vercel.
+    // We try both cookie name variants so auth keeps working even if NEXTAUTH_URL is wrong.
+    const token =
+        (await getToken({ req: request, secret, secureCookie: true })) ||
+        (await getToken({ req: request, secret, secureCookie: false }))
 
     const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/signup')

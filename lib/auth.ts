@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/utils';
 
 export const authOptions: NextAuthOptions = {
+    // On platforms like Vercel we always want secure cookies in production.
+    // This also keeps cookie names stable even if NEXTAUTH_URL is misconfigured.
+    useSecureCookies: process.env.NODE_ENV === 'production',
     providers: [
         ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
             ? [
