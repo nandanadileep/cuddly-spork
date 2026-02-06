@@ -160,8 +160,11 @@ const buildProjectsSection = (projects: ResumePayload['projects']) =>
             const bullets = project.bulletPoints
                 .map(point => `\\item ${escapeLatex(point)}`)
                 .join('\n')
-            const techLine = project.technologies && project.technologies.length > 0
-                ? ` $|$ \\emph{${escapeLatex(project.technologies.join(', '))}}`
+            const techs = Array.isArray(project.technologies)
+                ? project.technologies.filter(Boolean).slice(0, 5)
+                : []
+            const techLine = techs.length > 0
+                ? ` $|$ \\emph{${escapeLatex(techs.join(', '))}}`
                 : ''
             const link = project.url
                 ? `\\href{${escapeLatex(project.url)}}{\\faGithub\\ GitHub}`
