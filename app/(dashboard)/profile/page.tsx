@@ -60,6 +60,11 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(false);
     const [importing, setImporting] = useState(false);
     const [linkedInUrl, setLinkedInUrl] = useState('');
+    const [websiteUrl, setWebsiteUrl] = useState('');
+    const [phone, setPhone] = useState('');
+    const [location, setLocation] = useState('');
+    const [savingContact, setSavingContact] = useState(false);
+    const linkedinImportSupported = process.env.NODE_ENV !== 'production';
     // List States
     const [education, setEducation] = useState<Education[]>([]);
     const [experience, setExperience] = useState<WorkExperience[]>([]);
@@ -113,7 +118,10 @@ export default function ProfilePage() {
                 setExtracurriculars(data.extracurriculars || []);
                 setAwards(data.awards || []);
                 setPublications(data.publications || []);
-                if (data.linkedin_url) setLinkedInUrl(data.linkedin_url);
+                setLinkedInUrl(data.linkedin_url || '');
+                setWebsiteUrl(data.website || '');
+                setPhone(data.phone || '');
+                setLocation(data.location || '');
                 setNewRole(data.target_role || '');
                 setNewJD(data.job_description_jsonb?.raw_jd || '');
                 setAnalysis(data.job_description_jsonb?.analysis || null);
@@ -151,6 +159,39 @@ export default function ProfilePage() {
             alert('An error occurred during import.');
         } finally {
             setImporting(false);
+        }
+    };
+
+    const handleSaveContact = async () => {
+        setSavingContact(true);
+        try {
+            const res = await fetch('/api/user/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    linkedinUrl: linkedInUrl,
+                    websiteUrl,
+                    phone,
+                    location,
+                }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (data?.user) {
+                    setLinkedInUrl(data.user.linkedinUrl || '');
+                    setWebsiteUrl(data.user.websiteUrl || '');
+                    setPhone(data.user.phone || '');
+                    setLocation(data.user.location || '');
+                }
+                alert('Saved contact info.');
+            } else {
+                alert(data?.error || 'Failed to save contact info.');
+            }
+        } catch (error) {
+            console.error('Save contact error:', error);
+            alert('Failed to save contact info.');
+        } finally {
+            setSavingContact(false);
         }
     };
 
@@ -465,34 +506,78 @@ export default function ProfilePage() {
 
                 {/* Right Side: Resume Details */}
                 <div className="lg:col-span-3 space-y-8">
-                    {/* LinkedIn Import */}
-                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <span className="text-[#0077b5]">in</span> Import from LinkedIn
-                        </h2>
-                        <div className="flex gap-4 items-end">
-                            <div className="flex-1 space-y-2">
-                                <label className="text-sm font-medium text-[var(--text-secondary)]">Public Profile URL</label>
-                                <input
-                                    type="url"
-                                    placeholder="https://www.linkedin.com/in/username"
-                                    className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
-                                    value={linkedInUrl}
-                                    onChange={(e) => setLinkedInUrl(e.target.value)}
-                                />
-                            </div>
-                            <button
-                                onClick={handleImport}
-                                disabled={importing || !linkedInUrl}
-                                className="px-6 py-2 bg-[var(--orange-primary)] text-white font-medium rounded-md hover:opacity-90 disabled:opacity-50 transition-all"
-                            >
-                                {importing ? 'Importing...' : 'Import Data'}
-                            </button>
-                        </div>
-                        <p className="text-xs text-[var(--text-secondary)] mt-2">
-                            Note: We use a "best effort" approach to read public profiles.
-                        </p>
-                    </section>
+	                    {/* Contact & Links */}
+	                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
+	                        <h2 className="text-xl font-bold flex items-center gap-2">Contact & Links</h2>
+
+	                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+	                            <div className="space-y-2">
+	                                <label className="text-sm font-medium text-[var(--text-secondary)]">LinkedIn URL</label>
+	                                <input
+	                                    type="url"
+	                                    placeholder="https://www.linkedin.com/in/username"
+	                                    className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+	                                    value={linkedInUrl}
+	                                    onChange={(e) => setLinkedInUrl(e.target.value)}
+	                                />
+	                            </div>
+	                            <div className="space-y-2">
+	                                <label className="text-sm font-medium text-[var(--text-secondary)]">Website</label>
+	                                <input
+	                                    type="url"
+	                                    placeholder="https://your-site.com"
+	                                    className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+	                                    value={websiteUrl}
+	                                    onChange={(e) => setWebsiteUrl(e.target.value)}
+	                                />
+	                            </div>
+	                            <div className="space-y-2">
+	                                <label className="text-sm font-medium text-[var(--text-secondary)]">Phone (optional)</label>
+	                                <input
+	                                    type="tel"
+	                                    placeholder="+1 (555) 123-4567"
+	                                    className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+	                                    value={phone}
+	                                    onChange={(e) => setPhone(e.target.value)}
+	                                />
+	                            </div>
+	                            <div className="space-y-2">
+	                                <label className="text-sm font-medium text-[var(--text-secondary)]">Location (optional)</label>
+	                                <input
+	                                    type="text"
+	                                    placeholder="City, Country"
+	                                    className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+	                                    value={location}
+	                                    onChange={(e) => setLocation(e.target.value)}
+	                                />
+	                            </div>
+	                        </div>
+
+	                        <div className="flex flex-col sm:flex-row gap-3">
+	                            <button
+	                                onClick={handleSaveContact}
+	                                disabled={savingContact}
+	                                className="px-6 py-2 bg-[var(--orange-primary)] text-white font-medium rounded-md hover:opacity-90 disabled:opacity-50 transition-all"
+	                            >
+	                                {savingContact ? 'Saving...' : 'Save'}
+	                            </button>
+	                            {linkedinImportSupported && (
+	                                <button
+	                                    onClick={handleImport}
+	                                    disabled={importing || !linkedInUrl}
+	                                    className="px-6 py-2 border border-[var(--border-light)] text-[var(--text-secondary)] font-medium rounded-md hover:bg-[var(--bg-light)] disabled:opacity-50 transition-all"
+	                                >
+	                                    {importing ? 'Importing...' : 'Import from LinkedIn'}
+	                                </button>
+	                            )}
+	                        </div>
+
+	                        <p className="text-xs text-[var(--text-secondary)]">
+	                            {linkedinImportSupported
+	                                ? 'LinkedIn import is a best-effort feature and may fail for some accounts.'
+	                                : 'LinkedIn import is not supported on the deployed app. Add your education and work experience manually below.'}
+	                        </p>
+	                    </section>
 
                     <div className="grid md:grid-cols-2 gap-8">
                         {/* Work Experience Section */}
