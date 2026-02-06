@@ -68,7 +68,23 @@ export async function PATCH(request: NextRequest) {
                 }
             } else {
                 // Generate with LLM
-                jobDescriptionData = await generateJobDescription(targetRole)
+                try {
+                    jobDescriptionData = await generateJobDescription(targetRole)
+                } catch (err) {
+                    console.error('Failed to generate job description (falling back to basic template):', err)
+                    jobDescriptionData = {
+                        title: targetRole,
+                        summary: `Role snapshot for ${targetRole}.`,
+                        requiredSkills: [],
+                        preferredSkills: [],
+                        responsibilities: [],
+                        tools: [],
+                        metrics: [],
+                        keywords: targetRole.toLowerCase().split(' '),
+                        experienceLevel: 'Mid',
+                        industry: ['technology'],
+                    }
+                }
             }
         }
 
