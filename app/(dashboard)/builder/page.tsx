@@ -53,7 +53,7 @@ interface ResumePreview {
 }
 
 export default function ResumeBuilderPage() {
-    const { status } = useSession()
+    const { data: session, status } = useSession()
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>([])
     const [draft, setDraft] = useState<AnalysisDraft | null>(null)
@@ -69,6 +69,8 @@ export default function ResumeBuilderPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [quota, setQuota] = useState<{ count: number; limit: number; remaining: number } | null>(null)
     const [resumePreview, setResumePreview] = useState<ResumePreview | null>(null)
+
+    const isHistoryClearAllowed = (session?.user?.email || '').trim().toLowerCase() === 'nandanadileep2002@gmail.com'
 
     const fetchProjects = () => {
         return fetch('/api/projects')
@@ -682,7 +684,7 @@ export default function ResumeBuilderPage() {
                                             <p className="text-xs text-[var(--text-secondary)]">
                                                 Downloads: {quota.count} of {quota.limit} used
                                             </p>
-                                            {quota.count > 0 && (
+                                            {quota.count > 0 && isHistoryClearAllowed && (
                                                 <button
                                                     type="button"
                                                     onClick={clearResumeHistory}
