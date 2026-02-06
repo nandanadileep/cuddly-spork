@@ -126,8 +126,23 @@ export async function POST(req: NextRequest) {
             return matches
         }
 
+        const normalizeRoleKey = (value: unknown) => {
+            const normalized = typeof value === 'string' ? value.trim().toLowerCase() : ''
+            return normalized || '__default__'
+        }
+
+        const getRoleCache = (value: unknown): Record<string, any> => {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+            const cache = (value as any)._role_cache
+            if (!cache || typeof cache !== 'object' || Array.isArray(cache)) return {}
+            return cache
+        }
+
         for (const project of projects) {
             try {
+                const roleKey = normalizeRoleKey(targetRole)
+                const roleCache = getRoleCache(project.ai_analysis_jsonb as any)
+
                 const alreadyAnalyzedForRole =
                     (project.analyzed_for_role || null) === (targetRole || null) &&
                     project.ai_analysis_jsonb &&
@@ -139,6 +154,33 @@ export async function POST(req: NextRequest) {
                         success: true,
                         score: project.ai_score,
                         cached: true
+                    })
+                    continue
+                }
+
+                const cachedEntry = roleCache?.[roleKey]
+                const cachedScore = typeof cachedEntry?.score === 'number' ? cachedEntry.score : null
+                const cachedAnalysis = cachedEntry?.analysis
+                const cachedTechnologies = Array.isArray(cachedEntry?.technologies)
+                    ? cachedEntry.technologies.filter((item: any) => typeof item === 'string')
+                    : null
+
+                if (cachedScore !== null && cachedAnalysis && typeof cachedAnalysis === 'object') {
+                    await prisma.project.update({
+                        where: { id: project.id },
+                        data: {
+                            ai_score: cachedScore,
+                            ai_analysis_jsonb: { ...(cachedAnalysis as any), _role_cache: roleCache } as any,
+                            analyzed_for_role: targetRole,
+                            technologies_jsonb: cachedTechnologies || project.technologies_jsonb,
+                        },
+                    })
+
+                    results.push({
+                        id: project.id,
+                        success: true,
+                        score: cachedScore,
+                        cached: true,
                     })
                     continue
                 }
@@ -229,12 +271,22 @@ export async function POST(req: NextRequest) {
                     readme_excerpt: readmeContent ? readmeContent.slice(0, 2000) : null
                 }
 
+                const nextRoleCache = {
+                    ...roleCache,
+                    [roleKey]: {
+                        score: analysis.score,
+                        analysis: analysisWithContext,
+                        technologies: mergedTechnologies,
+                        analyzedAt: new Date().toISOString(),
+                    },
+                }
+
                 // 6. Update Database
                 const updatedProject = await prisma.project.update({
                     where: { id: project.id },
                     data: {
                         ai_score: analysis.score,
-                        ai_analysis_jsonb: analysisWithContext as any,
+                        ai_analysis_jsonb: { ...analysisWithContext, _role_cache: nextRoleCache } as any,
                         analyzed_for_role: targetRole,
                         technologies_jsonb: mergedTechnologies
                     }
