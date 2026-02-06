@@ -29,11 +29,13 @@ interface FetchReposResult {
 /**
  * Fetch all public repositories for a GitHub username
  */
-export async function fetchGitHubRepos(username: string): Promise<FetchReposResult> {
+export async function fetchGitHubRepos(username: string, accessToken?: string): Promise<FetchReposResult> {
     try {
         const repos: GitHubRepo[] = []
         let page = 1
         const perPage = 100 // Max allowed by GitHub
+
+        const token = accessToken || process.env.GITHUB_TOKEN
 
         // Fetch all pages of repos
         while (true) {
@@ -41,8 +43,10 @@ export async function fetchGitHubRepos(username: string): Promise<FetchReposResu
 
             const response = await fetch(url, {
                 headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'User-Agent': 'ShipCV-App'
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    Accept: 'application/vnd.github+json',
+                    'User-Agent': 'ShipCV-App',
+                    'X-GitHub-Api-Version': '2022-11-28',
                 }
             })
 
@@ -54,16 +58,23 @@ export async function fetchGitHubRepos(username: string): Promise<FetchReposResu
 
             if (!response.ok) {
                 if (response.status === 404) {
-                    return { success: false, error: 'GitHub user not found' }
+                    return { success: false, error: 'GitHub user not found', rateLimit }
                 }
                 if (response.status === 403) {
+                    if (rateLimit.remaining === 0) {
+                        return {
+                            success: false,
+                            error: 'GitHub API rate limit exceeded',
+                            rateLimit
+                        }
+                    }
                     return {
                         success: false,
-                        error: 'GitHub API rate limit exceeded',
+                        error: 'GitHub API request forbidden',
                         rateLimit
                     }
                 }
-                return { success: false, error: `GitHub API error: ${response.statusText}` }
+                return { success: false, error: `GitHub API error: ${response.statusText}`, rateLimit }
             }
 
             const pageRepos: GitHubRepo[] = await response.json()

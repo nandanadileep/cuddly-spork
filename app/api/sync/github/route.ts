@@ -13,9 +13,17 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const { username } = await req.json()
-        const hasEnvToken = Boolean(process.env.GITHUB_TOKEN)
-        console.log('[GitHub Sync] Env token present:', hasEnvToken)
+        const { username } = await req.json().catch(() => ({ username: '' }))
+
+        const connection = await prisma.platformConnection.findUnique({
+            where: {
+                user_id_platform: {
+                    user_id: session.user.id,
+                    platform: 'github',
+                },
+            },
+            select: { username: true, metadata_jsonb: true, access_token_encrypted: true },
+        })
 
         const normalizeGithubUsername = (value: string) => {
             const trimmed = value.trim()
@@ -34,15 +42,6 @@ export async function POST(req: NextRequest) {
 
         let rawUsername = username
         if (!rawUsername) {
-            const connection = await prisma.platformConnection.findUnique({
-                where: {
-                    user_id_platform: {
-                        user_id: session.user.id,
-                        platform: 'github'
-                    }
-                },
-                select: { username: true, metadata_jsonb: true }
-            })
             const manualUrl = (connection?.metadata_jsonb as { manual_url?: string } | null | undefined)?.manual_url
             rawUsername = manualUrl || connection?.username || ''
         }
@@ -59,7 +58,8 @@ export async function POST(req: NextRequest) {
         console.log(`[GitHub Sync] Starting sync for user ${session.user.id}, username: ${normalizedUsername}`)
 
         // Fetch repos from GitHub
-        const result = await fetchGitHubRepos(normalizedUsername)
+        const githubToken = connection?.access_token_encrypted || process.env.GITHUB_TOKEN || undefined
+        const result = await fetchGitHubRepos(normalizedUsername, githubToken)
 
         if (!result.success) {
             console.error('[GitHub Sync] Failed:', result.error)
