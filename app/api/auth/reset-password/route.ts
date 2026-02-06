@@ -39,6 +39,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true })
     } catch (error) {
         console.error('Reset password error:', error)
-        return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+        return NextResponse.json(
+            {
+                error: 'Something went wrong',
+                ...(process.env.NODE_ENV === 'development'
+                    ? { details: error instanceof Error ? error.message : String(error) }
+                    : {}),
+            },
+            { status: 500 }
+        )
     }
 }

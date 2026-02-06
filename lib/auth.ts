@@ -6,15 +6,19 @@ import { verifyPassword } from '@/lib/utils';
 
 export const authOptions: NextAuthOptions = {
     providers: [
-        GithubProvider({
-            clientId: process.env.GITHUB_CLIENT_ID!,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-            authorization: {
-                params: {
-                    scope: 'read:user user:email repo',
-                },
-            },
-        }),
+        ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+            ? [
+                GithubProvider({
+                    clientId: process.env.GITHUB_CLIENT_ID,
+                    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+                    authorization: {
+                        params: {
+                            scope: 'read:user user:email repo',
+                        },
+                    },
+                }),
+            ]
+            : []),
         CredentialsProvider({
             name: 'credentials',
             credentials: {
