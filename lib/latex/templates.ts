@@ -196,6 +196,47 @@ const normalizeUrl = (input: string) => {
 
 const normalizePhoneForTel = (input: string) => String(input || '').replace(/[^+\d]/g, '')
 
+const splitTextIntoBullets = (input: string, max: number) => {
+    const normalized = normalizeLatexText(input).trim()
+    if (!normalized) return []
+
+    const lines = normalized
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+
+    const parts: string[] = []
+    for (const line of lines) {
+        const sentences = line.match(/[^.!?]+[.!?]+|[^.!?]+$/g)
+        if (sentences && sentences.length > 0) {
+            parts.push(...sentences)
+        } else {
+            parts.push(line)
+        }
+    }
+
+    const merged: string[] = []
+    for (const part of parts.map((p) => p.trim()).filter(Boolean)) {
+        // Merge very short fragments (e.g. "Ph." / "D.") into the previous sentence.
+        if (merged.length > 0 && part.length <= 12) {
+            merged[merged.length - 1] = `${merged[merged.length - 1]} ${part}`.trim()
+            continue
+        }
+        merged.push(part)
+    }
+
+    const deduped: string[] = []
+    for (const item of merged) {
+        const key = item.toLowerCase()
+        if (!deduped.some(existing => existing.toLowerCase() === key)) {
+            deduped.push(item)
+        }
+        if (deduped.length >= max) break
+    }
+
+    return deduped.slice(0, max)
+}
+
 const toTitleCase = (value: string) =>
     value
         .replace(/[-_]+/g, ' ')
@@ -216,7 +257,7 @@ const buildProjectsSection = (projects: ResumePayload['projects']) =>
             const fallbackDescription = String(project.description || '').trim()
             const bulletSource = bulletItems.length > 0
                 ? bulletItems
-                : (fallbackDescription ? [fallbackDescription] : [])
+                : (fallbackDescription ? splitTextIntoBullets(fallbackDescription, 4) : [])
 
             const bullets = bulletSource
                 .map(point => `\\item ${escapeLatex(point)}`)
