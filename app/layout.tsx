@@ -3,8 +3,8 @@ import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 
 export const metadata: Metadata = {
-    title: 'ShipCV - Elegant Resume Builder',
-    description: 'Turn your code into a professional resume.',
+    title: 'ShipCV - ATS Resume Builder',
+    description: 'Fill the form to get an ATS-winning resume.',
 }
 
 export default function RootLayout({
