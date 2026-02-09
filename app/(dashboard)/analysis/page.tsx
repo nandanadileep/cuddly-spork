@@ -40,6 +40,7 @@ export default function AnalysisFlowPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [analysisProgress, setAnalysisProgress] = useState<{ total: number; current: number; failed: number } | null>(null)
     const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
+    const [resumeAnalysisNotice, setResumeAnalysisNotice] = useState<{ total: number; analyzed: number } | null>(null)
     const [skills, setSkills] = useState<string[]>([])
     const [manualSkills, setManualSkills] = useState<string[]>([])
     const [excludedSkills, setExcludedSkills] = useState<string[]>([])
@@ -172,6 +173,27 @@ export default function AnalysisFlowPage() {
         return true
     }
 
+    const getAnalysisSnapshot = () => {
+        const apiSelected = projects.filter(project => selectedProjectIds.includes(project.id))
+        let analyzedCount = 0
+        const pendingIds: string[] = []
+
+        apiSelected.forEach((project) => {
+            const hasAnalysis = project.ai_score !== null || project.ai_analysis_jsonb
+            if (hasAnalysis) {
+                analyzedCount += 1
+            } else {
+                pendingIds.push(project.id)
+            }
+        })
+
+        return {
+            total: apiSelected.length,
+            analyzedCount,
+            pendingIds,
+        }
+    }
+
     const fetchProjects = () => {
         return fetch('/api/projects')
             .then(res => res.json())
@@ -212,6 +234,23 @@ export default function AnalysisFlowPage() {
             Promise.all([fetchProjects(), fetchDraft()]).finally(() => setIsLoading(false))
         }
     }, [status])
+
+    useEffect(() => {
+        if (status !== 'authenticated') return
+        if (draftStatus === 'unknown') return
+
+        const inProgress = typeof window !== 'undefined' && localStorage.getItem('shipcv_analysis_in_progress') === 'true'
+        const snapshot = getAnalysisSnapshot()
+
+        if (snapshot.pendingIds.length > 0 && inProgress) {
+            setResumeAnalysisNotice({ total: snapshot.total, analyzed: snapshot.analyzedCount })
+        } else {
+            setResumeAnalysisNotice(null)
+            if (snapshot.pendingIds.length === 0 && typeof window !== 'undefined') {
+                localStorage.removeItem('shipcv_analysis_in_progress')
+            }
+        }
+    }, [projects, selectedProjectIds, status, draftStatus])
 
     useEffect(() => {
         if (status !== 'authenticated') return
@@ -388,19 +427,34 @@ export default function AnalysisFlowPage() {
     }
 
     const handleAnalyzeSelected = async () => {
-        const apiProjectIds = selectedProjectIds.filter(id => !id.startsWith('manual-'))
-        if (apiProjectIds.length === 0) return
+        const { total, analyzedCount, pendingIds } = getAnalysisSnapshot()
+        if (total === 0) return
+
+        if (pendingIds.length === 0) {
+            setAnalysisProgress({ total, current: total, failed: 0 })
+            setAnalysisMessage('All selected projects are already analyzed.')
+            setResumeAnalysisNotice(null)
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('shipcv_analysis_in_progress')
+            }
+            return
+        }
 
         setIsAnalyzing(true)
-        setAnalysisProgress({ total: apiProjectIds.length, current: 0, failed: 0 })
+        setAnalysisProgress({ total, current: analyzedCount, failed: 0 })
+        setResumeAnalysisNotice(null)
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('shipcv_analysis_in_progress', 'true')
+        }
         try {
             const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
             const batchSize = 3
             const cooldownSeconds = 20
             let failedCount = 0
+            let processedCount = analyzedCount
 
-            for (let start = 0; start < apiProjectIds.length; start += batchSize) {
-                const batch = apiProjectIds.slice(start, start + batchSize)
+            for (let start = 0; start < pendingIds.length; start += batchSize) {
+                const batch = pendingIds.slice(start, start + batchSize)
                 const res = await fetch('/api/projects/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -414,13 +468,14 @@ export default function AnalysisFlowPage() {
                         failedCount += data.results.filter((item: any) => item?.success === false).length
                     }
                 }
+                processedCount = Math.min(processedCount + batch.length, total)
                 setAnalysisProgress((prev) => ({
-                    total: apiProjectIds.length,
-                    current: Math.min((prev?.current || 0) + batch.length, apiProjectIds.length),
+                    total,
+                    current: processedCount,
                     failed: failedCount
                 }))
 
-                if (start + batchSize < apiProjectIds.length) {
+                if (start + batchSize < pendingIds.length) {
                     setAnalysisCooldown(cooldownSeconds)
                     for (let i = cooldownSeconds; i > 0; i -= 1) {
                         await sleep(1000)
@@ -436,13 +491,16 @@ export default function AnalysisFlowPage() {
             }
 
             const latestProjects = (refreshed as any)?.projects || projects
-            const selectedProjects = latestProjects.filter((project: Project) => apiProjectIds.includes(project.id))
+            const selectedProjects = latestProjects.filter((project: Project) => selectedProjectIds.includes(project.id))
             const manualSelected = manualProjects.filter(project => selectedProjectIds.includes(project.id))
             const nextSkills = applyExcludedSkills(deriveSkillsFromProjects(selectedProjects, manualSelected))
             if (nextSkills.length > 0) {
                 setSkills(nextSkills)
                 await saveDraft({ skills: nextSkills })
                 setSkillsMessage('Skills updated from project analysis.')
+            }
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('shipcv_analysis_in_progress')
             }
         } catch (error) {
             console.error('Analysis error:', error)
@@ -782,6 +840,22 @@ export default function AnalysisFlowPage() {
                                     className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                                 >
                                     Dismiss
+                                </button>
+                            </div>
+                        )}
+                        {resumeAnalysisNotice && !isAnalyzing && (
+                            <div className="mt-4 text-sm text-[var(--text-secondary)] bg-[var(--orange-light)] border border-[var(--border-light)] rounded-lg px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <span>
+                                    Analysis paused at {resumeAnalysisNotice.analyzed}/{resumeAnalysisNotice.total}. Resume to finish scoring.
+                                </span>
+                                <button
+                                    onClick={async () => {
+                                        setStep(2)
+                                        await handleAnalyzeSelected()
+                                    }}
+                                    className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-xs font-semibold hover:bg-[var(--orange-hover)]"
+                                >
+                                    Resume Analysis
                                 </button>
                             </div>
                         )}
