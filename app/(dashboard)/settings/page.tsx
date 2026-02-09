@@ -23,7 +23,8 @@ export default function SettingsPage() {
     const [connections, setConnections] = useState<Connection[]>([])
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const lastPlatformRef = useRef<HTMLDivElement | null>(null)
+    const [shouldScrollToUrls, setShouldScrollToUrls] = useState(false)
+    const platformUrlsRef = useRef<HTMLDivElement | null>(null)
 
     const getPlatformUrlPlaceholder = (platformId: string) => {
         switch (platformId) {
@@ -69,6 +70,21 @@ export default function SettingsPage() {
             .finally(() => setIsLoading(false))
     }, [])
 
+    useEffect(() => {
+        if (!shouldScrollToUrls) return
+        if (selectedPlatforms.length === 0) return
+
+        const scrollToUrls = () => {
+            platformUrlsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            setTimeout(() => {
+                window.scrollBy({ top: -96, behavior: 'smooth' })
+            }, 150)
+        }
+
+        setShouldScrollToUrls(false)
+        requestAnimationFrame(scrollToUrls)
+    }, [shouldScrollToUrls, selectedPlatforms.length])
+
     const handlePlatformToggle = (id: string) => {
         if (selectedPlatforms.includes(id)) {
             setSelectedPlatforms(selectedPlatforms.filter(p => p !== id))
@@ -99,6 +115,7 @@ export default function SettingsPage() {
 
             if (response.ok) {
                 alert('Settings saved successfully!')
+                setShouldScrollToUrls(true)
                 const syncEndpoint: Record<string, string> = {
                     github: '/api/sync/github',
                     gitlab: '/api/sync/gitlab',
@@ -123,11 +140,6 @@ export default function SettingsPage() {
                 const data = await fetch('/api/user/connections').then(r => r.json())
                 if (data.connections) {
                     setConnections(data.connections)
-                }
-                if (selectedPlatforms.length > 0) {
-                    setTimeout(() => {
-                        lastPlatformRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    }, 100)
                 }
             } else {
                 alert('Failed to save settings')
@@ -240,7 +252,7 @@ export default function SettingsPage() {
 
                 {/* URL Inputs for Selected Platforms */}
                 {selectedPlatforms.length > 0 && (
-                    <div className="mt-6 space-y-3">
+                    <div ref={platformUrlsRef} className="mt-6 space-y-3">
                         <div>
                             <h3 className="font-semibold text-lg">Platform URLs</h3>
                             <p className="text-sm text-[var(--text-secondary)] mt-1">
@@ -250,14 +262,9 @@ export default function SettingsPage() {
                         {selectedPlatforms.map(id => {
                             const platform = getPlatformById(id)
                             if (!platform) return null
-                            const isLast = selectedPlatforms[selectedPlatforms.length - 1] === id
 
                             return (
-                                <div
-                                    key={id}
-                                    ref={isLast ? lastPlatformRef : undefined}
-                                    className="flex items-center gap-4 p-4 rounded-lg border border-[var(--border-light)] bg-white"
-                                >
+                                <div key={id} className="flex items-center gap-4 p-4 rounded-lg border border-[var(--border-light)] bg-white">
                                     <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-[var(--bg-light)] rounded-md">
                                         <platform.icon className="text-xl" style={{ color: platform.color }} />
                                     </div>
