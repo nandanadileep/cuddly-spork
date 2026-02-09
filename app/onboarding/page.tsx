@@ -298,10 +298,10 @@ export default function OnboardingPage() {
                             </p>
                         </div>
 
-	                        {step < totalSteps && (
-	                            <div className="flex items-center gap-2">
-	                                {step > 1 && (
-	                                    <button
+                        {step < totalSteps && (
+                            <div className="flex items-center gap-2">
+                                {step > 1 && (
+                                    <button
                                         type="button"
                                         onClick={handleBack}
                                         className="px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] transition-colors"
@@ -320,14 +320,14 @@ export default function OnboardingPage() {
                                 >
                                     {step === 6 ? (isLoading ? 'Saving...' : 'Start Syncing') : 'Continue'}
                                 </button>
-	                            </div>
-	                        )}
-	                    </div>
+                            </div>
+                        )}
                     </div>
+                </div>
 
-	                {/* Step 1: LinkedIn */}
-	                {step === 1 && (
-	                    <div className="space-y-8">
+                {/* Step 1: LinkedIn */}
+                {step === 1 && (
+                    <div className="space-y-8">
                         <div className="text-center py-8">
                             <SiLinkedin className="mx-auto text-5xl text-[#0077B5] mb-6 opacity-90" />
                             <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Connect your LinkedIn</h2>
@@ -346,126 +346,103 @@ export default function OnboardingPage() {
                             />
                             <p className="text-xs text-[var(--text-secondary)] mt-2">Optional - you can skip this step</p>
                         </div>
+                    </div>
+                )}
 
-                        <div className="flex justify-center">
-                            <button
-                                onClick={handleNext}
-                                className="px-8 py-3 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-all shadow-sm"
-                            >
-                                Continue
-                            </button>
+                    {/* Step 2: Personal Website */}
+                    {step === 2 && (
+                        <div className="space-y-8">
+                            <div className="text-center py-8">
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                                    <MdLanguage className="text-3xl text-[var(--orange-primary)]" />
+                                </div>
+                                <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Add your personal website</h2>
+                                <p className="text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
+                                    Optional. We'll include it on your resume and try to fetch basic details from it.
+                                </p>
+                            </div>
+
+                            <div className="max-w-lg mx-auto space-y-3">
+                                <input
+                                    type="url"
+                                    placeholder="https://your-site.com"
+                                    className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                    value={websiteUrl}
+                                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                                />
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={fetchWebsiteDetails}
+                                        disabled={isFetchingWebsite || !websiteUrl.trim()}
+                                        className="px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                                    >
+                                        {isFetchingWebsite ? 'Fetching...' : 'Fetch details'}
+                                    </button>
+                                    <p className="text-xs text-[var(--text-secondary)]">Optional</p>
+                                </div>
+
+                                {websiteFetchError && (
+                                    <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                        {websiteFetchError}
+                                    </div>
+                                )}
+
+                                {websitePreview && (
+                                    <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-1">
+                                        <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Preview</div>
+                                        <div className="font-semibold text-[var(--text-primary)]">{websitePreview.title || websitePreview.url}</div>
+                                        {websitePreview.description && (
+                                            <div className="text-sm text-[var(--text-secondary)]">{websitePreview.description}</div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
-	                    </div>
-	                )}
+                    )}
 
-	                {/* Step 2: Personal Website */}
-	                {step === 2 && (
-	                    <div className="space-y-8">
-	                        <div className="text-center py-8">
-	                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
-	                                <MdLanguage className="text-3xl text-[var(--orange-primary)]" />
-	                            </div>
-	                            <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Add your personal website</h2>
-	                            <p className="text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-	                                Optional. We'll include it on your resume and try to fetch basic details from it.
-	                            </p>
-	                        </div>
+                    {/* Step 3: Education & Work */}
+                    {step === 3 && (
+                        <div className="space-y-8">
+                            <div className="text-center mb-8">
+                                <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Education & Work Experience</h2>
+                                <p className="text-[var(--text-secondary)] mt-1">
+                                    Add what you want included in your resume. You can also update this later in Profile.
+                                </p>
+                                {profileCounts && (
+                                    <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                        Current: {profileCounts.experience} experience · {profileCounts.education} education
+                                    </p>
+                                )}
+                            </div>
 
-	                        <div className="max-w-lg mx-auto space-y-3">
-	                            <input
-	                                type="url"
-	                                placeholder="https://your-site.com"
-	                                className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
-	                                value={websiteUrl}
-	                                onChange={(e) => setWebsiteUrl(e.target.value)}
-	                            />
-	                            <div className="flex items-center gap-2">
-	                                <button
-	                                    type="button"
-	                                    onClick={fetchWebsiteDetails}
-	                                    disabled={isFetchingWebsite || !websiteUrl.trim()}
-	                                    className="px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
-	                                >
-	                                    {isFetchingWebsite ? 'Fetching...' : 'Fetch details'}
-	                                </button>
-	                                <p className="text-xs text-[var(--text-secondary)]">Optional</p>
-	                            </div>
+                            {profileSaveError && (
+                                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                    {profileSaveError}
+                                </div>
+                            )}
 
-	                            {websiteFetchError && (
-	                                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-	                                    {websiteFetchError}
-	                                </div>
-	                            )}
-
-	                            {websitePreview && (
-	                                <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-1">
-	                                    <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Preview</div>
-	                                    <div className="font-semibold text-[var(--text-primary)]">{websitePreview.title || websitePreview.url}</div>
-	                                    {websitePreview.description && (
-	                                        <div className="text-sm text-[var(--text-secondary)]">{websitePreview.description}</div>
-	                                    )}
-	                                </div>
-	                            )}
-	                        </div>
-
-	                        <div className="flex justify-between pt-6 border-t border-[var(--border-light)] mt-8">
-	                            <button
-	                                onClick={handleBack}
-	                                className="px-6 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)] transition-colors"
-	                            >
-	                                Back
-	                            </button>
-	                            <button
-	                                onClick={handleNext}
-	                                className="px-8 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-all shadow-sm"
-	                            >
-	                                Continue
-	                            </button>
-	                        </div>
-	                    </div>
-	                )}
-
-	                {/* Step 3: Education & Work */}
-	                {step === 3 && (
-	                    <div className="space-y-8">
-	                        <div className="text-center mb-8">
-	                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Education & Work Experience</h2>
-	                            <p className="text-[var(--text-secondary)] mt-1">
-	                                Add what you want included in your resume. You can also update this later in Profile.
-	                            </p>
-	                            {profileCounts && (
-	                                <p className="text-sm text-[var(--text-secondary)] mt-2">
-	                                    Current: {profileCounts.experience} experience · {profileCounts.education} education
-	                                </p>
-	                            )}
-	                        </div>
-
-	                        {profileSaveError && (
-	                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-	                                {profileSaveError}
-	                            </div>
-	                        )}
-
-	                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-	                            <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-3">
-	                                <div className="flex items-center gap-2">
-	                                    <MdSchool className="text-xl text-[var(--orange-primary)]" />
-	                                    <h3 className="font-semibold text-[var(--text-primary)]">Education</h3>
-	                                </div>
-	                                <input
-	                                    type="text"
-	                                    placeholder="Institution"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                    value={newEducation.institution}
-	                                    onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
-	                                />
-	                                <input
-	                                    type="text"
-	                                    placeholder="Degree"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                    value={newEducation.degree}
-	                                    onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
-	                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <MdSchool className="text-xl text-[var(--orange-primary)]" />
+                                        <h3 className="font-semibold text-[var(--text-primary)]">Education</h3>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Institution"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                        value={newEducation.institution}
+                                        onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Degree"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                        value={newEducation.degree}
+                                        onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
+                                    />
                                     <input
                                         type="text"
                                         placeholder="Field (optional)"
@@ -484,130 +461,116 @@ export default function OnboardingPage() {
                                         <input
                                             type="date"
                                             className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                        value={newEducation.start_date}
-	                                        onChange={(e) => setNewEducation({ ...newEducation, start_date: e.target.value })}
-	                                    />
-	                                    <input
-	                                        type="date"
-	                                        disabled={newEducation.is_current}
-	                                        className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
-	                                        value={newEducation.end_date}
-	                                        onChange={(e) => setNewEducation({ ...newEducation, end_date: e.target.value })}
-	                                    />
-	                                </div>
-	                                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-	                                    <input
-	                                        type="checkbox"
-	                                        checked={newEducation.is_current}
-	                                        onChange={(e) => setNewEducation({ ...newEducation, is_current: e.target.checked, end_date: e.target.checked ? '' : newEducation.end_date })}
-	                                    />
-	                                    Current
-	                                </label>
-	                                <textarea
-	                                    placeholder="Description (optional)"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
-	                                    value={newEducation.description}
-	                                    onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })}
-	                                />
-	                                <button
-	                                    type="button"
-	                                    onClick={addEducation}
-	                                    disabled={isSavingProfile || !newEducation.institution.trim() || !newEducation.degree.trim()}
-	                                    className="w-full px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] disabled:opacity-50"
-	                                >
-	                                    {isSavingProfile ? 'Saving...' : 'Add education'}
-	                                </button>
-	                            </div>
+                                            value={newEducation.start_date}
+                                            onChange={(e) => setNewEducation({ ...newEducation, start_date: e.target.value })}
+                                        />
+                                        <input
+                                            type="date"
+                                            disabled={newEducation.is_current}
+                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
+                                            value={newEducation.end_date}
+                                            onChange={(e) => setNewEducation({ ...newEducation, end_date: e.target.value })}
+                                        />
+                                    </div>
+                                    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                        <input
+                                            type="checkbox"
+                                            checked={newEducation.is_current}
+                                            onChange={(e) => setNewEducation({ ...newEducation, is_current: e.target.checked, end_date: e.target.checked ? '' : newEducation.end_date })}
+                                        />
+                                        Current
+                                    </label>
+                                    <textarea
+                                        placeholder="Description (optional)"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
+                                        value={newEducation.description}
+                                        onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={addEducation}
+                                        disabled={isSavingProfile || !newEducation.institution.trim() || !newEducation.degree.trim()}
+                                        className="w-full px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] disabled:opacity-50"
+                                    >
+                                        {isSavingProfile ? 'Saving...' : 'Add education'}
+                                    </button>
+                                </div>
 
-	                            <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-3">
-	                                <div className="flex items-center gap-2">
-	                                    <MdWorkOutline className="text-xl text-[var(--orange-primary)]" />
-	                                    <h3 className="font-semibold text-[var(--text-primary)]">Work Experience</h3>
-	                                </div>
-	                                <input
-	                                    type="text"
-	                                    placeholder="Company"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                    value={newExperience.company}
-	                                    onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
-	                                />
-	                                <input
-	                                    type="text"
-	                                    placeholder="Position"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                    value={newExperience.position}
-	                                    onChange={(e) => setNewExperience({ ...newExperience, position: e.target.value })}
-	                                />
-	                                <input
-	                                    type="text"
-	                                    placeholder="Location (optional)"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                    value={newExperience.location}
-	                                    onChange={(e) => setNewExperience({ ...newExperience, location: e.target.value })}
-	                                />
-	                                <div className="flex gap-2">
-	                                    <input
-	                                        type="date"
-	                                        className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-	                                        value={newExperience.start_date}
-	                                        onChange={(e) => setNewExperience({ ...newExperience, start_date: e.target.value })}
-	                                    />
-	                                    <input
-	                                        type="date"
-	                                        disabled={newExperience.is_current}
-	                                        className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
-	                                        value={newExperience.end_date}
-	                                        onChange={(e) => setNewExperience({ ...newExperience, end_date: e.target.value })}
-	                                    />
-	                                </div>
-	                                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-	                                    <input
-	                                        type="checkbox"
-	                                        checked={newExperience.is_current}
-	                                        onChange={(e) => setNewExperience({ ...newExperience, is_current: e.target.checked, end_date: e.target.checked ? '' : newExperience.end_date })}
-	                                    />
-	                                    Current
-	                                </label>
-	                                <textarea
-	                                    placeholder="Description (optional)"
-	                                    className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
-	                                    value={newExperience.description}
-	                                    onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
-	                                />
-	                                <button
-	                                    type="button"
-	                                    onClick={addExperience}
-	                                    disabled={isSavingProfile || !newExperience.company.trim() || !newExperience.position.trim()}
-	                                    className="w-full px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] disabled:opacity-50"
-	                                >
-	                                    {isSavingProfile ? 'Saving...' : 'Add experience'}
-	                                </button>
-	                            </div>
-	                        </div>
+                                <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <MdWorkOutline className="text-xl text-[var(--orange-primary)]" />
+                                        <h3 className="font-semibold text-[var(--text-primary)]">Work Experience</h3>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Company"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                        value={newExperience.company}
+                                        onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Position"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                        value={newExperience.position}
+                                        onChange={(e) => setNewExperience({ ...newExperience, position: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Location (optional)"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                        value={newExperience.location}
+                                        onChange={(e) => setNewExperience({ ...newExperience, location: e.target.value })}
+                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="date"
+                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                            value={newExperience.start_date}
+                                            onChange={(e) => setNewExperience({ ...newExperience, start_date: e.target.value })}
+                                        />
+                                        <input
+                                            type="date"
+                                            disabled={newExperience.is_current}
+                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
+                                            value={newExperience.end_date}
+                                            onChange={(e) => setNewExperience({ ...newExperience, end_date: e.target.value })}
+                                        />
+                                    </div>
+                                    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                        <input
+                                            type="checkbox"
+                                            checked={newExperience.is_current}
+                                            onChange={(e) => setNewExperience({ ...newExperience, is_current: e.target.checked, end_date: e.target.checked ? '' : newExperience.end_date })}
+                                        />
+                                        Current
+                                    </label>
+                                    <textarea
+                                        placeholder="Description (optional)"
+                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
+                                        value={newExperience.description}
+                                        onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={addExperience}
+                                        disabled={isSavingProfile || !newExperience.company.trim() || !newExperience.position.trim()}
+                                        className="w-full px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] disabled:opacity-50"
+                                    >
+                                        {isSavingProfile ? 'Saving...' : 'Add experience'}
+                                    </button>
+                                </div>
+                            </div>
 
-	                        <div className="flex justify-between pt-6 border-t border-[var(--border-light)] mt-8">
-	                            <button
-	                                onClick={handleBack}
-	                                className="px-6 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)] transition-colors"
-	                            >
-	                                Back
-	                            </button>
-	                            <button
-	                                onClick={handleNext}
-	                                className="px-8 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-all shadow-sm"
-	                            >
-	                                Continue
-	                            </button>
-	                        </div>
-	                    </div>
-	                )}
+                        </div>
+                    )}
 
-	                {/* Step 4: Select Platforms */}
-	                {step === 4 && (
-	                    <div className="space-y-6">
-	                        <div className="text-center mb-8">
-	                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Where do you showcase work?</h2>
-	                            <p className="text-[var(--text-secondary)] mt-1">Select the platforms you use to build your portfolio.</p>
+                    {/* Step 4: Select Platforms */}
+                    {step === 4 && (
+                        <div className="space-y-6">
+                            <div className="text-center mb-8">
+                                <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Where do you showcase work?</h2>
+                                <p className="text-[var(--text-secondary)] mt-1">Select the platforms you use to build your portfolio.</p>
                         </div>
 
                         <PlatformSelector
@@ -615,30 +578,16 @@ export default function OnboardingPage() {
                             onPlatformToggle={handlePlatformToggle}
                         />
 
-                        <div className="flex justify-between pt-6 border-t border-[var(--border-light)] mt-8">
-                            <button
-                                onClick={handleBack}
-                                className="px-6 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)] transition-colors"
-                            >
-                                Back
-                            </button>
-                            <button
-                                onClick={handleNext}
-                                className="px-8 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-all shadow-sm"
-                            >
-                                Continue
-                            </button>
-                        </div>
                     </div>
                 )}
 
-	                {/* Step 5: Enter URLs */}
-	                {step === 5 && (
-	                    <div className="space-y-6">
-	                        <div className="text-center mb-8">
-	                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Link your profiles</h2>
-	                            <p className="text-[var(--text-secondary)] mt-1">Enter your profile URLs so we can fetch your work.</p>
-	                        </div>
+                    {/* Step 5: Enter URLs */}
+                    {step === 5 && (
+                        <div className="space-y-6">
+                            <div className="text-center mb-8">
+                                <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Link your profiles</h2>
+                                <p className="text-[var(--text-secondary)] mt-1">Enter your profile URLs so we can fetch your work.</p>
+                            </div>
 
                         <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                             {selectedPlatforms.map(id => {
@@ -673,26 +622,12 @@ export default function OnboardingPage() {
                             )}
                         </div>
 
-                        <div className="flex justify-between pt-6 border-t border-[var(--border-light)] mt-8">
-                            <button
-                                onClick={handleBack}
-                                className="px-6 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)] transition-colors"
-                            >
-                                Back
-                            </button>
-                            <button
-                                onClick={handleNext}
-                                className="px-8 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-all shadow-sm"
-                            >
-                                Continue
-                            </button>
                         </div>
-                    </div>
-                )}
+                    )}
 
-	                {/* Step 6: Target Role */}
-	                {step === 6 && (
-	                    <div className="space-y-8">
+                    {/* Step 6: Target Role */}
+                    {step === 6 && (
+                        <div className="space-y-8">
                         <div className="text-center py-4">
                             <div className="text-4xl mb-4"></div>
                             <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">What's your target role?</h2>
@@ -714,27 +649,12 @@ export default function OnboardingPage() {
                             />
                         </div>
 
-                        <div className="flex justify-between pt-6 border-t border-[var(--border-light)] mt-8">
-                            <button
-                                onClick={handleBack}
-                                className="px-6 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)] transition-colors"
-                            >
-                                Back
-                            </button>
-	                            <button
-	                                onClick={handleContinueToSync}
-	                                disabled={isLoading || !targetRole}
-	                                className="px-8 py-2 bg-[var(--github-green)] text-white rounded-md font-medium hover:opacity-90 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
-	                            >
-	                                {isLoading ? 'Saving...' : 'Start Syncing'}
-	                            </button>
-	                        </div>
-	                    </div>
-	                )}
+                        </div>
+                    )}
 
-	                {/* Step 7: Syncing Progress */}
-	                {step === 7 && (
-	                    <div className="space-y-8">
+                    {/* Step 7: Syncing Progress */}
+                    {step === 7 && (
+                        <div className="space-y-8">
                         <div className="text-center">
                             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--green-light)] mb-6">
                                 <MdSync className={`text-3xl text-[var(--github-green)] ${isSyncing ? 'animate-spin' : ''}`} />
