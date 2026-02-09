@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MdCheckCircle, MdLink } from 'react-icons/md'
+import { MdCheckCircle, MdChevronRight, MdLink, MdRadioButtonUnchecked } from 'react-icons/md'
 
 interface Project {
     id: string
@@ -54,6 +54,8 @@ export default function DashboardPage() {
     const [showTour, setShowTour] = useState(false)
     const [tourStep, setTourStep] = useState(0)
     const [tourHideNext, setTourHideNext] = useState(false)
+    const [connectionsCount, setConnectionsCount] = useState<number | null>(null)
+    const [resumeQuota, setResumeQuota] = useState<{ count: number; limit: number; remaining: number } | null>(null)
 
     const tourSteps = [
         {
@@ -111,6 +113,26 @@ export default function DashboardPage() {
             .catch(err => console.error('Failed to fetch projects:', err))
     }
 
+    const fetchConnections = () =>
+        fetch('/api/user/connections')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data.connections)) {
+                    setConnectionsCount(data.connections.length)
+                }
+            })
+            .catch(() => setConnectionsCount(null))
+
+    const fetchQuota = () =>
+        fetch('/api/resume/quota')
+            .then(res => res.json())
+            .then(data => {
+                if (typeof data?.count === 'number' && typeof data?.limit === 'number') {
+                    setResumeQuota({ count: data.count, limit: data.limit, remaining: data.remaining })
+                }
+            })
+            .catch(() => setResumeQuota(null))
+
     const fetchTargetRole = () => {
         setIsRoleLoading(true)
         return fetch('/api/user/target-role')
@@ -129,7 +151,7 @@ export default function DashboardPage() {
     useEffect(() => {
         if (status === 'authenticated') {
             setIsLoading(true)
-            Promise.all([fetchProjects(), fetchTargetRole()]).finally(() => setIsLoading(false))
+            Promise.all([fetchProjects(), fetchTargetRole(), fetchConnections(), fetchQuota()]).finally(() => setIsLoading(false))
         }
     }, [status])
 
@@ -360,6 +382,116 @@ export default function DashboardPage() {
                         ? `You have ${projects.length} ${projects.length === 1 ? 'project' : 'projects'} synced from your connected platforms.`
                         : 'Your profile is being synced from your connected platforms.'}
                 </p>
+            </div>
+
+            <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm mb-8">
+                {(() => {
+                    const hasConnections = (connectionsCount ?? 0) > 0
+                    const hasProjects = projects.length > 0
+                    const hasTargetRole = Boolean(targetRole)
+                    const analyzedCount = projects.filter(p => typeof p.ai_score === 'number').length
+                    const hasAnalysis = analyzedCount > 0
+                    const hasResume = (resumeQuota?.count || 0) > 0
+
+                    const steps = [
+                        {
+                            key: 'connections',
+                            title: 'Connect platforms',
+                            detail: hasConnections ? `${connectionsCount} connected` : 'Add GitHub/others in Settings',
+                            done: hasConnections,
+                            action: () => router.push('/settings'),
+                        },
+                        {
+                            key: 'projects',
+                            title: 'Sync projects',
+                            detail: hasProjects ? `${projects.length} projects imported` : 'Sync to pull your repos/posts/etc',
+                            done: hasProjects,
+                            action: () => router.push('/settings'),
+                        },
+                        {
+                            key: 'role',
+                            title: 'Set a target role',
+                            detail: hasTargetRole ? targetRole : 'This tailors scoring + bullets',
+                            done: hasTargetRole,
+                            action: () => {
+                                const el = document.getElementById('target-role-card')
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            },
+                        },
+                        {
+                            key: 'analysis',
+                            title: 'Analyze projects',
+                            detail: hasAnalysis ? `${analyzedCount} scored` : 'Get AI scores + bullets',
+                            done: hasAnalysis,
+                            action: () => router.push('/analysis'),
+                        },
+                        {
+                            key: 'resume',
+                            title: 'Build & download resume',
+                            detail: hasResume ? `${resumeQuota?.count} downloaded` : 'Edit bullets and export PDF/DOCX',
+                            done: hasResume,
+                            action: () => router.push('/builder'),
+                        },
+                    ]
+
+                    const next =
+                        steps.find(step => !step.done) || steps[steps.length - 1]
+
+                    return (
+                        <>
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold">
+                                        Resume Setup
+                                    </div>
+                                    <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)] mt-1">
+                                        One clear path to a great resume
+                                    </h2>
+                                    <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                        Follow the steps below. Use “Continue” to jump to the next thing you should do.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={next.action}
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)]"
+                                >
+                                    Continue
+                                    <MdChevronRight className="text-xl" />
+                                </button>
+                            </div>
+
+                            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {steps.map((step) => (
+                                    <button
+                                        key={step.key}
+                                        type="button"
+                                        onClick={step.action}
+                                        className="text-left rounded-xl border border-[var(--border-light)] bg-[var(--bg-warm)] px-4 py-3 hover:bg-[var(--orange-light)] transition-colors"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className="mt-0.5">
+                                                {step.done ? (
+                                                    <MdCheckCircle className="text-xl text-[var(--github-green)]" />
+                                                ) : (
+                                                    <MdRadioButtonUnchecked className="text-xl text-[var(--text-secondary)]" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="font-semibold text-[var(--text-primary)]">
+                                                    {step.title}
+                                                </div>
+                                                <div className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
+                                                    {step.detail}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )
+                })()}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
