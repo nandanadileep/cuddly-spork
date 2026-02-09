@@ -5,8 +5,6 @@ import { prisma } from '@/lib/prisma'
 import { buildDocxResume } from '@/lib/docx-resume'
 import type { ResumePayload } from '@/lib/latex/templates'
 
-const RESUME_LIMIT = 2
-
 export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions)
@@ -28,7 +26,6 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json().catch(() => ({}))
         const {
-            templateId,
             selectedProjectIds,
             manualProjects,
             skills,
@@ -110,33 +107,6 @@ export async function POST(req: NextRequest) {
             .filter(Boolean)
             .filter((item) => !excludedSet.has(String(item).toLowerCase()))
 
-        const resolvedTemplateId = (templateId || draft?.template_id || 'modern') as string
-
-        const jsonEqual = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
-
-        const lastResume = await prisma.resume.findFirst({
-            where: { user_id: userRecord.id },
-            orderBy: { created_at: 'desc' },
-            select: { template_id: true, target_role: true, selected_projects_jsonb: true, skills_jsonb: true },
-        })
-
-        const isDuplicate =
-            !!lastResume &&
-            lastResume.template_id === resolvedTemplateId &&
-            (lastResume.target_role || null) === (userRecord.target_role || null) &&
-            jsonEqual(lastResume.selected_projects_jsonb, selectedIds) &&
-            jsonEqual(lastResume.skills_jsonb, uniqueSkills)
-
-        if (!isDuplicate) {
-            const resumeCount = await prisma.resume.count({ where: { user_id: userRecord.id } })
-            if (resumeCount >= RESUME_LIMIT) {
-                return NextResponse.json(
-                    { error: `You have reached the limit of ${RESUME_LIMIT} resumes. Delete an existing resume to create or download a new one.` },
-                    { status: 403 }
-                )
-            }
-        }
-
         const payload: ResumePayload = {
             name: userRecord.name || 'Untitled Resume',
             email: userRecord.email,
@@ -211,20 +181,6 @@ export async function POST(req: NextRequest) {
 
         const buffer = await buildDocxResume(payload)
         const uint8 = new Uint8Array(buffer)
-        if (!isDuplicate) {
-            await prisma.resume.create({
-                data: {
-                    user_id: userRecord.id,
-                    title: `Resume DOC - ${new Date().toISOString().slice(0, 10)}`,
-                    target_role: userRecord.target_role || null,
-                    template_id: resolvedTemplateId,
-                    latex_content: '',
-                    pdf_url: null,
-                    selected_projects_jsonb: selectedIds,
-                    skills_jsonb: uniqueSkills,
-                },
-            })
-        }
         const filename = `resume-${new Date().toISOString().slice(0, 10)}.docx`
         return new NextResponse(uint8, {
             headers: {

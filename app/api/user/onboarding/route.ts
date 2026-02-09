@@ -13,7 +13,16 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json()
-        const { linkedinUrl, targetRole, websiteUrl, platforms = [], skipRoleSnapshot } = body
+        const {
+            linkedinUrl,
+            targetRole,
+            websiteUrl,
+            firstName,
+            middleName,
+            lastName,
+            platforms = [],
+            skipRoleSnapshot
+        } = body
 
         console.log('Onboarding request:', { linkedinUrl, targetRole, websiteUrl, platforms })
 
@@ -77,6 +86,13 @@ export async function POST(req: NextRequest) {
         }
         if (typeof targetRole === 'string') {
             userUpdate.target_role = trimmedTargetRole || null
+        }
+        const nameParts = [firstName, middleName, lastName]
+            .map((value: unknown) => (typeof value === 'string' ? value.trim() : ''))
+            .filter(Boolean)
+        const fullName = nameParts.join(' ')
+        if (fullName) {
+            userUpdate.name = fullName
         }
         if (jobDescriptionJsonb !== undefined) {
             userUpdate.job_description_jsonb = jobDescriptionJsonb

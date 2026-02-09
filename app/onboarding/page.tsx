@@ -21,6 +21,9 @@ export default function OnboardingPage() {
     const [linkedinUrl, setLinkedinUrl] = useState('')
     const [websiteUrl, setWebsiteUrl] = useState('')
     const [targetRole, setTargetRole] = useState('')
+    const [firstName, setFirstName] = useState('')
+    const [middleName, setMiddleName] = useState('')
+    const [lastName, setLastName] = useState('')
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
     const [platformUrls, setPlatformUrls] = useState<Record<string, string>>({})
 
@@ -341,6 +344,9 @@ export default function OnboardingPage() {
                     linkedinUrl,
                     websiteUrl,
                     targetRole,
+                    firstName,
+                    middleName,
+                    lastName,
                     skipRoleSnapshot: snapshotOk,
                     platforms: selectedPlatforms.map(id => ({
                         id,
@@ -416,7 +422,30 @@ export default function OnboardingPage() {
                             </p>
                         </div>
 
-                        <div className="max-w-lg mx-auto">
+                        <div className="max-w-lg mx-auto space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="First name (optional)"
+                                    className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Middle name (optional)"
+                                    className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                    value={middleName}
+                                    onChange={(e) => setMiddleName(e.target.value)}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Last name (optional)"
+                                    className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                />
+                            </div>
                             <input
                                 type="url"
                                 placeholder="https://www.linkedin.com/in/username"

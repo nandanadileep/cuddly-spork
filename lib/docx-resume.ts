@@ -18,6 +18,13 @@ function normalizeUrl(input: string): string {
     return `https://${trimmed}`
 }
 
+function formatUrlLabel(input: string): string {
+    const trimmed = String(input || '').trim()
+    if (!trimmed) return ''
+    const withoutProtocol = trimmed.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '').replace(/^\/\//, '')
+    return withoutProtocol.replace(/\/$/, '')
+}
+
 function normalizePhoneForTel(input: string): string {
     return String(input || '').replace(/[^+\d]/g, '')
 }
@@ -85,22 +92,37 @@ export async function buildDocxResume(payload: ResumePayload): Promise<Buffer> {
     if (payload.website) {
         const websiteHref = normalizeUrl(payload.website)
         pushSep()
+        const label = formatUrlLabel(payload.website) || payload.website
         contactChildren.push(
             new ExternalHyperlink({
                 link: websiteHref,
-                children: [new TextRun({ text: payload.website, size: 22, style: 'Hyperlink' })],
+                children: [new TextRun({ text: label, size: 22, style: 'Hyperlink' })],
             })
         )
     }
 
     if (payload.linkedin) {
         pushSep()
-        contactChildren.push(new TextRun({ text: payload.linkedin, size: 22 }))
+        const linkedinHref = normalizeUrl(payload.linkedin)
+        const label = formatUrlLabel(payload.linkedin) || 'LinkedIn'
+        contactChildren.push(
+            new ExternalHyperlink({
+                link: linkedinHref,
+                children: [new TextRun({ text: label, size: 22, style: 'Hyperlink' })],
+            })
+        )
     }
 
     if (payload.github) {
         pushSep()
-        contactChildren.push(new TextRun({ text: payload.github, size: 22 }))
+        const githubHref = normalizeUrl(payload.github)
+        const label = formatUrlLabel(payload.github) || 'GitHub'
+        contactChildren.push(
+            new ExternalHyperlink({
+                link: githubHref,
+                children: [new TextRun({ text: label, size: 22, style: 'Hyperlink' })],
+            })
+        )
     }
 
     const children: Paragraph[] = []
@@ -171,12 +193,21 @@ export async function buildDocxResume(payload: ResumePayload): Promise<Buffer> {
     if (payload.projects && payload.projects.length > 0) {
         children.push(sectionHeading('Key Projects'))
         for (const project of payload.projects) {
+            const projectLinkLabel = project.url ? (formatUrlLabel(project.url) || project.url) : ''
             children.push(
                 new Paragraph({
                     spacing: { before: 120, after: 80 },
                     children: [
                         new TextRun({ text: project.name, bold: true, size: 24 }),
-                        ...(project.url ? [new TextRun({ text: ` — ${project.url}`, size: 22 })] : []),
+                        ...(project.url
+                            ? [
+                                new TextRun({ text: ' — ', size: 22 }),
+                                new ExternalHyperlink({
+                                    link: normalizeUrl(project.url),
+                                    children: [new TextRun({ text: projectLinkLabel, size: 22, style: 'Hyperlink' })],
+                                }),
+                            ]
+                            : []),
                     ],
                 })
             )

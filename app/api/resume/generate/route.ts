@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { renderLatexTemplate, TemplateId } from '@/lib/latex/templates'
 
+const RESUME_LIMIT = 2
+
 const parseLatexLiteError = (raw: string) => {
     let details = String(raw || '').trim()
     try {
@@ -265,6 +267,30 @@ export async function POST(req: NextRequest) {
         const resolvedTemplateId = (templateId || draft?.template_id || 'modern') as TemplateId
         const latexPayload = renderLatexTemplate(resolvedTemplateId, payload)
 
+        const jsonEqual = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+        const lastResume = await prisma.resume.findFirst({
+            where: { user_id: userRecord.id },
+            orderBy: { created_at: 'desc' },
+            select: { template_id: true, target_role: true, selected_projects_jsonb: true, skills_jsonb: true },
+        })
+
+        const isDuplicate =
+            !!lastResume &&
+            lastResume.template_id === resolvedTemplateId &&
+            (lastResume.target_role || null) === (userRecord.target_role || null) &&
+            jsonEqual(lastResume.selected_projects_jsonb, selectedIds) &&
+            jsonEqual(lastResume.skills_jsonb, uniqueSkills)
+
+        if (!isDuplicate) {
+            const resumeCount = await prisma.resume.count({ where: { user_id: userRecord.id } })
+            if (resumeCount >= RESUME_LIMIT) {
+                return NextResponse.json(
+                    { error: `You have reached the limit of ${RESUME_LIMIT} resume generations. Delete an existing resume to generate a new one.` },
+                    { status: 403 }
+                )
+            }
+        }
+
         const apiKey = process.env.LATEXLITE_API_KEY
         if (!apiKey) {
             return NextResponse.json({ error: 'LATEXLITE_API_KEY is not configured' }, { status: 500 })
@@ -290,6 +316,21 @@ export async function POST(req: NextRequest) {
         }
 
         const pdfBuffer = Buffer.from(await latexResponse.arrayBuffer())
+
+        if (!isDuplicate) {
+            await prisma.resume.create({
+                data: {
+                    user_id: userRecord.id,
+                    title: `Resume Preview - ${new Date().toISOString().slice(0, 10)}`,
+                    target_role: userRecord.target_role || null,
+                    template_id: resolvedTemplateId,
+                    latex_content: latexPayload.template,
+                    pdf_url: null,
+                    selected_projects_jsonb: selectedIds,
+                    skills_jsonb: uniqueSkills,
+                },
+            })
+        }
 
         return NextResponse.json({
             success: true,

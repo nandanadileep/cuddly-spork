@@ -112,7 +112,7 @@ export default function ResumeBuilderPage() {
             .catch(err => console.error('Failed to fetch resume preview:', err))
 
     const clearResumeHistory = async () => {
-        if (!confirm('Clear your resume download history? This will reset your download quota.')) return
+        if (!confirm('Clear your resume generation history? This will reset your generation quota.')) return
         try {
             const res = await fetch('/api/resume/history', { method: 'DELETE' })
             if (!res.ok) {
@@ -376,7 +376,7 @@ export default function ResumeBuilderPage() {
                                     </div>
                                     {quota !== null && (
                                         <div className="text-xs text-[var(--text-secondary)] mt-1">
-                                            Downloads: {quota.count} of {quota.limit} used
+                                            Generations: {quota.count} of {quota.limit} used
                                         </div>
                                     )}
                                 </div>
@@ -395,7 +395,7 @@ export default function ResumeBuilderPage() {
                                 <button
                                     type="button"
                                     onClick={handleGenerate}
-                                    disabled={isGenerating}
+                                    disabled={isGenerating || (quota !== null && quota.remaining <= 0)}
                                     className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isGenerating ? 'Generating...' : 'Generate Preview'}
@@ -404,7 +404,7 @@ export default function ResumeBuilderPage() {
                                     <button
                                         type="button"
                                         onClick={handleDownloadPdf}
-                                        disabled={isDownloadingPdf || (quota !== null && quota.remaining <= 0)}
+                                        disabled={isDownloadingPdf}
                                         className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isDownloadingPdf ? 'PDF...' : 'Download PDF'}
@@ -412,7 +412,7 @@ export default function ResumeBuilderPage() {
                                     <button
                                         type="button"
                                         onClick={handleDownloadDoc}
-                                        disabled={isDownloadingDoc || (quota !== null && quota.remaining <= 0)}
+                                        disabled={isDownloadingDoc}
                                         className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isDownloadingDoc ? 'DOC...' : 'Download DOCX'}
