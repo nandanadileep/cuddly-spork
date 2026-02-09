@@ -24,6 +24,29 @@ export default function SettingsPage() {
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
 
+    const getPlatformUrlPlaceholder = (platformId: string) => {
+        switch (platformId) {
+            case 'github':
+                return 'username or https://github.com/username'
+            case 'gitlab':
+                return 'username or https://gitlab.com/username'
+            case 'bitbucket':
+                return 'workspace or https://bitbucket.org/workspace'
+            case 'medium':
+                return '@username or https://medium.com/@username'
+            case 'devto':
+                return 'username or https://dev.to/username'
+            case 'substack':
+                return 'https://yournewsletter.substack.com'
+            case 'huggingface':
+                return 'username or https://huggingface.co/username'
+            case 'codeforces':
+                return 'handle or https://codeforces.com/profile/handle'
+            default:
+                return 'Paste your profile URL or username'
+        }
+    }
+
     useEffect(() => {
         // Fetch existing connections
         fetch('/api/user/connections')
@@ -200,7 +223,7 @@ export default function SettingsPage() {
                         disabled={isSaving}
                         className="px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] transition-colors disabled:opacity-50"
                     >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
+                        {isSaving ? 'Saving & syncing...' : 'Save & Sync'}
                     </button>
                 </div>
 
@@ -212,7 +235,12 @@ export default function SettingsPage() {
                 {/* URL Inputs for Selected Platforms */}
                 {selectedPlatforms.length > 0 && (
                     <div className="mt-6 space-y-3">
-                        <h3 className="font-semibold text-lg">Platform URLs</h3>
+                        <div>
+                            <h3 className="font-semibold text-lg">Platform URLs</h3>
+                            <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                Paste your profile URL or username. We’ll fetch your work after you click <span className="font-semibold">Save &amp; Sync</span>.
+                            </p>
+                        </div>
                         {selectedPlatforms.map(id => {
                             const platform = getPlatformById(id)
                             if (!platform) return null
@@ -231,8 +259,11 @@ export default function SettingsPage() {
                                         </p>
                                         <input
                                             type="text"
-                                            placeholder="Your profile URL or username"
-                                            className="w-full bg-transparent border-none p-0 focus:ring-0 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/40 font-medium"
+                                            placeholder={getPlatformUrlPlaceholder(platform.id)}
+                                            autoCapitalize="none"
+                                            autoCorrect="off"
+                                            spellCheck={false}
+                                            className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50"
                                             value={platformUrls[id] || ''}
                                             onChange={(e) => setPlatformUrls({ ...platformUrls, [id]: e.target.value })}
                                         />
