@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/utils'
+import { sendEmailVerification } from '@/lib/email'
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
     try {
@@ -48,12 +50,19 @@ export async function POST(req: NextRequest) {
         // Hash password
         const password_hash = await hashPassword(password)
 
+        // Create user + verification token
+        const token = crypto.randomBytes(32).toString('hex')
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
         // Create user
         const user = await prisma.user.create({
             data: {
                 name: normalizedName,
                 email: normalizedEmail,
                 password_hash,
+                email_verification_token: hashedToken,
+                email_verification_expires: expires,
             },
             select: {
                 id: true,
@@ -63,9 +72,17 @@ export async function POST(req: NextRequest) {
             },
         })
 
+        const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL ||
+            process.env.NEXTAUTH_URL ||
+            'http://localhost:3000'
+        const verifyUrl = `${baseUrl}/verify-email?token=${token}`
+        const verificationResult = await sendEmailVerification({ to: normalizedEmail, verifyUrl })
+
         return NextResponse.json({
             success: true,
             user,
+            verificationSent: !verificationResult.skipped,
         })
     } catch (error) {
         console.error('Signup error:', error)

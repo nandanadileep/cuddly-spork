@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendEmailVerification } from '@/lib/email'
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
     try {
@@ -67,6 +69,17 @@ export async function POST(req: NextRequest) {
             nextEmail = trimmed
         }
 
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { email: true },
+        })
+        const isEmailChange = nextEmail && currentUser?.email?.toLowerCase() !== nextEmail
+        const verificationToken = isEmailChange ? crypto.randomBytes(32).toString('hex') : null
+        const hashedToken = verificationToken
+            ? crypto.createHash('sha256').update(verificationToken).digest('hex')
+            : null
+        const verificationExpires = verificationToken ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null
+
         // Update user
         const nameParts = [firstName, middleName, lastName]
             .map((value: unknown) => (typeof value === 'string' ? value.trim() : ''))
@@ -82,8 +95,24 @@ export async function POST(req: NextRequest) {
                 website: nextWebsite,
                 phone: typeof phone === 'string' ? phone.trim() || null : undefined,
                 location: typeof location === 'string' ? location.trim() || null : undefined,
+                ...(isEmailChange
+                    ? {
+                          email_verified_at: null,
+                          email_verification_token: hashedToken,
+                          email_verification_expires: verificationExpires,
+                      }
+                    : {}),
             },
         })
+
+        if (isEmailChange && verificationToken) {
+            const baseUrl =
+                process.env.NEXT_PUBLIC_APP_URL ||
+                process.env.NEXTAUTH_URL ||
+                'http://localhost:3000'
+            const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`
+            await sendEmailVerification({ to: nextEmail!, verifyUrl })
+        }
 
         return NextResponse.json({
             success: true,

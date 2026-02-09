@@ -10,6 +10,8 @@ export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [resendMessage, setResendMessage] = useState('')
+    const [isResending, setIsResending] = useState(false)
     const [loading, setLoading] = useState(false)
     const [providers, setProviders] = useState<Record<string, any> | null>(null)
 
@@ -34,7 +36,11 @@ export default function LoginPage() {
             })
 
             if (result?.error) {
-                setError('Invalid email or password')
+                if (result.error === 'EMAIL_NOT_VERIFIED') {
+                    setError('Please verify your email before signing in.')
+                } else {
+                    setError('Invalid email or password')
+                }
             } else {
                 // Avoid useSearchParams() so /login can be prerendered in production builds.
                 const callbackUrl =
@@ -47,6 +53,36 @@ export default function LoginPage() {
             setError('An error occurred. Please try again.')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleResendVerification = async () => {
+        if (!email) {
+            setResendMessage('Enter your email above to resend the verification link.')
+            return
+        }
+        setIsResending(true)
+        setResendMessage('')
+        try {
+            const res = await fetch('/api/auth/resend-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (res.ok) {
+                if (data.alreadyVerified) {
+                    setResendMessage('Email already verified. Please sign in.')
+                } else {
+                    setResendMessage('If an account exists, we sent a verification link.')
+                }
+            } else {
+                setResendMessage(data.error || 'Failed to resend verification email.')
+            }
+        } catch (err) {
+            setResendMessage('Failed to resend verification email.')
+        } finally {
+            setIsResending(false)
         }
     }
 
@@ -70,6 +106,11 @@ export default function LoginPage() {
                     {error && (
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
                             {error}
+                        </div>
+                    )}
+                    {resendMessage && (
+                        <div className="mb-4 p-3 bg-[var(--bg-warm)] border border-[var(--border-light)] text-[var(--text-secondary)] rounded-lg text-sm">
+                            {resendMessage}
                         </div>
                     )}
 
@@ -137,6 +178,17 @@ export default function LoginPage() {
                             {loading ? 'Signing in...' : 'Sign In'}
                         </button>
                     </form>
+
+                    {error === 'Please verify your email before signing in.' && (
+                        <button
+                            type="button"
+                            onClick={handleResendVerification}
+                            disabled={isResending}
+                            className="mt-4 w-full px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                        >
+                            {isResending ? 'Sending...' : 'Resend verification email'}
+                        </button>
+                    )}
 
                     <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
                         Don't have an account?{' '}

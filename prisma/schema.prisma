@@ -17,6 +17,9 @@ model User {
   password_hash     String?
   password_reset_token String?            @db.Text
   password_reset_expires DateTime?
+  email_verified_at DateTime?
+  email_verification_token String?        @db.Text
+  email_verification_expires DateTime?
   openai_credits       Int                  @default(100)
   target_role          String?
   linkedin_url         String?              // manual entry linkedin url

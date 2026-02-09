@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 
 export default function SignupPage() {
     const router = useRouter()
@@ -10,11 +9,13 @@ export default function SignupPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [message, setMessage] = useState('')
     const [loading, setLoading] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
+        setMessage('')
         setLoading(true)
 
         try {
@@ -33,20 +34,8 @@ export default function SignupPage() {
                 return
             }
 
-            // 2. Automatically sign in the user
-            const signInResult = await signIn('credentials', {
-                email,
-                password,
-                redirect: false,
-            })
-
-            if (signInResult?.error) {
-                setError('Account created but login failed. Please sign in manually.')
-                router.push('/login?registered=true')
-            } else {
-                // 3. Redirect to onboarding
-                router.push('/onboarding')
-            }
+            setMessage('Account created. Check your email to verify before signing in.')
+            setTimeout(() => router.push('/login?registered=true'), 800)
         } catch (err) {
             setError('An error occurred. Please try again.')
         } finally {
@@ -66,6 +55,11 @@ export default function SignupPage() {
                     {error && (
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
                             {error}
+                        </div>
+                    )}
+                    {message && (
+                        <div className="mb-4 p-3 bg-[var(--bg-warm)] border border-[var(--border-light)] text-[var(--text-secondary)] rounded-lg text-sm">
+                            {message}
                         </div>
                     )}
 

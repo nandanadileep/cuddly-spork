@@ -4,7 +4,10 @@ import { AuthProvider } from '@/components/auth/AuthProvider'
 
 export const metadata: Metadata = {
     title: 'ShipCV - ATS Resume Builder',
-    description: 'Fill the form to get an ATS-winning resume.',
+    description: 'Land more interviews.',
+    icons: {
+        icon: '/favicon.svg',
+    },
 }
 
 export default function RootLayout({

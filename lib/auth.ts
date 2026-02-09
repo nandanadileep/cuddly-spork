@@ -53,6 +53,11 @@ export const authOptions: NextAuthOptions = {
                         return null;
                     }
 
+                    if (!user.email_verified_at) {
+                        console.log('Email not verified for:', normalizedEmail);
+                        throw new Error('EMAIL_NOT_VERIFIED');
+                    }
+
                     const isValid = await verifyPassword(credentials.password, user.password_hash);
                     console.log('Login attempt for:', normalizedEmail, 'Valid:', isValid);
 
@@ -80,6 +85,7 @@ export const authOptions: NextAuthOptions = {
                     // Check if user exists
                     const existingUser = await prisma.user.findUnique({
                         where: { email: user.email },
+                        select: { id: true, email_verified_at: true },
                     });
 
                     if (!existingUser) {
@@ -90,8 +96,14 @@ export const authOptions: NextAuthOptions = {
                                 email: user.email,
                                 name: user.name || profile?.name || 'GitHub User',
                                 openai_credits: 20, // Give new users 20 credits (2 free analyses)
+                                email_verified_at: new Date(),
                             },
                         });
+                    } else if (!existingUser.email_verified_at) {
+                        await prisma.user.update({
+                            where: { id: existingUser.id },
+                            data: { email_verified_at: new Date() },
+                        })
                     }
                 } catch (error) {
                     console.error('Error creating user:', error);
@@ -104,7 +116,7 @@ export const authOptions: NextAuthOptions = {
                     const normalizedEmail = user.email.trim().toLowerCase()
                     const existingUser = await prisma.user.findFirst({
                         where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
-                        select: { id: true },
+                        select: { id: true, email_verified_at: true },
                     })
 
                     if (!existingUser) {
@@ -113,7 +125,13 @@ export const authOptions: NextAuthOptions = {
                                 email: normalizedEmail,
                                 name: user.name || profile?.name || 'Google User',
                                 openai_credits: 20,
+                                email_verified_at: new Date(),
                             },
+                        })
+                    } else if (!existingUser.email_verified_at) {
+                        await prisma.user.update({
+                            where: { id: existingUser.id },
+                            data: { email_verified_at: new Date() },
                         })
                     }
                 } catch (error) {
