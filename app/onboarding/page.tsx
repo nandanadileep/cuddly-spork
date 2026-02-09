@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { SiLinkedin } from 'react-icons/si'
-import { MdCheckCircle, MdLanguage, MdSchool, MdSync, MdWorkOutline } from 'react-icons/md'
+import { MdCheckCircle, MdLanguage, MdSchool, MdSync, MdUploadFile, MdWorkOutline } from 'react-icons/md'
 import PlatformSelector from '@/components/PlatformSelector'
 import { getPlatformById } from '@/lib/constants/platforms'
 
@@ -28,6 +28,17 @@ export default function OnboardingPage() {
     const [profileCounts, setProfileCounts] = useState<{ education: number; experience: number } | null>(null)
     const [profileSaveError, setProfileSaveError] = useState('')
     const [isSavingProfile, setIsSavingProfile] = useState(false)
+
+    const [resumeFile, setResumeFile] = useState<File | null>(null)
+    const [isExtractingResume, setIsExtractingResume] = useState(false)
+    const [resumeExtractError, setResumeExtractError] = useState('')
+    const [resumeExtractSummary, setResumeExtractSummary] = useState<{
+        skills: number
+        projects: number
+        education: number
+        experience: number
+        contactFields: number
+    } | null>(null)
 
     const [newEducation, setNewEducation] = useState({
         institution: '',
@@ -55,7 +66,7 @@ export default function OnboardingPage() {
     const [syncProgress, setSyncProgress] = useState<Record<string, 'pending' | 'syncing' | 'complete'>>({})
     const [isSyncing, setIsSyncing] = useState(false)
 
-    const totalSteps = 7
+    const totalSteps = 8
 
     const handleNext = () => setStep(step + 1)
     const handleBack = () => setStep(step - 1)
@@ -112,10 +123,45 @@ export default function OnboardingPage() {
     }
 
     useEffect(() => {
-        if (step === 3 && session) {
+        if (step === 4 && session) {
             refreshProfileCounts()
         }
     }, [step, session])
+
+    const handleResumeExtract = async () => {
+        if (!resumeFile) {
+            setResumeExtractError('Please choose a resume file to upload.')
+            return
+        }
+
+        setIsExtractingResume(true)
+        setResumeExtractError('')
+        setResumeExtractSummary(null)
+
+        try {
+            const formData = new FormData()
+            formData.append('file', resumeFile)
+
+            const res = await fetch('/api/profile/resume-import', {
+                method: 'POST',
+                body: formData,
+            })
+            const data = await res.json().catch(() => ({}))
+
+            if (!res.ok) {
+                setResumeExtractError(data.error || 'Failed to extract resume details.')
+                return
+            }
+
+            setResumeExtractSummary(data.summary || null)
+            await refreshProfileCounts()
+        } catch (error) {
+            console.error('Resume extract error:', error)
+            setResumeExtractError('Failed to extract resume details.')
+        } finally {
+            setIsExtractingResume(false)
+        }
+    }
 
     const addEducation = async () => {
         setIsSavingProfile(true)
@@ -311,14 +357,14 @@ export default function OnboardingPage() {
                                 )}
                                 <button
                                     type="button"
-                                    onClick={step === 6 ? handleContinueToSync : handleNext}
-                                    disabled={step === 6 ? (isLoading || !targetRole) : false}
-                                    className={`px-5 py-2 rounded-md text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${step === 6
+                                    onClick={step === 7 ? handleContinueToSync : handleNext}
+                                    disabled={step === 7 ? (isLoading || !targetRole) : false}
+                                    className={`px-5 py-2 rounded-md text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${step === 7
                                         ? 'bg-[var(--github-green)] hover:opacity-90'
                                         : 'bg-[var(--orange-primary)] hover:bg-[var(--orange-hover)]'
                                         }`}
                                 >
-                                    {step === 6 ? (isLoading ? 'Saving...' : 'Start Syncing') : 'Continue'}
+                                    {step === 7 ? (isLoading ? 'Saving...' : 'Start Syncing') : 'Continue'}
                                 </button>
                             </div>
                         )}
@@ -349,11 +395,11 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
-                    {/* Step 2: Personal Website */}
-                    {step === 2 && (
-                        <div className="space-y-8">
-                            <div className="text-center py-8">
-                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                {/* Step 2: Personal Website */}
+                {step === 2 && (
+                    <div className="space-y-8">
+                        <div className="text-center py-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
                                     <MdLanguage className="text-3xl text-[var(--orange-primary)]" />
                                 </div>
                                 <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Add your personal website</h2>
@@ -397,18 +443,66 @@ export default function OnboardingPage() {
                                         )}
                                     </div>
                                 )}
-                            </div>
-
                         </div>
-                    )}
 
-                    {/* Step 3: Education & Work */}
-                    {step === 3 && (
-                        <div className="space-y-8">
-                            <div className="text-center mb-8">
-                                <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Education & Work Experience</h2>
-                                <p className="text-[var(--text-secondary)] mt-1">
-                                    Add what you want included in your resume. You can also update this later in Profile.
+                    </div>
+                )}
+
+                {/* Step 3: Upload Resume */}
+                {step === 3 && (
+                    <div className="space-y-8">
+                        <div className="text-center py-6">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                                <MdUploadFile className="text-3xl text-[var(--orange-primary)]" />
+                            </div>
+                            <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Upload your existing resume</h2>
+                            <p className="text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
+                                Optional. We’ll extract skills, projects, education, and work experience into the right pools so you can review them later.
+                            </p>
+                        </div>
+
+                        <div className="max-w-lg mx-auto space-y-4">
+                            <label className="block text-sm font-medium text-[var(--text-secondary)]">Resume file (PDF, DOCX, or TXT)</label>
+                            <input
+                                type="file"
+                                accept=".pdf,.docx,.txt"
+                                onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                                className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleResumeExtract}
+                                disabled={!resumeFile || isExtractingResume}
+                                className="w-full px-4 py-2 rounded-md bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50"
+                            >
+                                {isExtractingResume ? 'Extracting...' : 'Upload & Extract'}
+                            </button>
+                            {resumeExtractError && (
+                                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                    {resumeExtractError}
+                                </div>
+                            )}
+                            {resumeExtractSummary && (
+                                <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-1 text-sm text-[var(--text-secondary)]">
+                                    <div className="font-semibold text-[var(--text-primary)]">Imported summary</div>
+                                    <div>Skills: {resumeExtractSummary.skills}</div>
+                                    <div>Projects: {resumeExtractSummary.projects}</div>
+                                    <div>Education: {resumeExtractSummary.education}</div>
+                                    <div>Work Experience: {resumeExtractSummary.experience}</div>
+                                    <div>Contact fields updated: {resumeExtractSummary.contactFields}</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 4: Education & Work */}
+                {step === 4 && (
+                    <div className="space-y-8">
+                        <div className="text-center mb-8">
+                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Education & Work Experience</h2>
+                            <p className="text-[var(--text-secondary)] mt-1">
+                                Add what you want included in your resume. You can also update this later in Profile.
                                 </p>
                                 {profileCounts && (
                                     <p className="text-sm text-[var(--text-secondary)] mt-2">
@@ -565,8 +659,8 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                    {/* Step 4: Select Platforms */}
-                    {step === 4 && (
+                {/* Step 5: Select Platforms */}
+                {step === 5 && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
                                 <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Where do you showcase work?</h2>
@@ -581,8 +675,8 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
-                    {/* Step 5: Enter URLs */}
-                    {step === 5 && (
+                {/* Step 6: Enter URLs */}
+                {step === 6 && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
                                 <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Link your profiles</h2>
@@ -625,8 +719,8 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                    {/* Step 6: Target Role */}
-                    {step === 6 && (
+                {/* Step 7: Target Role */}
+                {step === 7 && (
                         <div className="space-y-8">
                         <div className="text-center py-4">
                             <div className="text-4xl mb-4"></div>
@@ -652,8 +746,8 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                    {/* Step 7: Syncing Progress */}
-                    {step === 7 && (
+                {/* Step 8: Syncing Progress */}
+                {step === 8 && (
                         <div className="space-y-8">
                         <div className="text-center">
                             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--green-light)] mb-6">
