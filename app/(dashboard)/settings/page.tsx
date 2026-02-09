@@ -23,7 +23,7 @@ export default function SettingsPage() {
     const [connections, setConnections] = useState<Connection[]>([])
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const [shouldScrollToUrls, setShouldScrollToUrls] = useState(false)
+    const [saveMessage, setSaveMessage] = useState('')
     const platformUrlsRef = useRef<HTMLDivElement | null>(null)
 
     const getPlatformUrlPlaceholder = (platformId: string) => {
@@ -70,21 +70,6 @@ export default function SettingsPage() {
             .finally(() => setIsLoading(false))
     }, [])
 
-    useEffect(() => {
-        if (!shouldScrollToUrls) return
-        if (selectedPlatforms.length === 0) return
-
-        const scrollToUrls = () => {
-            platformUrlsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            setTimeout(() => {
-                window.scrollBy({ top: -96, behavior: 'smooth' })
-            }, 150)
-        }
-
-        setShouldScrollToUrls(false)
-        requestAnimationFrame(scrollToUrls)
-    }, [shouldScrollToUrls, selectedPlatforms.length])
-
     const handlePlatformToggle = (id: string) => {
         if (selectedPlatforms.includes(id)) {
             setSelectedPlatforms(selectedPlatforms.filter(p => p !== id))
@@ -114,8 +99,16 @@ export default function SettingsPage() {
             })
 
             if (response.ok) {
-                alert('Settings saved successfully!')
-                setShouldScrollToUrls(true)
+                const nextMessage = 'Saved. Scroll down to add or verify your profile URLs.'
+                setSaveMessage(nextMessage)
+                if (selectedPlatforms.length > 0) {
+                    setTimeout(() => {
+                        platformUrlsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        setTimeout(() => {
+                            window.scrollBy({ top: -96, behavior: 'smooth' })
+                        }, 150)
+                    }, 50)
+                }
                 const syncEndpoint: Record<string, string> = {
                     github: '/api/sync/github',
                     gitlab: '/api/sync/gitlab',
@@ -142,13 +135,14 @@ export default function SettingsPage() {
                     setConnections(data.connections)
                 }
             } else {
-                alert('Failed to save settings')
+                setSaveMessage('Failed to save settings. Please try again.')
             }
         } catch (error) {
             console.error('Save error:', error)
-            alert('An error occurred')
+            setSaveMessage('An error occurred while saving.')
         } finally {
             setIsSaving(false)
+            setTimeout(() => setSaveMessage(''), 4000)
         }
     }
 
@@ -235,6 +229,9 @@ export default function SettingsPage() {
                         <p className="text-sm text-[var(--text-secondary)] mt-1">
                             Add or update the platforms where you showcase your work
                         </p>
+                        {saveMessage && (
+                            <p className="text-sm text-[var(--text-secondary)] mt-2">{saveMessage}</p>
+                        )}
                     </div>
                     <button
                         onClick={handleSave}
