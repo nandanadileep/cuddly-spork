@@ -505,7 +505,7 @@ export default function DashboardPage() {
                             {isRoleLoading ? (
                                 <span className="text-xs text-[var(--text-secondary)]">Loading…</span>
                             ) : (
-                                <span className="text-xs px-2 py-1 rounded-full bg-[var(--bg-warm)] text-[var(--text-secondary)]">
+                                <span className="inline-flex items-center text-xs px-3 py-1 rounded-full border border-[var(--border-light)] bg-[var(--bg-warm)] text-[var(--text-secondary)] font-medium whitespace-nowrap">
                                     {targetRole ? 'Active' : 'Not set'}
                                 </span>
                             )}
