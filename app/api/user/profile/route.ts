@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const { linkedinUrl, websiteUrl, phone, location } = await req.json()
+        const { firstName, middleName, lastName, linkedinUrl, websiteUrl, phone, location } = await req.json()
 
         // Validation (basic)
         if (linkedinUrl && !linkedinUrl.includes('linkedin.com/in/')) {
@@ -41,9 +41,15 @@ export async function POST(req: NextRequest) {
         }
 
         // Update user
+        const nameParts = [firstName, middleName, lastName]
+            .map((value: unknown) => (typeof value === 'string' ? value.trim() : ''))
+            .filter(Boolean)
+        const fullName = nameParts.join(' ')
+
         const user = await prisma.user.update({
             where: { id: session.user.id },
             data: {
+                ...(fullName ? { name: fullName } : {}),
                 linkedin_url: linkedinUrl || null,
                 website: nextWebsite,
                 phone: typeof phone === 'string' ? phone.trim() || null : undefined,
@@ -58,6 +64,7 @@ export async function POST(req: NextRequest) {
                 websiteUrl: user.website,
                 phone: user.phone,
                 location: user.location,
+                name: user.name,
             },
         })
     } catch (error) {

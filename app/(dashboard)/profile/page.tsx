@@ -65,6 +65,9 @@ export default function ProfilePage() {
     const [phone, setPhone] = useState('');
     const [location, setLocation] = useState('');
     const [savingContact, setSavingContact] = useState(false);
+    const [firstName, setFirstName] = useState('');
+    const [middleName, setMiddleName] = useState('');
+    const [lastName, setLastName] = useState('');
     const linkedinImportSupported = process.env.NODE_ENV !== 'production';
     // List States
     const [education, setEducation] = useState<Education[]>([]);
@@ -123,6 +126,10 @@ export default function ProfilePage() {
                 setWebsiteUrl(data.website || '');
                 setPhone(data.phone || '');
                 setLocation(data.location || '');
+                const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
+                setFirstName(nameParts[0] || '');
+                setLastName(nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
+                setMiddleName(nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '');
                 setNewRole(data.target_role || '');
                 setNewJD(data.job_description_jsonb?.raw_jd || '');
                 setAnalysis(data.job_description_jsonb?.analysis || null);
@@ -170,6 +177,9 @@ export default function ProfilePage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    firstName,
+                    middleName,
+                    lastName,
                     linkedinUrl: linkedInUrl,
                     websiteUrl,
                     phone,
@@ -183,6 +193,10 @@ export default function ProfilePage() {
                     setWebsiteUrl(data.user.websiteUrl || '');
                     setPhone(data.user.phone || '');
                     setLocation(data.user.location || '');
+                    const nextNameParts = String(data.user.name || '').trim().split(/\s+/).filter(Boolean);
+                    setFirstName(nextNameParts[0] || '');
+                    setLastName(nextNameParts.length > 1 ? nextNameParts[nextNameParts.length - 1] : '');
+                    setMiddleName(nextNameParts.length > 2 ? nextNameParts.slice(1, -1).join(' ') : '');
                 }
                 alert('Saved contact info.');
             } else {
@@ -511,6 +525,39 @@ export default function ProfilePage() {
 	                    {/* Contact & Links */}
 	                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
 	                        <h2 className="text-xl font-bold flex items-center gap-2">Contact & Links</h2>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-[var(--text-secondary)]">First name (optional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="First name"
+                                        className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-[var(--text-secondary)]">Middle name (optional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Middle name"
+                                        className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+                                        value={middleName}
+                                        onChange={(e) => setMiddleName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-[var(--text-secondary)]">Last name (optional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Last name"
+                                        className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                    />
+                                </div>
+                            </div>
 
 	                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 	                            <div className="space-y-2">
