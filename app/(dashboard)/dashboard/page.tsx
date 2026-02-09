@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MdCheckCircle, MdChevronRight, MdLink, MdRadioButtonUnchecked } from 'react-icons/md'
+import { MdCheckCircle, MdLink, MdRadioButtonUnchecked } from 'react-icons/md'
 
 interface Project {
     id: string
@@ -455,17 +455,9 @@ export default function DashboardPage() {
                                         One clear path to a great resume
                                     </h2>
                                     <p className="text-sm text-[var(--text-secondary)] mt-2">
-                                        Follow the steps below. Use “Continue” to jump to the next thing you should do.
+                                        Follow the steps below to finish your resume.
                                     </p>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={next.action}
-                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)]"
-                                >
-                                    Continue
-                                    <MdChevronRight className="text-xl" />
-                                </button>
                             </div>
 
                             <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -701,20 +693,6 @@ export default function DashboardPage() {
                         )}
                     </div>
 
-                    <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm">
-                        <h3 className="text-lg font-serif font-semibold mb-2">Next Steps</h3>
-                        <div className="text-sm text-[var(--text-secondary)] space-y-2">
-                            <p>1. Set a target role to guide AI scoring.</p>
-                            <p>2. Analyze projects to get relevance scores.</p>
-                            <p>3. Auto-select your top 5-7 projects.</p>
-                        </div>
-                        <button
-                            onClick={() => router.push('/analysis')}
-                            className="mt-4 w-full px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)]"
-                        >
-                            Start AI Analysis Flow
-                        </button>
-                    </div>
                 </div>
 
                 <div className="lg:col-span-2 space-y-6">
