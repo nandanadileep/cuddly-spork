@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import PlatformSelector from '@/components/PlatformSelector'
@@ -23,6 +23,7 @@ export default function SettingsPage() {
     const [connections, setConnections] = useState<Connection[]>([])
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const platformUrlsRef = useRef<HTMLDivElement | null>(null)
 
     const getPlatformUrlPlaceholder = (platformId: string) => {
         switch (platformId) {
@@ -123,6 +124,7 @@ export default function SettingsPage() {
                 if (data.connections) {
                     setConnections(data.connections)
                 }
+                platformUrlsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             } else {
                 alert('Failed to save settings')
             }
@@ -234,7 +236,7 @@ export default function SettingsPage() {
 
                 {/* URL Inputs for Selected Platforms */}
                 {selectedPlatforms.length > 0 && (
-                    <div className="mt-6 space-y-3">
+                    <div ref={platformUrlsRef} className="mt-6 space-y-3">
                         <div>
                             <h3 className="font-semibold text-lg">Platform URLs</h3>
                             <p className="text-sm text-[var(--text-secondary)] mt-1">
