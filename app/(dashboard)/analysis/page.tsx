@@ -533,6 +533,65 @@ export default function AnalysisFlowPage() {
                 ))}
             </div>
 
+            <div className="sticky top-20 z-40">
+                <div className="bg-[var(--bg-card)]/95 backdrop-blur rounded-2xl p-4 border border-[var(--border-light)] shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold">
+                                Step {step} of 3
+                            </div>
+                            <div className="text-sm text-[var(--text-secondary)] mt-1 truncate">
+                                {step === 1 && 'Pick projects to include (you can add projects manually too).'}
+                                {step === 2 && 'Run AI scoring (optional) and edit your project highlights.'}
+                                {step === 3 && 'Review skills and add/remove anything before the builder.'}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (step === 1) router.push('/dashboard')
+                                    else setStep((step - 1) as any)
+                                }}
+                                className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                            >
+                                {step === 1 ? 'Back to Dashboard' : 'Back'}
+                            </button>
+
+                            {step === 2 && (
+                                <button
+                                    type="button"
+                                    onClick={handleAnalyzeSelected}
+                                    disabled={isAnalyzing || combinedSelectedProjects.apiProjects.length === 0}
+                                    className="px-4 py-2 rounded-lg bg-white border border-[var(--border-light)] text-[var(--text-primary)] text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    {isAnalyzing && analysisProgress
+                                        ? `Analyzing ${analysisProgress.current}/${analysisProgress.total}`
+                                        : 'Analyze Projects'}
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    await saveDraft()
+                                    if (step === 1) setStep(2)
+                                    else if (step === 2) setStep(3)
+                                    else router.push('/builder')
+                                }}
+                                disabled={step === 1 && selectedProjectIds.length === 0}
+                                className="px-5 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {step === 1 && 'Continue to AI Analysis'}
+                                {step === 2 && 'Continue to Skills'}
+                                {step === 3 && 'Continue to Builder'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {step === 1 && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-4">
