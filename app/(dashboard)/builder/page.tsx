@@ -420,6 +420,27 @@ export default function ResumeBuilderPage() {
                                 </div>
                             </div>
                         </div>
+                        {generateError && (
+                            <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                <div className="font-semibold">{generateError.message}</div>
+                                {generateError.details && (
+                                    <div className="text-xs text-red-700 mt-1">{generateError.details}</div>
+                                )}
+                                {generateError.hint && (
+                                    <div className="text-xs text-red-700 mt-1">{generateError.hint}</div>
+                                )}
+                            </div>
+                        )}
+                        {pdfUrl && (
+                            <a
+                                href={pdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 block text-center px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                            >
+                                Open Preview PDF
+                            </a>
+                        )}
                     </div>
                 </div>
             )}
@@ -752,73 +773,18 @@ export default function ResumeBuilderPage() {
 
                             <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
                                 <div>
-                                    <h2 className="text-xl font-serif font-semibold mb-2">Generate Resume</h2>
+                                    <h2 className="text-xl font-serif font-semibold mb-2">Preview & Export</h2>
                                     <p className="text-sm text-[var(--text-secondary)]">
-                                        Produce LaTeX and a downloadable PDF or DOC with your edits.
+                                        Use the Quick Actions bar above to generate and download. If you need to tweak formatting, edit the LaTeX below and re-compile.
                                     </p>
-                                    {quota !== null && (
-                                        <div className="mt-2 flex items-center justify-between gap-3">
-                                            <p className="text-xs text-[var(--text-secondary)]">
-                                                Downloads: {quota.count} of {quota.limit} used
-                                            </p>
-                                            {quota.count > 0 && isHistoryClearAllowed && (
-                                                <button
-                                                    type="button"
-                                                    onClick={clearResumeHistory}
-                                                    className="text-xs font-semibold text-[var(--orange-primary)] hover:underline"
-                                                >
-                                                    Clear history
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
-                                {generateError && (
-                                    <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                                        <div className="font-semibold">{generateError.message}</div>
-                                        {generateError.details && (
-                                            <div className="text-xs text-red-700 mt-1">{generateError.details}</div>
-                                        )}
-                                        {generateError.hint && (
-                                            <div className="text-xs text-red-700 mt-1">{generateError.hint}</div>
-                                        )}
+
+                                {!latexContent && (
+                                    <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-warm)] border border-[var(--border-light)] rounded-lg px-4 py-3">
+                                        No preview generated yet. Click <span className="font-semibold">Generate Preview</span> in Quick Actions.
                                     </div>
                                 )}
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={isGenerating}
-                                    className="w-full px-4 py-3 rounded-lg bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isGenerating ? 'Generating...' : 'Generate LaTeX & PDF'}
-                                </button>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={handleDownloadPdf}
-                                        disabled={isDownloadingPdf || (quota !== null && quota.remaining <= 0)}
-                                        className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isDownloadingPdf ? 'Downloading...' : 'Download as PDF'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleDownloadDoc}
-                                        disabled={isDownloadingDoc || (quota !== null && quota.remaining <= 0)}
-                                        className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isDownloadingDoc ? 'Downloading...' : 'Download as DOC'}
-                                    </button>
-                                </div>
-                                {pdfUrl && (
-                                    <a
-                                        href={pdfUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="block text-center px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
-                                    >
-                                        Preview generated PDF
-                                    </a>
-                                )}
+
                                 {latexContent && (
                                     <textarea
                                         value={latexDraft}
@@ -851,7 +817,7 @@ export default function ResumeBuilderPage() {
                                         }}
                                         className="w-full px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
                                     >
-                                        Compile Edited LaTeX
+                                        Compile Edited LaTeX (Preview Only)
                                     </button>
                                 )}
                             </div>
