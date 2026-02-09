@@ -28,6 +28,7 @@ export default function DashboardLayout({
     const pathname = usePathname()
     const [nextStep, setNextStep] = useState<NextStep | null>(null)
     const [nextStepLoading, setNextStepLoading] = useState(true)
+    const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: MdSpaceDashboard },
@@ -218,14 +219,58 @@ export default function DashboardLayout({
                                 </div>
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/' })}
-                                    className="px-4 py-2 rounded-md border border-[var(--border-light)] hover:bg-[var(--bg-warm)] transition-colors text-sm font-medium text-[var(--text-secondary)]"
+                                    className="px-4 py-2 rounded-md border border-[var(--border-light)] hover:bg-[var(--bg-warm)] transition-colors text-sm font-medium text-[var(--text-secondary)] hidden sm:inline-flex"
                                 >
                                     Sign Out
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileNavOpen((prev) => !prev)}
+                                    className="md:hidden inline-flex items-center justify-center p-2 rounded-md border border-[var(--border-light)] text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                                    aria-label="Toggle navigation"
+                                    aria-expanded={mobileNavOpen}
+                                >
+                                    {mobileNavOpen ? 'Close' : 'Menu'}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
+                {mobileNavOpen && (
+                    <div className="md:hidden border-t border-[var(--border-light)] bg-[var(--bg-card)]">
+                        <div className="px-4 py-4 space-y-3">
+                            <div className="text-sm">
+                                <div className="font-medium text-[var(--text-primary)]">{session?.user?.name || 'User'}</div>
+                                <div className="text-[var(--text-secondary)] text-xs">{session?.user?.email}</div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {navigation.map((item) => {
+                                    const isActive = pathname === item.href
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            href={item.href}
+                                            onClick={() => setMobileNavOpen(false)}
+                                            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium ${isActive
+                                                ? 'border-[var(--orange-primary)] text-[var(--orange-primary)]'
+                                                : 'border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                                                }`}
+                                        >
+                                            <item.icon className="text-lg" />
+                                            {item.name}
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                            <button
+                                onClick={() => signOut({ callbackUrl: '/' })}
+                                className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] hover:bg-[var(--bg-warm)] transition-colors text-sm font-medium text-[var(--text-secondary)]"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                )}
             </nav>
 
             {/* Main Content */}
@@ -241,7 +286,7 @@ export default function DashboardLayout({
                         </div>
                         <Link
                             href={nextStep.href}
-                            className="px-5 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold hover:bg-[var(--orange-hover)] transition-colors"
+                            className="w-full md:w-auto text-center px-5 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold hover:bg-[var(--orange-hover)] transition-colors"
                         >
                             {nextStep.cta}
                         </Link>
