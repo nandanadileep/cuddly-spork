@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { MdInsights, MdOutlineDescription, MdPersonOutline, MdSettings, MdSpaceDashboard } from 'react-icons/md'
 
 export default function DashboardLayout({
     children,
@@ -13,9 +14,11 @@ export default function DashboardLayout({
     const pathname = usePathname()
 
     const navigation = [
-        { name: 'Dashboard', href: '/dashboard', icon: '' },
-        { name: 'Profile', href: '/profile', icon: '' },
-        { name: 'Settings', href: '/settings', icon: '' },
+        { name: 'Dashboard', href: '/dashboard', icon: MdSpaceDashboard },
+        { name: 'Analysis', href: '/analysis', icon: MdInsights },
+        { name: 'Builder', href: '/builder', icon: MdOutlineDescription },
+        { name: 'Profile', href: '/profile', icon: MdPersonOutline },
+        { name: 'Settings', href: '/settings', icon: MdSettings },
     ]
 
     return (
@@ -44,6 +47,7 @@ export default function DashboardLayout({
                                                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                                 }`}
                                         >
+                                            <item.icon className="text-lg" />
                                             {item.name}
                                         </Link>
                                     )
