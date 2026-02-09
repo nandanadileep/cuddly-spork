@@ -423,7 +423,14 @@ export default function DashboardPage() {
                             title: 'Analyze projects',
                             detail: hasAnalysis ? `${analyzedCount} scored` : 'Get AI scores + bullets',
                             done: hasAnalysis,
-                            action: () => router.push('/analysis'),
+                            action: () => {
+                                const el = document.getElementById('ai-curation-section')
+                                if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                } else {
+                                    router.push('/analysis')
+                                }
+                            },
                         },
                         {
                             key: 'resume',
@@ -712,7 +719,7 @@ export default function DashboardPage() {
 
                 <div className="lg:col-span-2 space-y-6">
                     {projects.length > 0 ? (
-                        <div className="space-y-6">
+                        <div id="ai-curation-section" className="space-y-6">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div>
                                     <h2 className="text-2xl font-serif font-semibold">AI Curation</h2>

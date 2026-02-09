@@ -57,9 +57,20 @@ interface Publication {
 }
 
 export default function ProfilePage() {
-    const { data: session } = useSession();
+    const { data: session, update } = useSession();
     const [loading, setLoading] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [email, setEmail] = useState('');
+    const [resumeFile, setResumeFile] = useState<File | null>(null);
+    const [isExtractingResume, setIsExtractingResume] = useState(false);
+    const [resumeExtractError, setResumeExtractError] = useState('');
+    const [resumeExtractSummary, setResumeExtractSummary] = useState<{
+        skills: number;
+        projects: number;
+        education: number;
+        experience: number;
+        contactFields: number;
+    } | null>(null);
     const [linkedInUrl, setLinkedInUrl] = useState('');
     const [websiteUrl, setWebsiteUrl] = useState('');
     const [phone, setPhone] = useState('');
@@ -126,6 +137,7 @@ export default function ProfilePage() {
                 setWebsiteUrl(data.website || '');
                 setPhone(data.phone || '');
                 setLocation(data.location || '');
+                setEmail(data.email || '');
                 const nameParts = String(data.name || '').trim().split(/\s+/).filter(Boolean);
                 setFirstName(nameParts[0] || '');
                 setLastName(nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
@@ -170,6 +182,41 @@ export default function ProfilePage() {
         }
     };
 
+    const handleResumeExtract = async () => {
+        if (!resumeFile) {
+            setResumeExtractError('Please choose a resume file to upload.');
+            return;
+        }
+
+        setIsExtractingResume(true);
+        setResumeExtractError('');
+        setResumeExtractSummary(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', resumeFile);
+
+            const res = await fetch('/api/profile/resume-import', {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                setResumeExtractError(data.error || 'Failed to extract resume details.');
+                return;
+            }
+
+            setResumeExtractSummary(data.summary || null);
+            fetchProfile();
+        } catch (error) {
+            console.error('Resume extract error:', error);
+            setResumeExtractError('Failed to extract resume details.');
+        } finally {
+            setIsExtractingResume(false);
+        }
+    };
+
     const handleSaveContact = async () => {
         setSavingContact(true);
         try {
@@ -180,6 +227,7 @@ export default function ProfilePage() {
                     firstName,
                     middleName,
                     lastName,
+                    email,
                     linkedinUrl: linkedInUrl,
                     websiteUrl,
                     phone,
@@ -193,10 +241,12 @@ export default function ProfilePage() {
                     setWebsiteUrl(data.user.websiteUrl || '');
                     setPhone(data.user.phone || '');
                     setLocation(data.user.location || '');
+                    setEmail(data.user.email || '');
                     const nextNameParts = String(data.user.name || '').trim().split(/\s+/).filter(Boolean);
                     setFirstName(nextNameParts[0] || '');
                     setLastName(nextNameParts.length > 1 ? nextNameParts[nextNameParts.length - 1] : '');
                     setMiddleName(nextNameParts.length > 2 ? nextNameParts.slice(1, -1).join(' ') : '');
+                    await update?.();
                 }
                 alert('Saved contact info.');
             } else {
@@ -523,8 +573,8 @@ export default function ProfilePage() {
                 {/* Right Side: Resume Details */}
                 <div className="lg:col-span-3 space-y-8">
 	                    {/* Contact & Links */}
-	                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
-	                        <h2 className="text-xl font-bold flex items-center gap-2">Contact & Links</h2>
+                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
+                        <h2 className="text-xl font-bold flex items-center gap-2">Contact & Links</h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
@@ -557,6 +607,20 @@ export default function ProfilePage() {
                                         onChange={(e) => setLastName(e.target.value)}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-[var(--text-secondary)]">Email</label>
+                                <input
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)] focus:ring-2 focus:ring-[var(--orange-primary)] outline-none"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                                <p className="text-xs text-[var(--text-secondary)]">
+                                    Updating your email may require signing in again.
+                                </p>
                             </div>
 
 	                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -621,12 +685,56 @@ export default function ProfilePage() {
 	                            )}
 	                        </div>
 
-	                        <p className="text-xs text-[var(--text-secondary)]">
-	                            {linkedinImportSupported
-	                                ? 'LinkedIn import is a best-effort feature and may fail for some accounts.'
-	                                : 'LinkedIn import is not supported on the deployed app. Add your education and work experience manually below.'}
-	                        </p>
-	                    </section>
+                        <p className="text-xs text-[var(--text-secondary)]">
+                            {linkedinImportSupported
+                                ? 'LinkedIn import is a best-effort feature and may fail for some accounts.'
+                                : 'LinkedIn import is not supported on the deployed app. Add your education and work experience manually below.'}
+                        </p>
+                    </section>
+
+                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
+                        <div>
+                            <h2 className="text-xl font-bold">Import Resume</h2>
+                            <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                Upload your current resume to extract skills, projects, education, and experience into the right pools.
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="text-sm font-medium text-[var(--text-secondary)]">Resume file (PDF, DOCX, or TXT)</label>
+                            <input
+                                type="file"
+                                accept=".pdf,.docx,.txt"
+                                onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                                className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-light)]"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleResumeExtract}
+                                disabled={!resumeFile || isExtractingResume}
+                                className="px-4 py-2 rounded-md bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)] disabled:opacity-50"
+                            >
+                                {isExtractingResume ? 'Extracting...' : 'Upload & Extract'}
+                            </button>
+
+                            {resumeExtractError && (
+                                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                    {resumeExtractError}
+                                </div>
+                            )}
+
+                            {resumeExtractSummary && (
+                                <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-1 text-sm text-[var(--text-secondary)]">
+                                    <div className="font-semibold text-[var(--text-primary)]">Imported summary</div>
+                                    <div>Skills: {resumeExtractSummary.skills}</div>
+                                    <div>Projects: {resumeExtractSummary.projects}</div>
+                                    <div>Education: {resumeExtractSummary.education}</div>
+                                    <div>Work Experience: {resumeExtractSummary.experience}</div>
+                                    <div>Contact fields updated: {resumeExtractSummary.contactFields}</div>
+                                </div>
+                            )}
+                        </div>
+                    </section>
 
                     <div className="grid md:grid-cols-2 gap-8">
                         {/* Work Experience Section */}

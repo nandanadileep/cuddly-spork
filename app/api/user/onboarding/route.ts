@@ -13,39 +13,49 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json()
-        const { linkedinUrl, targetRole, websiteUrl, platforms = [] } = body
+        const { linkedinUrl, targetRole, websiteUrl, platforms = [], skipRoleSnapshot } = body
 
         console.log('Onboarding request:', { linkedinUrl, targetRole, websiteUrl, platforms })
 
-        // 0. Generate AI Analysis for target role if provided
-        let jobDescriptionJsonb: Prisma.InputJsonValue | null = null
-        if (targetRole) {
-            try {
-                const { generateJobDescription } = await import('@/lib/openai')
-                const analysis = await generateJobDescription(targetRole)
-                jobDescriptionJsonb = {
-                    raw_jd: '',
-                    analysis: analysis,
-                    last_updated: new Date().toISOString()
-                } as unknown as Prisma.InputJsonValue
-            } catch (error) {
-                console.error('Failed to generate job description in onboarding:', error)
-            }
-        }
-
-        // 1. Update User Profile
+        // 1. Identify user up-front
         const userId = session.user.id || null
         const userEmail = session.user.email || null
         const userRecord = userId
-            ? await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })
+            ? await prisma.user.findUnique({ where: { id: userId }, select: { id: true, target_role: true, job_description_jsonb: true } })
             : userEmail
-                ? await prisma.user.findUnique({ where: { email: userEmail }, select: { id: true } })
+                ? await prisma.user.findUnique({ where: { email: userEmail }, select: { id: true, target_role: true, job_description_jsonb: true } })
                 : null
 
         if (!userRecord?.id) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
+        // 2. Generate role snapshot if needed
+        const trimmedTargetRole = typeof targetRole === 'string' ? targetRole.trim() : ''
+        let jobDescriptionJsonb: Prisma.InputJsonValue | undefined = undefined
+
+        if (trimmedTargetRole && !skipRoleSnapshot) {
+            const hasExistingSnapshot = userRecord.target_role === trimmedTargetRole && !!userRecord.job_description_jsonb
+
+            if (!hasExistingSnapshot) {
+                try {
+                    const { generateJobDescription } = await import('@/lib/openai')
+                    const analysis = await generateJobDescription(trimmedTargetRole)
+                    const analysisJson = analysis
+                        ? (JSON.parse(JSON.stringify(analysis)) as Prisma.InputJsonValue)
+                        : null
+                    jobDescriptionJsonb = {
+                        raw_jd: '',
+                        analysis: analysisJson,
+                        last_updated: new Date().toISOString()
+                    } as Prisma.InputJsonValue
+                } catch (error) {
+                    console.error('Failed to generate job description in onboarding:', error)
+                }
+            }
+        }
+
+        // 3. Update User Profile
         const userUpdate: Prisma.UserUpdateInput = { onboarding_completed: true }
         if (typeof linkedinUrl === 'string') {
             userUpdate.linkedin_url = linkedinUrl.trim() || null
@@ -66,9 +76,9 @@ export async function POST(req: NextRequest) {
             }
         }
         if (typeof targetRole === 'string') {
-            userUpdate.target_role = targetRole.trim() || null
+            userUpdate.target_role = trimmedTargetRole || null
         }
-        if (jobDescriptionJsonb !== null) {
+        if (jobDescriptionJsonb !== undefined) {
             userUpdate.job_description_jsonb = jobDescriptionJsonb
         }
 
@@ -77,7 +87,7 @@ export async function POST(req: NextRequest) {
             data: userUpdate,
         })
 
-        // 2. Save Manual Platform Connections
+        // 4. Save Manual Platform Connections
         // We'll treat these as "manual" connections in the platform_connections table
         // Or simpler: just save them if we had a dedicated manuals table, but let's reuse platformConnection
         // For simplicity, we might iterate and check if we can store them.

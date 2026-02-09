@@ -13,6 +13,9 @@ export default function OnboardingPage() {
     const { data: session } = useSession()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
+    const [isGeneratingRoleSnapshot, setIsGeneratingRoleSnapshot] = useState(false)
+    const [roleSnapshotReady, setRoleSnapshotReady] = useState(false)
+    const [roleSnapshotError, setRoleSnapshotError] = useState('')
 
     // Form State
     const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -229,6 +232,35 @@ export default function OnboardingPage() {
         }
     }
 
+    const ensureRoleSnapshot = async () => {
+        const trimmedRole = targetRole.trim()
+        if (!trimmedRole || roleSnapshotReady) return roleSnapshotReady
+
+        setIsGeneratingRoleSnapshot(true)
+        setRoleSnapshotError('')
+
+        try {
+            const res = await fetch('/api/profile/target-role', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_role: trimmedRole })
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                setRoleSnapshotError(data.error || 'Failed to create role snapshot.')
+                return false
+            }
+            setRoleSnapshotReady(true)
+            return true
+        } catch (error) {
+            console.error('Role snapshot error:', error)
+            setRoleSnapshotError('Failed to create role snapshot.')
+            return false
+        } finally {
+            setIsGeneratingRoleSnapshot(false)
+        }
+    }
+
     const startSync = async () => {
         setIsSyncing(true)
 
@@ -300,6 +332,7 @@ export default function OnboardingPage() {
     const handleContinueToSync = async () => {
         setIsLoading(true)
         try {
+            const snapshotOk = await ensureRoleSnapshot()
             // Save URLs to backend
             const response = await fetch('/api/user/onboarding', {
                 method: 'POST',
@@ -308,6 +341,7 @@ export default function OnboardingPage() {
                     linkedinUrl,
                     websiteUrl,
                     targetRole,
+                    skipRoleSnapshot: snapshotOk,
                     platforms: selectedPlatforms.map(id => ({
                         id,
                         url: platformUrls[id]
@@ -739,8 +773,23 @@ export default function OnboardingPage() {
                                 placeholder="e.g. Senior Frontend Engineer, Product Manager"
                                 className="w-full px-4 py-3 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] focus:ring-1 focus:ring-[var(--orange-primary)] focus:border-[var(--orange-primary)] outline-none transition-all placeholder-[var(--text-secondary)]/50 font-medium"
                                 value={targetRole}
-                                onChange={(e) => setTargetRole(e.target.value)}
+                                onChange={(e) => {
+                                    setTargetRole(e.target.value)
+                                    setRoleSnapshotReady(false)
+                                    setRoleSnapshotError('')
+                                }}
                             />
+                            {isGeneratingRoleSnapshot && (
+                                <p className="text-xs text-[var(--text-secondary)] mt-2">Creating your role snapshot...</p>
+                            )}
+                            {roleSnapshotReady && !isGeneratingRoleSnapshot && (
+                                <p className="text-xs text-[var(--github-green)] mt-2">Role snapshot ready.</p>
+                            )}
+                            {roleSnapshotError && (
+                                <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                    {roleSnapshotError} We’ll retry during sync.
+                                </div>
+                            )}
                         </div>
 
                         </div>

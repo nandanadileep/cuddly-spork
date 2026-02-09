@@ -127,6 +127,7 @@ export const authOptions: NextAuthOptions = {
             if (session?.user) {
                 session.user.id = token.sub || user?.id || '';
                 session.user.targetRole = (token as any).targetRole || null;
+                session.user.email = (token.email as string) || session.user.email;
             }
             return session;
         },
@@ -143,7 +144,18 @@ export const authOptions: NextAuthOptions = {
             }
 
             if (trigger === 'update' && session) {
-                (token as any).targetRole = (session as any).targetRole ?? (token as any).targetRole ?? null;
+                if (token.sub) {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: token.sub },
+                        select: { email: true, target_role: true },
+                    })
+                    if (dbUser) {
+                        token.email = dbUser.email
+                        (token as any).targetRole = dbUser.target_role ?? (token as any).targetRole ?? null
+                    }
+                } else {
+                    (token as any).targetRole = (session as any).targetRole ?? (token as any).targetRole ?? null;
+                }
             }
 
             // Store GitHub access token if OAuth login

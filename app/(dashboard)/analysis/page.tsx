@@ -255,23 +255,37 @@ export default function AnalysisFlowPage() {
     useEffect(() => {
         if (status !== 'authenticated') return
         if (projects.length === 0) return
-        if (draftStatus !== 'missing') return
+        if (draftStatus === 'unknown') return
         if (selectedProjectIds.length > 0) return
 
         const autoSelect = async () => {
             setIsAutoSelecting(true)
             try {
-                const res = await fetch('/api/projects/auto-select', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ limit: 7 }),
-                })
-                const data = await res.json()
-                if (res.ok && data.projectIds) {
-                    setSelectedProjectIds(data.projectIds)
+                const scoredProjects = projects
+                    .filter(project => typeof project.ai_score === 'number')
+                    .sort((a, b) => (b.ai_score || 0) - (a.ai_score || 0))
+
+                if (scoredProjects.length > 0) {
+                    const topIds = scoredProjects.slice(0, 7).map(project => project.id)
+                    setSelectedProjectIds(topIds)
                     setDraftStatus('exists')
-                    await fetchProjects()
-                    await saveDraft({ selectedProjectIds: data.projectIds })
+                    await saveDraft({ selectedProjectIds: topIds })
+                    return
+                }
+
+                if (draftStatus === 'missing') {
+                    const res = await fetch('/api/projects/auto-select', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ limit: 7 }),
+                    })
+                    const data = await res.json()
+                    if (res.ok && data.projectIds) {
+                        setSelectedProjectIds(data.projectIds)
+                        setDraftStatus('exists')
+                        await fetchProjects()
+                        await saveDraft({ selectedProjectIds: data.projectIds })
+                    }
                 }
             } catch (error) {
                 console.error('Auto-select error:', error)
