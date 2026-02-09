@@ -24,6 +24,8 @@
         "next": "^16.1.6",
         "next-auth": "^4.24.11",
         "openai": "^4.77.3",
+        "mammoth": "^1.8.0",
+        "pdf-parse": "^1.1.1",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-icons": "^5.5.0",
@@ -34,7 +36,9 @@
     "devDependencies": {
         "@types/bcryptjs": "^2.4.6",
         "@types/cheerio": "^0.22.35",
+        "@types/mammoth": "^1.6.6",
         "@types/node": "^22",
+        "@types/pdf-parse": "^1.1.4",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "autoprefixer": "^10.4.24",

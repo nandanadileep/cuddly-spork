@@ -207,6 +207,128 @@ Return a JSON object with a "skills" array, ordered by relevance.`
     return result.skills || []
 }
 
+export interface ResumeExtractionResult {
+    contact: {
+        name?: string
+        email?: string
+        phone?: string
+        location?: string
+        website?: string
+        linkedin?: string
+        github?: string
+    }
+    skills: string[]
+    projects: Array<{
+        name: string
+        description?: string
+        technologies?: string[]
+        url?: string
+    }>
+    education: Array<{
+        institution: string
+        degree?: string
+        field?: string
+        cgpa?: string
+        location?: string
+        startDate?: string
+        endDate?: string
+        isCurrent?: boolean
+        description?: string
+    }>
+    workExperience: Array<{
+        company: string
+        position: string
+        location?: string
+        startDate?: string
+        endDate?: string
+        isCurrent?: boolean
+        description?: string
+    }>
+}
+
+export async function extractResumeData(text: string): Promise<ResumeExtractionResult> {
+    const prompt = `Extract structured resume data from the text below.
+
+Return a JSON object with exactly these keys:
+{
+  "contact": {
+    "name": "",
+    "email": "",
+    "phone": "",
+    "location": "",
+    "website": "",
+    "linkedin": "",
+    "github": ""
+  },
+  "skills": [],
+  "projects": [
+    { "name": "", "description": "", "technologies": [], "url": "" }
+  ],
+  "education": [
+    {
+      "institution": "",
+      "degree": "",
+      "field": "",
+      "cgpa": "",
+      "location": "",
+      "startDate": "",
+      "endDate": "",
+      "isCurrent": false,
+      "description": ""
+    }
+  ],
+  "workExperience": [
+    {
+      "company": "",
+      "position": "",
+      "location": "",
+      "startDate": "",
+      "endDate": "",
+      "isCurrent": false,
+      "description": ""
+    }
+  ]
+}
+
+Guidelines:
+- If a field is missing, use empty string or empty array.
+- Prefer concise descriptions (1-2 sentences).
+- Dates should be YYYY-MM where possible, otherwise YYYY, otherwise empty string.
+
+Resume text:
+${text}
+`
+
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+            {
+                role: 'system',
+                content: 'You are an expert resume parser that extracts structured data accurately.',
+            },
+            { role: 'user', content: prompt },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.1,
+        max_tokens: 1500,
+    })
+
+    const content = response.choices[0]?.message?.content
+    if (!content) {
+        throw new Error('No response from OpenAI')
+    }
+
+    const parsed = JSON.parse(content) as ResumeExtractionResult
+
+    return {
+        contact: parsed.contact || {},
+        skills: Array.isArray(parsed.skills) ? parsed.skills : [],
+        projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+        education: Array.isArray(parsed.education) ? parsed.education : [],
+        workExperience: Array.isArray(parsed.workExperience) ? parsed.workExperience : [],
+    }
+}
+
 /**
  * Detect tech stack from project metadata
  */
