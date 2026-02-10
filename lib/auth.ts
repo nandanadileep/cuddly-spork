@@ -168,7 +168,7 @@ export const authOptions: NextAuthOptions = {
                         select: { email: true, target_role: true },
                     })
                     if (dbUser) {
-                        token.email = dbUser.email
+                        token.email = dbUser.email;
                         (token as any).targetRole = dbUser.target_role ?? (token as any).targetRole ?? null
                     }
                 } else {
