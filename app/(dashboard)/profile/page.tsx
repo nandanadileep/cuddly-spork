@@ -56,6 +56,16 @@ interface Publication {
     description?: string;
 }
 
+interface ResumeItem {
+    id: string;
+    title: string;
+    template_id: string;
+    target_role: string | null;
+    pdf_url: string | null;
+    pdfUrl?: string | null;
+    created_at: string;
+}
+
 export default function ProfilePage() {
     const { data: session, update } = useSession();
     const [loading, setLoading] = useState(false);
@@ -89,6 +99,9 @@ export default function ProfilePage() {
     const [extracurriculars, setExtracurriculars] = useState<Extracurricular[]>([]);
     const [awards, setAwards] = useState<Award[]>([]);
     const [publications, setPublications] = useState<Publication[]>([]);
+    const [resumes, setResumes] = useState<ResumeItem[]>([]);
+    const [isResumesLoading, setIsResumesLoading] = useState(false);
+    const [resumesError, setResumesError] = useState('');
 
     // Form States
     const [isAddingWork, setIsAddingWork] = useState(false);
@@ -123,6 +136,7 @@ export default function ProfilePage() {
     useEffect(() => {
         if (!session) return;
         fetchProfile();
+        fetchResumes();
     }, [session]);
 
     const fetchProfile = async () => {
@@ -153,6 +167,26 @@ export default function ProfilePage() {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchResumes = async () => {
+        setIsResumesLoading(true);
+        setResumesError('');
+        try {
+            const res = await fetch('/api/resume/history');
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && Array.isArray(data?.resumes)) {
+                setResumes(data.resumes);
+            } else {
+                setResumes([]);
+            }
+        } catch (error) {
+            console.error('Failed to load resumes:', error);
+            setResumes([]);
+            setResumesError('Failed to load resume files.');
+        } finally {
+            setIsResumesLoading(false);
         }
     };
 
@@ -581,7 +615,87 @@ export default function ProfilePage() {
 
                 {/* Right Side: Resume Details */}
                 <div className="lg:col-span-3 space-y-8">
-	                    {/* Contact & Links */}
+                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div>
+                                <h2 className="text-xl font-bold">Saved Resumes</h2>
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    Reopen and edit your generated resumes anytime.
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={fetchResumes}
+                                    className="px-3 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                                >
+                                    Refresh
+                                </button>
+                                <Link
+                                    href="/analysis"
+                                    className="px-3 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold hover:bg-[var(--orange-hover)]"
+                                >
+                                    Open analysis flow
+                                </Link>
+                            </div>
+                        </div>
+
+                        {resumesError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                {resumesError}
+                            </div>
+                        )}
+
+                        {isResumesLoading ? (
+                            <div className="text-sm text-[var(--text-secondary)]">Loading resumes...</div>
+                        ) : resumes.length === 0 ? (
+                            <div className="text-sm text-[var(--text-secondary)]">
+                                No saved resumes yet. Generate one in the analysis flow to see it here.
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {resumes.map((resume) => (
+                                    <div
+                                        key={resume.id}
+                                        className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-[var(--border-light)] bg-[var(--bg-warm)] rounded-xl px-4 py-3"
+                                    >
+                                        <div>
+                                            <div className="font-semibold text-[var(--text-primary)]">
+                                                {resume.title}
+                                            </div>
+                                            <div className="text-xs text-[var(--text-secondary)] mt-1">
+                                                {resume.target_role || 'No target role'} · {new Date(resume.created_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {resume.pdfUrl ? (
+                                                <a
+                                                    href={resume.pdfUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="px-3 py-1.5 rounded-lg border border-[var(--border-light)] text-xs font-medium text-[var(--text-secondary)] hover:bg-white"
+                                                >
+                                                    View PDF
+                                                </a>
+                                            ) : (
+                                                <span className="px-3 py-1.5 rounded-lg border border-dashed border-[var(--border-light)] text-xs text-[var(--text-secondary)]">
+                                                    File pending
+                                                </span>
+                                            )}
+                                            <Link
+                                                href="/analysis"
+                                                className="px-3 py-1.5 rounded-lg bg-[var(--orange-primary)] text-white text-xs font-semibold hover:bg-[var(--orange-hover)]"
+                                            >
+                                                Edit in analysis
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Contact & Links */}
                     <section id="contact" className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
                         <h2 className="text-xl font-bold flex items-center gap-2">Contact & Links</h2>
 

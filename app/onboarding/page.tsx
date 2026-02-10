@@ -56,6 +56,15 @@ export default function OnboardingPage() {
         contactFields: number
     } | null>(null)
 
+    const resumeImportedCount = resumeExtractSummary
+        ? resumeExtractSummary.education +
+          resumeExtractSummary.experience +
+          resumeExtractSummary.extracurriculars +
+          resumeExtractSummary.awards +
+          resumeExtractSummary.publications
+        : 0
+    const hasResumeImported = resumeImportedCount > 0
+
     const emptyEducation = {
         institution: '',
         degree: '',
@@ -913,6 +922,25 @@ export default function OnboardingPage() {
                                     <div>Contact fields updated: {resumeExtractSummary.contactFields}</div>
                                 </div>
                             )}
+
+                            {hasResumeImported && (
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setStep(platformSelectStep)}
+                                        className="flex-1 px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                                    >
+                                        Skip manual entry
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleNext}
+                                        className="flex-1 px-4 py-2 rounded-md bg-[var(--orange-primary)] text-white font-semibold hover:bg-[var(--orange-hover)]"
+                                    >
+                                        Review imported data
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -933,6 +961,11 @@ export default function OnboardingPage() {
                                     Current: {profileCounts.education} education
                                 </p>
                             )}
+                            {resumeExtractSummary?.education ? (
+                                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                                    Imported {resumeExtractSummary.education} education entries from your resume. You can skip this step.
+                                </p>
+                            ) : null}
                             {pendingEducation.length > 0 && (
                                 <p className="text-sm text-[var(--text-secondary)] mt-1">
                                     Pending additions: {pendingEducation.length}
@@ -1065,6 +1098,11 @@ export default function OnboardingPage() {
                                     Current: {profileCounts.experience} experience
                                 </p>
                             )}
+                            {resumeExtractSummary?.experience ? (
+                                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                                    Imported {resumeExtractSummary.experience} work entries from your resume. You can skip this step.
+                                </p>
+                            ) : null}
                             {pendingExperience.length > 0 && (
                                 <p className="text-sm text-[var(--text-secondary)] mt-1">
                                     Pending additions: {pendingExperience.length}
@@ -1191,6 +1229,11 @@ export default function OnboardingPage() {
                                     Current: {profileCounts.extracurriculars} extracurriculars
                                 </p>
                             )}
+                            {resumeExtractSummary?.extracurriculars ? (
+                                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                                    Imported {resumeExtractSummary.extracurriculars} extracurriculars from your resume. You can skip this step.
+                                </p>
+                            ) : null}
                             {pendingExtracurriculars.length > 0 && (
                                 <p className="text-sm text-[var(--text-secondary)] mt-1">
                                     Pending additions: {pendingExtracurriculars.length}
@@ -1322,6 +1365,11 @@ export default function OnboardingPage() {
                                     Current: {profileCounts.awards} awards
                                 </p>
                             )}
+                            {resumeExtractSummary?.awards ? (
+                                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                                    Imported {resumeExtractSummary.awards} awards from your resume. You can skip this step.
+                                </p>
+                            ) : null}
                             {pendingAwards.length > 0 && (
                                 <p className="text-sm text-[var(--text-secondary)] mt-1">
                                     Pending additions: {pendingAwards.length}
@@ -1423,6 +1471,11 @@ export default function OnboardingPage() {
                                     Current: {profileCounts.publications} publications
                                 </p>
                             )}
+                            {resumeExtractSummary?.publications ? (
+                                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                                    Imported {resumeExtractSummary.publications} publications from your resume. You can skip this step.
+                                </p>
+                            ) : null}
                             {pendingPublications.length > 0 && (
                                 <p className="text-sm text-[var(--text-secondary)] mt-1">
                                     Pending additions: {pendingPublications.length}
