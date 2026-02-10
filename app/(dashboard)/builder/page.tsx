@@ -338,6 +338,115 @@ export default function ResumeBuilderPage() {
         { id: 'compact', name: 'Compact', description: 'Dense layout for longer resumes.' },
     ]
 
+    const renderTemplatePreview = (id: string) => {
+        const line = 'h-2 rounded bg-[var(--border-light)]'
+        const faintLine = 'h-1.5 rounded bg-[var(--border-light)]/70'
+        switch (id) {
+            case 'classic':
+                return (
+                    <div className="h-full w-full rounded-md bg-[var(--bg-card)] p-2 flex flex-col gap-2">
+                        <div className="flex items-center justify-center">
+                            <div className="h-2 w-24 rounded bg-[var(--text-primary)]/80" />
+                        </div>
+                        <div className="h-px bg-[var(--border-light)]" />
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                                <div className={`${line} w-16`} />
+                                <div className={`${faintLine} w-full`} />
+                                <div className={`${faintLine} w-5/6`} />
+                                <div className={`${faintLine} w-4/6`} />
+                            </div>
+                            <div className="space-y-1">
+                                <div className={`${line} w-14`} />
+                                <div className={`${faintLine} w-full`} />
+                                <div className={`${faintLine} w-4/6`} />
+                                <div className={`${faintLine} w-5/6`} />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <div className={`${line} w-20`} />
+                            <div className={`${faintLine} w-full`} />
+                            <div className={`${faintLine} w-5/6`} />
+                        </div>
+                    </div>
+                )
+            case 'minimal':
+                return (
+                    <div className="h-full w-full rounded-md bg-[var(--bg-card)] p-2 flex flex-col gap-2">
+                        <div className={`${line} w-20`} />
+                        <div className={`${faintLine} w-full`} />
+                        <div className={`${faintLine} w-5/6`} />
+                        <div className={`${faintLine} w-2/3`} />
+                        <div className="h-px bg-[var(--border-light)]" />
+                        <div className={`${line} w-16`} />
+                        <div className={`${faintLine} w-full`} />
+                        <div className={`${faintLine} w-4/6`} />
+                        <div className={`${faintLine} w-3/6`} />
+                    </div>
+                )
+            case 'bold':
+                return (
+                    <div className="h-full w-full rounded-md bg-[var(--bg-card)] p-2 flex flex-col gap-2">
+                        <div className="h-3 w-3/4 rounded bg-[var(--text-primary)]/85" />
+                        <div className="h-2 w-24 rounded bg-[var(--orange-primary)]/70" />
+                        <div className="space-y-1">
+                            <div className={`${line} w-20`} />
+                            <div className={`${faintLine} w-full`} />
+                            <div className={`${faintLine} w-5/6`} />
+                        </div>
+                        <div className="space-y-1">
+                            <div className={`${line} w-24`} />
+                            <div className={`${faintLine} w-full`} />
+                            <div className={`${faintLine} w-4/6`} />
+                        </div>
+                    </div>
+                )
+            case 'compact':
+                return (
+                    <div className="h-full w-full rounded-md bg-[var(--bg-card)] p-2 flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                            <div className="h-2 w-16 rounded bg-[var(--text-primary)]/80" />
+                            <div className="h-2 w-10 rounded bg-[var(--border-light)]" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                            <div className={`${faintLine} w-full`} />
+                            <div className={`${faintLine} w-full`} />
+                            <div className={`${faintLine} w-full`} />
+                        </div>
+                        <div className="h-px bg-[var(--border-light)]" />
+                        {Array.from({ length: 5 }).map((_, index) => (
+                            <div key={index} className="grid grid-cols-3 gap-1">
+                                <div className={`${faintLine} w-full`} />
+                                <div className={`${faintLine} w-full`} />
+                                <div className={`${faintLine} w-full`} />
+                            </div>
+                        ))}
+                    </div>
+                )
+            case 'modern':
+            default:
+                return (
+                    <div className="h-full w-full rounded-md bg-[var(--bg-card)] p-2 flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-20 rounded bg-[var(--text-primary)]/80" />
+                            <div className="h-1.5 w-10 rounded bg-[var(--orange-primary)]/70" />
+                        </div>
+                        <div className="h-px bg-[var(--border-light)]" />
+                        <div className="space-y-1">
+                            <div className={`${line} w-24`} />
+                            <div className={`${faintLine} w-full`} />
+                            <div className={`${faintLine} w-5/6`} />
+                        </div>
+                        <div className="space-y-1">
+                            <div className={`${line} w-20`} />
+                            <div className={`${faintLine} w-full`} />
+                            <div className={`${faintLine} w-4/6`} />
+                        </div>
+                    </div>
+                )
+        }
+    }
+
     if (status === 'loading' || isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -475,6 +584,9 @@ export default function ResumeBuilderPage() {
                                             : 'border-[var(--border-light)] bg-[var(--bg-card)] hover:shadow-sm'
                                         }`}
                                 >
+                                    <div className="mb-3 aspect-[4/5] rounded-lg border border-[var(--border-light)] bg-[var(--bg-warm)] p-2">
+                                        {renderTemplatePreview(template.id)}
+                                    </div>
                                     <div className="font-semibold text-[var(--text-primary)]">{template.name}</div>
                                     <div className="text-xs text-[var(--text-secondary)]">{template.description}</div>
                                 </button>
@@ -545,9 +657,11 @@ export default function ResumeBuilderPage() {
                                                                         const next = bullets.filter((_: string, i: number) => i !== index)
                                                                         updateProjectBullets(project.id, next.length ? next : [''])
                                                                     }}
-                                                                    className="px-2 py-1 text-xs rounded border border-[var(--border-light)] text-red-600"
+                                                                    className="w-7 h-7 inline-flex items-center justify-center text-xs rounded border border-[var(--border-light)] text-red-600 hover:bg-[var(--bg-warm)]"
+                                                                    aria-label="Remove bullet"
+                                                                    title="Remove"
                                                                 >
-                                                                    Remove
+                                                                    ×
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -611,9 +725,11 @@ export default function ResumeBuilderPage() {
                                                                     const next = source.filter((_, i) => i !== index)
                                                                     updateManualProjectNotes(project.id, next.length ? next : [''])
                                                                 }}
-                                                                className="px-2 py-1 text-xs rounded border border-[var(--border-light)] text-red-600"
+                                                                className="w-7 h-7 inline-flex items-center justify-center text-xs rounded border border-[var(--border-light)] text-red-600 hover:bg-[var(--bg-warm)]"
+                                                                aria-label="Remove note"
+                                                                title="Remove"
                                                             >
-                                                                Remove
+                                                                ×
                                                             </button>
                                                         </div>
                                                     </div>
