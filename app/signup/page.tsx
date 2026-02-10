@@ -1,54 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getProviders, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { FcGoogle } from 'react-icons/fc'
 import ThemeToggle from '@/components/ThemeToggle'
 
 export default function SignupPage() {
     const router = useRouter()
-    const [firstName, setFirstName] = useState('')
-    const [lastName, setLastName] = useState('')
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
-    const [message, setMessage] = useState('')
-    const [loading, setLoading] = useState(false)
+    const [providers, setProviders] = useState<Record<string, any> | null>(null)
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError('')
-        setMessage('')
-        setLoading(true)
+    useEffect(() => {
+        getProviders()
+            .then((p) => setProviders(p || null))
+            .catch(() => setProviders(null))
+    }, [])
 
-        try {
-            const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
-            if (!firstName.trim() || !lastName.trim()) {
-                setError('Please enter your first and last name.')
-                setLoading(false)
-                return
-            }
-            // 1. Create the account
-            const response = await fetch('/api/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: fullName, email, password }),
-            })
+    const googleEnabled = Boolean(providers?.google)
 
-            const data = await response.json()
-
-            if (!response.ok) {
-                setError(data.error || 'Something went wrong')
-                setLoading(false)
-                return
-            }
-
-            setMessage('Account created. Check your email to verify before signing in.')
-            setTimeout(() => router.push('/login?registered=true'), 800)
-        } catch (err) {
-            setError('An error occurred. Please try again.')
-        } finally {
-            setLoading(false)
-        }
+    const handleGoogle = () => {
+        signIn('google', { callbackUrl: '/dashboard' })
     }
 
     return (
@@ -59,88 +30,35 @@ export default function SignupPage() {
             <div className="max-w-md w-full">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-extrabold mb-2">Create your account</h1>
-                    <p className="text-[var(--text-secondary)]">Start building your AI-powered resume</p>
+                    <p className="text-[var(--text-secondary)]">Accounts are created automatically with Google</p>
                 </div>
 
                 <div className="bg-[var(--bg-card)] rounded-2xl p-8 shadow-lg border border-[var(--border-light)]">
-                    {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
-                    {message && (
-                        <div className="mb-4 p-3 bg-[var(--bg-warm)] border border-[var(--border-light)] text-[var(--text-secondary)] rounded-lg text-sm">
-                            {message}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-sm font-semibold mb-2">First name</label>
-                                <input
-                                    type="text"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
-                                    placeholder="First"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold mb-2">Last name</label>
-                                <input
-                                    type="text"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
-                                    placeholder="Last"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold mb-2">Email</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
-                                placeholder="you@example.com"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold mb-2">Password</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
-                                placeholder="••••••••"
-                                required
-                                minLength={8}
-                            />
-                            <p className="text-xs text-[var(--text-secondary)] mt-1">At least 8 characters</p>
-                        </div>
-
+                    {googleEnabled ? (
                         <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-[var(--orange-primary)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--orange-hover)] transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="button"
+                            onClick={handleGoogle}
+                            className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-white font-semibold hover:bg-[var(--bg-warm)] transition-colors flex items-center justify-center gap-3"
                         >
-                            {loading ? 'Creating account...' : 'Sign Up'}
+                            <FcGoogle className="text-xl" />
+                            Continue with Google
                         </button>
-                    </form>
+                    ) : (
+                        <div className="text-sm text-[var(--text-secondary)] text-center">
+                            Google sign-in is not configured yet.
+                        </div>
+                    )}
 
-                    <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
+                    <div className="mt-6 text-center text-sm text-[var(--text-secondary)]">
                         Already have an account?{' '}
-                        <a href="/login" className="text-[var(--orange-primary)] font-semibold hover:underline">
+                        <button
+                            type="button"
+                            onClick={() => router.push('/login')}
+                            className="text-[var(--orange-primary)] font-semibold hover:underline"
+                        >
                             Sign in
-                        </a>
-                    </p>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

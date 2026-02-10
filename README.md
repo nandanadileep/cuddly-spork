@@ -17,7 +17,7 @@ ShipCV is a resume builder that turns your projects, experience, and profile dat
 ## Tech Stack
 
 - **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS
-- **Auth:** NextAuth (credentials)
+- **Auth:** NextAuth (Google OAuth)
 - **Database:** PostgreSQL + Prisma
 - **AI:** OpenAI API for analysis + skill extraction
 - **PDF:** LaTeXLite for LaTeX compilation
