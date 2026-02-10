@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { SiLinkedin } from 'react-icons/si'
 import { MdCheckCircle, MdLanguage, MdSchool, MdSync, MdUploadFile, MdWorkOutline } from 'react-icons/md'
 import PlatformSelector from '@/components/PlatformSelector'
+import ThemeToggle from '@/components/ThemeToggle'
 import { getPlatformById } from '@/lib/constants/platforms'
 
 export default function OnboardingPage() {
@@ -46,7 +47,7 @@ export default function OnboardingPage() {
         contactFields: number
     } | null>(null)
 
-    const [newEducation, setNewEducation] = useState({
+    const emptyEducation = {
         institution: '',
         degree: '',
         field: '',
@@ -56,9 +57,9 @@ export default function OnboardingPage() {
         end_date: '',
         is_current: false,
         description: '',
-    })
+    }
 
-    const [newExperience, setNewExperience] = useState({
+    const emptyExperience = {
         company: '',
         position: '',
         location: '',
@@ -66,15 +67,40 @@ export default function OnboardingPage() {
         end_date: '',
         is_current: false,
         description: '',
-    })
+    }
+
+    type EducationDraft = typeof emptyEducation
+    type ExperienceDraft = typeof emptyExperience
+
+    const [newEducation, setNewEducation] = useState<EducationDraft>({ ...emptyEducation })
+    const [newExperience, setNewExperience] = useState<ExperienceDraft>({ ...emptyExperience })
+    const [pendingEducation, setPendingEducation] = useState<EducationDraft[]>([])
+    const [pendingExperience, setPendingExperience] = useState<ExperienceDraft[]>([])
 
     // Syncing state
     const [syncProgress, setSyncProgress] = useState<Record<string, 'pending' | 'syncing' | 'complete'>>({})
     const [isSyncing, setIsSyncing] = useState(false)
 
-    const totalSteps = 8
+    const educationStep = 4
+    const experienceStep = 5
+    const platformSelectStep = 6
+    const platformUrlsStep = 7
+    const targetRoleStep = 8
+    const syncStep = 9
+    const totalSteps = syncStep
 
-    const handleNext = () => setStep(step + 1)
+    const handleNext = async () => {
+        if (isSavingProfile) return
+        if (step === educationStep) {
+            const ok = await saveEducationOnContinue()
+            if (!ok) return
+        }
+        if (step === experienceStep) {
+            const ok = await saveExperienceOnContinue()
+            if (!ok) return
+        }
+        setStep(prev => prev + 1)
+    }
     const handleBack = () => setStep(step - 1)
 
     const handlePlatformToggle = (id: string) => {
@@ -129,10 +155,10 @@ export default function OnboardingPage() {
     }
 
     useEffect(() => {
-        if (step === 4 && session) {
+        if ((step === educationStep || step === experienceStep) && session) {
             refreshProfileCounts()
         }
-    }, [step, session])
+    }, [step, session, educationStep, experienceStep])
 
     const handleResumeExtract = async () => {
         if (!resumeFile) {
@@ -169,67 +195,145 @@ export default function OnboardingPage() {
         }
     }
 
-    const addEducation = async () => {
-        setIsSavingProfile(true)
+    const hasEducationInput = (entry: EducationDraft) =>
+        Boolean(
+            entry.institution.trim() ||
+            entry.degree.trim() ||
+            entry.field.trim() ||
+            entry.cgpa.trim() ||
+            entry.location.trim() ||
+            entry.start_date ||
+            entry.end_date ||
+            entry.description.trim()
+        )
+
+    const isEducationComplete = (entry: EducationDraft) =>
+        entry.institution.trim().length > 0 && entry.degree.trim().length > 0
+
+    const queueEducation = () => {
+        if (!isEducationComplete(newEducation)) {
+            setProfileSaveError('Add an institution and degree to queue this education.')
+            return
+        }
+        setPendingEducation(prev => [...prev, { ...newEducation }])
+        setNewEducation({ ...emptyEducation })
         setProfileSaveError('')
-        try {
+    }
+
+    const removeEducation = (index: number) => {
+        setPendingEducation(prev => prev.filter((_, i) => i !== index))
+    }
+
+    const saveEducationEntries = async (entries: EducationDraft[]) => {
+        for (const entry of entries) {
             const res = await fetch('/api/profile/education', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newEducation),
+                body: JSON.stringify(entry),
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                setProfileSaveError(data.error || 'Failed to add education')
-                return
+                throw new Error(data.error || 'Failed to add education')
             }
-            setNewEducation({
-                institution: '',
-                degree: '',
-                field: '',
-                cgpa: '',
-                location: '',
-                start_date: '',
-                end_date: '',
-                is_current: false,
-                description: '',
-            })
+        }
+    }
+
+    const saveEducationOnContinue = async () => {
+        setProfileSaveError('')
+        const entries = [...pendingEducation]
+        if (hasEducationInput(newEducation)) {
+            if (!isEducationComplete(newEducation)) {
+                setProfileSaveError('Please add both institution and degree before continuing.')
+                return false
+            }
+            entries.push({ ...newEducation })
+        }
+
+        if (entries.length === 0) return true
+
+        setIsSavingProfile(true)
+        setProfileSaveError('')
+        try {
+            await saveEducationEntries(entries)
+            setPendingEducation([])
+            setNewEducation({ ...emptyEducation })
             await refreshProfileCounts()
+            return true
         } catch (error) {
             console.error('Add education error:', error)
-            setProfileSaveError('Failed to add education')
+            setProfileSaveError(error instanceof Error ? error.message : 'Failed to add education')
+            return false
         } finally {
             setIsSavingProfile(false)
         }
     }
 
-    const addExperience = async () => {
-        setIsSavingProfile(true)
+    const hasExperienceInput = (entry: ExperienceDraft) =>
+        Boolean(
+            entry.company.trim() ||
+            entry.position.trim() ||
+            entry.location.trim() ||
+            entry.start_date ||
+            entry.end_date ||
+            entry.description.trim()
+        )
+
+    const isExperienceComplete = (entry: ExperienceDraft) =>
+        entry.company.trim().length > 0 && entry.position.trim().length > 0
+
+    const queueExperience = () => {
+        if (!isExperienceComplete(newExperience)) {
+            setProfileSaveError('Add a company and position to queue this experience.')
+            return
+        }
+        setPendingExperience(prev => [...prev, { ...newExperience }])
+        setNewExperience({ ...emptyExperience })
         setProfileSaveError('')
-        try {
+    }
+
+    const removeExperience = (index: number) => {
+        setPendingExperience(prev => prev.filter((_, i) => i !== index))
+    }
+
+    const saveExperienceEntries = async (entries: ExperienceDraft[]) => {
+        for (const entry of entries) {
             const res = await fetch('/api/profile/experience', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newExperience),
+                body: JSON.stringify(entry),
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                setProfileSaveError(data.error || 'Failed to add work experience')
-                return
+                throw new Error(data.error || 'Failed to add work experience')
             }
-            setNewExperience({
-                company: '',
-                position: '',
-                location: '',
-                start_date: '',
-                end_date: '',
-                is_current: false,
-                description: '',
-            })
+        }
+    }
+
+    const saveExperienceOnContinue = async () => {
+        setProfileSaveError('')
+        const entries = [...pendingExperience]
+        if (hasExperienceInput(newExperience)) {
+            if (!isExperienceComplete(newExperience)) {
+                setProfileSaveError('Please add both company and position before continuing.')
+                return false
+            }
+            entries.push({ ...newExperience })
+        }
+
+        if (entries.length === 0) return true
+
+        setIsSavingProfile(true)
+        setProfileSaveError('')
+        try {
+            await saveExperienceEntries(entries)
+            setPendingExperience([])
+            setNewExperience({ ...emptyExperience })
             await refreshProfileCounts()
+            return true
         } catch (error) {
             console.error('Add experience error:', error)
-            setProfileSaveError('Failed to add work experience')
+            setProfileSaveError(error instanceof Error ? error.message : 'Failed to add work experience')
+            return false
         } finally {
             setIsSavingProfile(false)
         }
@@ -356,7 +460,7 @@ export default function OnboardingPage() {
             })
 
             if (response.ok) {
-                handleNext() // Go to sync step
+                setStep(prev => prev + 1) // Go to sync step
                 // Start syncing immediately
                 setTimeout(() => startSync(), 500)
             } else {
@@ -372,42 +476,20 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)] p-4">
+            <div className="fixed top-4 right-4 z-40">
+                <ThemeToggle />
+            </div>
             <div className="bg-[var(--bg-card)] max-w-3xl w-full rounded-lg shadow-sm border border-[var(--border-light)] p-8 my-8">
 
                 {/* Progress */}
                 <div className="sticky top-0 z-20 bg-[var(--bg-card)] border-b border-[var(--border-light)] pb-4 mb-8">
-                    <div className="flex justify-between items-end gap-4">
+                    <div className="flex items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)]">Welcome to ShipCV</h1>
+                            <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-semibold">Profile setup</p>
                             <p className="text-[var(--text-secondary)] mt-1 font-sans">
                                 {step === totalSteps ? 'Setting up your profile...' : `Step ${step} of ${totalSteps - 1}`}
                             </p>
                         </div>
-
-                        {step < totalSteps && (
-                            <div className="flex items-center gap-2">
-                                {step > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={handleBack}
-                                        className="px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] transition-colors"
-                                    >
-                                        Back
-                                    </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={step === 7 ? handleContinueToSync : handleNext}
-                                    disabled={step === 7 ? (isLoading || !targetRole) : false}
-                                    className={`px-5 py-2 rounded-md text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${step === 7
-                                        ? 'bg-[var(--github-green)] hover:opacity-90'
-                                        : 'bg-[var(--orange-primary)] hover:bg-[var(--orange-hover)]'
-                                        }`}
-                                >
-                                    {step === 7 ? (isLoading ? 'Saving...' : 'Start Syncing') : 'Continue'}
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -559,171 +641,266 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
-                {/* Step 4: Education & Work */}
-                {step === 4 && (
+                {/* Step 4: Education */}
+                {step === educationStep && (
                     <div className="space-y-8">
                         <div className="text-center mb-8">
-                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Education & Work Experience</h2>
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                                <MdSchool className="text-3xl text-[var(--orange-primary)]" />
+                            </div>
+                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Education</h2>
                             <p className="text-[var(--text-secondary)] mt-1">
-                                Add what you want included in your resume. You can also update this later in Profile.
+                                Optional. Add your education now or later in Profile.
+                            </p>
+                            {profileCounts && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                    Current: {profileCounts.education} education
                                 </p>
-                                {profileCounts && (
-                                    <p className="text-sm text-[var(--text-secondary)] mt-2">
-                                        Current: {profileCounts.experience} experience · {profileCounts.education} education
-                                    </p>
-                                )}
-                            </div>
-
-                            {profileSaveError && (
-                                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                                    {profileSaveError}
-                                </div>
                             )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <MdSchool className="text-xl text-[var(--orange-primary)]" />
-                                        <h3 className="font-semibold text-[var(--text-primary)]">Education</h3>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Institution"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                        value={newEducation.institution}
-                                        onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Degree"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                        value={newEducation.degree}
-                                        onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Field (optional)"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                        value={newEducation.field}
-                                        onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="CGPA (optional)"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                        value={newEducation.cgpa}
-                                        onChange={(e) => setNewEducation({ ...newEducation, cgpa: e.target.value })}
-                                    />
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="date"
-                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                            value={newEducation.start_date}
-                                            onChange={(e) => setNewEducation({ ...newEducation, start_date: e.target.value })}
-                                        />
-                                        <input
-                                            type="date"
-                                            disabled={newEducation.is_current}
-                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
-                                            value={newEducation.end_date}
-                                            onChange={(e) => setNewEducation({ ...newEducation, end_date: e.target.value })}
-                                        />
-                                    </div>
-                                    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                                        <input
-                                            type="checkbox"
-                                            checked={newEducation.is_current}
-                                            onChange={(e) => setNewEducation({ ...newEducation, is_current: e.target.checked, end_date: e.target.checked ? '' : newEducation.end_date })}
-                                        />
-                                        Current
-                                    </label>
-                                    <textarea
-                                        placeholder="Description (optional)"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
-                                        value={newEducation.description}
-                                        onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={addEducation}
-                                        disabled={isSavingProfile || !newEducation.institution.trim() || !newEducation.degree.trim()}
-                                        className="w-full px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] disabled:opacity-50"
-                                    >
-                                        {isSavingProfile ? 'Saving...' : 'Add education'}
-                                    </button>
-                                </div>
-
-                                <div className="p-4 rounded-lg border border-[var(--border-light)] bg-white space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <MdWorkOutline className="text-xl text-[var(--orange-primary)]" />
-                                        <h3 className="font-semibold text-[var(--text-primary)]">Work Experience</h3>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Company"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                        value={newExperience.company}
-                                        onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Position"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                        value={newExperience.position}
-                                        onChange={(e) => setNewExperience({ ...newExperience, position: e.target.value })}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Location (optional)"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                        value={newExperience.location}
-                                        onChange={(e) => setNewExperience({ ...newExperience, location: e.target.value })}
-                                    />
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="date"
-                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
-                                            value={newExperience.start_date}
-                                            onChange={(e) => setNewExperience({ ...newExperience, start_date: e.target.value })}
-                                        />
-                                        <input
-                                            type="date"
-                                            disabled={newExperience.is_current}
-                                            className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
-                                            value={newExperience.end_date}
-                                            onChange={(e) => setNewExperience({ ...newExperience, end_date: e.target.value })}
-                                        />
-                                    </div>
-                                    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                                        <input
-                                            type="checkbox"
-                                            checked={newExperience.is_current}
-                                            onChange={(e) => setNewExperience({ ...newExperience, is_current: e.target.checked, end_date: e.target.checked ? '' : newExperience.end_date })}
-                                        />
-                                        Current
-                                    </label>
-                                    <textarea
-                                        placeholder="Description (optional)"
-                                        className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
-                                        value={newExperience.description}
-                                        onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={addExperience}
-                                        disabled={isSavingProfile || !newExperience.company.trim() || !newExperience.position.trim()}
-                                        className="w-full px-4 py-2 bg-[var(--orange-primary)] text-white rounded-md font-medium hover:bg-[var(--orange-hover)] disabled:opacity-50"
-                                    >
-                                        {isSavingProfile ? 'Saving...' : 'Add experience'}
-                                    </button>
-                                </div>
-                            </div>
-
+                            {pendingEducation.length > 0 && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    Pending additions: {pendingEducation.length}
+                                </p>
+                            )}
                         </div>
-                    )}
 
-                {/* Step 5: Select Platforms */}
-                {step === 5 && (
+                        {profileSaveError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                {profileSaveError}
+                            </div>
+                        )}
+
+                        <div className="max-w-2xl mx-auto space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Institution"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newEducation.institution}
+                                onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Degree"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newEducation.degree}
+                                onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Field (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newEducation.field}
+                                onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="CGPA (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newEducation.cgpa}
+                                onChange={(e) => setNewEducation({ ...newEducation, cgpa: e.target.value })}
+                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                    value={newEducation.start_date}
+                                    onChange={(e) => setNewEducation({ ...newEducation, start_date: e.target.value })}
+                                />
+                                <input
+                                    type="date"
+                                    disabled={newEducation.is_current}
+                                    className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
+                                    value={newEducation.end_date}
+                                    onChange={(e) => setNewEducation({ ...newEducation, end_date: e.target.value })}
+                                />
+                            </div>
+                            <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                <input
+                                    type="checkbox"
+                                    checked={newEducation.is_current}
+                                    onChange={(e) => setNewEducation({ ...newEducation, is_current: e.target.checked, end_date: e.target.checked ? '' : newEducation.end_date })}
+                                />
+                                Current
+                            </label>
+                            <textarea
+                                placeholder="Description (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
+                                value={newEducation.description}
+                                onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })}
+                            />
+                            <button
+                                type="button"
+                                onClick={queueEducation}
+                                disabled={isSavingProfile || !newEducation.institution.trim() || !newEducation.degree.trim()}
+                                className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                            >
+                                Add another education
+                            </button>
+                            <p className="text-xs text-[var(--text-secondary)]">
+                                We’ll save your education entries when you continue.
+                            </p>
+                        </div>
+
+                        {pendingEducation.length > 0 && (
+                            <div className="max-w-2xl mx-auto rounded-lg border border-[var(--border-light)] bg-white p-4 space-y-3">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                                    Pending education
+                                </div>
+                                {pendingEducation.map((education, index) => (
+                                    <div
+                                        key={`education-${index}`}
+                                        className="flex items-center justify-between gap-4 border-b border-[var(--border-light)] pb-2 last:border-b-0 last:pb-0"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-[var(--text-primary)]">
+                                                {education.institution || 'Untitled education'}
+                                            </div>
+                                            <div className="text-xs text-[var(--text-secondary)]">
+                                                {education.degree}{education.field ? ` · ${education.field}` : ''}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeEducation(index)}
+                                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 5: Work Experience */}
+                {step === experienceStep && (
+                    <div className="space-y-8">
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                                <MdWorkOutline className="text-3xl text-[var(--orange-primary)]" />
+                            </div>
+                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Work Experience</h2>
+                            <p className="text-[var(--text-secondary)] mt-1">
+                                Optional. Add your roles now or later in Profile.
+                            </p>
+                            {profileCounts && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                    Current: {profileCounts.experience} experience
+                                </p>
+                            )}
+                            {pendingExperience.length > 0 && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    Pending additions: {pendingExperience.length}
+                                </p>
+                            )}
+                        </div>
+
+                        {profileSaveError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                {profileSaveError}
+                            </div>
+                        )}
+
+                        <div className="max-w-2xl mx-auto space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Company"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newExperience.company}
+                                onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Position"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newExperience.position}
+                                onChange={(e) => setNewExperience({ ...newExperience, position: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Location (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newExperience.location}
+                                onChange={(e) => setNewExperience({ ...newExperience, location: e.target.value })}
+                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                    value={newExperience.start_date}
+                                    onChange={(e) => setNewExperience({ ...newExperience, start_date: e.target.value })}
+                                />
+                                <input
+                                    type="date"
+                                    disabled={newExperience.is_current}
+                                    className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
+                                    value={newExperience.end_date}
+                                    onChange={(e) => setNewExperience({ ...newExperience, end_date: e.target.value })}
+                                />
+                            </div>
+                            <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                <input
+                                    type="checkbox"
+                                    checked={newExperience.is_current}
+                                    onChange={(e) => setNewExperience({ ...newExperience, is_current: e.target.checked, end_date: e.target.checked ? '' : newExperience.end_date })}
+                                />
+                                Current
+                            </label>
+                            <textarea
+                                placeholder="Description (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
+                                value={newExperience.description}
+                                onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                            />
+                            <button
+                                type="button"
+                                onClick={queueExperience}
+                                disabled={isSavingProfile || !newExperience.company.trim() || !newExperience.position.trim()}
+                                className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                            >
+                                Add another experience
+                            </button>
+                            <p className="text-xs text-[var(--text-secondary)]">
+                                We’ll save your experience entries when you continue.
+                            </p>
+                        </div>
+
+                        {pendingExperience.length > 0 && (
+                            <div className="max-w-2xl mx-auto rounded-lg border border-[var(--border-light)] bg-white p-4 space-y-3">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                                    Pending experience
+                                </div>
+                                {pendingExperience.map((experience, index) => (
+                                    <div
+                                        key={`experience-${index}`}
+                                        className="flex items-center justify-between gap-4 border-b border-[var(--border-light)] pb-2 last:border-b-0 last:pb-0"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-[var(--text-primary)]">
+                                                {experience.position || 'Untitled role'}
+                                            </div>
+                                            <div className="text-xs text-[var(--text-secondary)]">
+                                                {experience.company}
+                                                {experience.location ? ` · ${experience.location}` : ''}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExperience(index)}
+                                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 6: Select Platforms */}
+                {step === platformSelectStep && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
                                 <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Where do you showcase work?</h2>
@@ -738,8 +915,8 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
-                {/* Step 6: Enter URLs */}
-                {step === 6 && (
+                {/* Step 7: Enter URLs */}
+                {step === platformUrlsStep && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
                                 <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Link your profiles</h2>
@@ -782,8 +959,8 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                {/* Step 7: Target Role */}
-                {step === 7 && (
+                {/* Step 8: Target Role */}
+                {step === targetRoleStep && (
                         <div className="space-y-8">
                         <div className="text-center py-4">
                             <div className="text-4xl mb-4"></div>
@@ -824,8 +1001,8 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                {/* Step 8: Syncing Progress */}
-                {step === 8 && (
+                {/* Step 9: Syncing Progress */}
+                {step === syncStep && (
                         <div className="space-y-8">
                         <div className="text-center">
                             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--green-light)] mb-6">
@@ -876,6 +1053,35 @@ export default function OnboardingPage() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {step < totalSteps && (
+                    <div className="mt-10 pt-6 border-t border-[var(--border-light)]">
+                        <div className={`flex items-center ${step > 1 ? 'justify-between' : 'justify-end'}`}>
+                            {step > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={handleBack}
+                                    className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                                >
+                                    Back
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={step === targetRoleStep ? handleContinueToSync : handleNext}
+                                disabled={isSavingProfile || (step === targetRoleStep ? (isLoading || !targetRole) : false)}
+                                className={`px-6 py-2 rounded-md text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${step === targetRoleStep
+                                    ? 'bg-[var(--github-green)] hover:opacity-90'
+                                    : 'bg-[var(--orange-primary)] hover:bg-[var(--orange-hover)]'
+                                    }`}
+                            >
+                                {step === targetRoleStep
+                                    ? (isLoading ? 'Saving...' : 'Start Syncing')
+                                    : (isSavingProfile ? 'Saving...' : 'Continue')}
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
