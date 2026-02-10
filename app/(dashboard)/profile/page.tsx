@@ -69,6 +69,9 @@ export default function ProfilePage() {
         projects: number;
         education: number;
         experience: number;
+        extracurriculars: number;
+        awards: number;
+        publications: number;
         contactFields: number;
     } | null>(null);
     const [linkedInUrl, setLinkedInUrl] = useState('');
@@ -736,6 +739,9 @@ export default function ProfilePage() {
                                     <div>Projects: {resumeExtractSummary.projects}</div>
                                     <div>Education: {resumeExtractSummary.education}</div>
                                     <div>Work Experience: {resumeExtractSummary.experience}</div>
+                                    <div>Extracurriculars: {resumeExtractSummary.extracurriculars}</div>
+                                    <div>Awards: {resumeExtractSummary.awards}</div>
+                                    <div>Publications: {resumeExtractSummary.publications}</div>
                                     <div>Contact fields updated: {resumeExtractSummary.contactFields}</div>
                                 </div>
                             )}

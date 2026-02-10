@@ -244,6 +244,28 @@ export interface ResumeExtractionResult {
         isCurrent?: boolean
         description?: string
     }>
+    extracurriculars: Array<{
+        title: string
+        organization?: string
+        location?: string
+        startDate?: string
+        endDate?: string
+        isCurrent?: boolean
+        description?: string
+    }>
+    awards: Array<{
+        title: string
+        issuer?: string
+        awardedAt?: string
+        description?: string
+    }>
+    publications: Array<{
+        title: string
+        venue?: string
+        publishedAt?: string
+        url?: string
+        description?: string
+    }>
 }
 
 export async function extractResumeData(text: string): Promise<ResumeExtractionResult> {
@@ -287,6 +309,34 @@ Return a JSON object with exactly these keys:
       "isCurrent": false,
       "description": ""
     }
+  ],
+  "extracurriculars": [
+    {
+      "title": "",
+      "organization": "",
+      "location": "",
+      "startDate": "",
+      "endDate": "",
+      "isCurrent": false,
+      "description": ""
+    }
+  ],
+  "awards": [
+    {
+      "title": "",
+      "issuer": "",
+      "awardedAt": "",
+      "description": ""
+    }
+  ],
+  "publications": [
+    {
+      "title": "",
+      "venue": "",
+      "publishedAt": "",
+      "url": "",
+      "description": ""
+    }
   ]
 }
 
@@ -326,6 +376,9 @@ ${text}
         projects: Array.isArray(parsed.projects) ? parsed.projects : [],
         education: Array.isArray(parsed.education) ? parsed.education : [],
         workExperience: Array.isArray(parsed.workExperience) ? parsed.workExperience : [],
+        extracurriculars: Array.isArray(parsed.extracurriculars) ? parsed.extracurriculars : [],
+        awards: Array.isArray(parsed.awards) ? parsed.awards : [],
+        publications: Array.isArray(parsed.publications) ? parsed.publications : [],
     }
 }
 

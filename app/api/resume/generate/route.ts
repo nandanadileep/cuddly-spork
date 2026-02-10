@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { renderLatexTemplate, TemplateId } from '@/lib/latex/templates'
+import { getSupabaseBucket, supabaseAdmin } from '@/lib/supabase-server'
 
 const RESUME_LIMIT = 2
 
@@ -27,6 +28,23 @@ const parseLatexLiteError = (raw: string) => {
     }
 
     return { details, hint }
+}
+
+const uploadResumePdf = async (userId: string, templateId: string, pdfBuffer: Buffer) => {
+    if (!supabaseAdmin) return null
+    const bucket = getSupabaseBucket()
+    const filePath = `${userId}/${templateId}/${crypto.randomUUID()}.pdf`
+    const { error } = await supabaseAdmin.storage
+        .from(bucket)
+        .upload(filePath, pdfBuffer, {
+            contentType: 'application/pdf',
+            upsert: true,
+        })
+    if (error) {
+        console.error('[Resume Generate] Supabase upload error:', error)
+        return null
+    }
+    return { bucket, filePath }
 }
 
 export async function POST(req: NextRequest) {
@@ -271,7 +289,7 @@ export async function POST(req: NextRequest) {
         const lastResume = await prisma.resume.findFirst({
             where: { user_id: userRecord.id },
             orderBy: { created_at: 'desc' },
-            select: { template_id: true, target_role: true, selected_projects_jsonb: true, skills_jsonb: true },
+            select: { id: true, template_id: true, target_role: true, selected_projects_jsonb: true, skills_jsonb: true },
         })
 
         const isDuplicate =
@@ -316,6 +334,7 @@ export async function POST(req: NextRequest) {
         }
 
         const pdfBuffer = Buffer.from(await latexResponse.arrayBuffer())
+        const uploaded = await uploadResumePdf(userRecord.id, resolvedTemplateId, pdfBuffer)
 
         if (!isDuplicate) {
             await prisma.resume.create({
@@ -325,10 +344,15 @@ export async function POST(req: NextRequest) {
                     target_role: userRecord.target_role || null,
                     template_id: resolvedTemplateId,
                     latex_content: latexPayload.template,
-                    pdf_url: null,
+                    pdf_url: uploaded?.filePath || null,
                     selected_projects_jsonb: selectedIds,
                     skills_jsonb: uniqueSkills,
                 },
+            })
+        } else if (lastResume?.id && uploaded?.filePath) {
+            await prisma.resume.update({
+                where: { id: lastResume.id },
+                data: { pdf_url: uploaded.filePath },
             })
         }
 

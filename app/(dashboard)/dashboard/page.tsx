@@ -32,6 +32,16 @@ interface JobDescriptionData {
     industry?: string[]
 }
 
+interface ResumeItem {
+    id: string
+    title: string
+    template_id: string
+    target_role: string | null
+    pdf_url: string | null
+    pdfUrl?: string | null
+    created_at: string
+}
+
 export default function DashboardPage() {
     const { data: session, status, update } = useSession()
     const router = useRouter()
@@ -56,6 +66,9 @@ export default function DashboardPage() {
     const [tourHideNext, setTourHideNext] = useState(false)
     const [connectionsCount, setConnectionsCount] = useState<number | null>(null)
     const [resumeQuota, setResumeQuota] = useState<{ count: number; limit: number; remaining: number } | null>(null)
+    const [resumes, setResumes] = useState<ResumeItem[]>([])
+    const [isResumesLoading, setIsResumesLoading] = useState(true)
+    const [resumesError, setResumesError] = useState('')
 
     const tourSteps = [
         {
@@ -133,6 +146,25 @@ export default function DashboardPage() {
             })
             .catch(() => setResumeQuota(null))
 
+    const fetchResumes = () => {
+        setIsResumesLoading(true)
+        setResumesError('')
+        return fetch('/api/resume/history')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data?.resumes)) {
+                    setResumes(data.resumes)
+                } else {
+                    setResumes([])
+                }
+            })
+            .catch(() => {
+                setResumes([])
+                setResumesError('Failed to load resume files.')
+            })
+            .finally(() => setIsResumesLoading(false))
+    }
+
     const fetchTargetRole = () => {
         setIsRoleLoading(true)
         return fetch('/api/user/target-role')
@@ -151,7 +183,7 @@ export default function DashboardPage() {
     useEffect(() => {
         if (status === 'authenticated') {
             setIsLoading(true)
-            Promise.all([fetchProjects(), fetchTargetRole(), fetchConnections(), fetchQuota()]).finally(() => setIsLoading(false))
+            Promise.all([fetchProjects(), fetchTargetRole(), fetchConnections(), fetchQuota(), fetchResumes()]).finally(() => setIsLoading(false))
         }
     }, [status])
 
@@ -480,6 +512,95 @@ export default function DashboardPage() {
                         </>
                     )
                 })()}
+            </div>
+
+            <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm mb-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold">
+                            Saved Resumes
+                        </div>
+                        <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)] mt-1">
+                            Reopen and edit anytime
+                        </h2>
+                        <p className="text-sm text-[var(--text-secondary)] mt-2">
+                            Your generated files are stored securely so you can tweak them later.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={fetchResumes}
+                            className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                        >
+                            Refresh
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => router.push('/builder')}
+                            className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold hover:bg-[var(--orange-hover)]"
+                        >
+                            Open Builder
+                        </button>
+                    </div>
+                </div>
+
+                {resumesError && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                        {resumesError}
+                    </div>
+                )}
+
+                <div className="mt-5">
+                    {isResumesLoading ? (
+                        <div className="text-sm text-[var(--text-secondary)]">Loading resumes...</div>
+                    ) : resumes.length === 0 ? (
+                        <div className="text-sm text-[var(--text-secondary)]">
+                            No saved resumes yet. Generate one in the builder to see it here.
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {resumes.map((resume) => (
+                                <div
+                                    key={resume.id}
+                                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-[var(--border-light)] bg-[var(--bg-warm)] rounded-xl px-4 py-3"
+                                >
+                                    <div>
+                                        <div className="font-semibold text-[var(--text-primary)]">
+                                            {resume.title}
+                                        </div>
+                                        <div className="text-xs text-[var(--text-secondary)] mt-1">
+                                            {resume.target_role || 'No target role'} · {new Date(resume.created_at).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {resume.pdfUrl ? (
+                                            <a
+                                                href={resume.pdfUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="px-3 py-1.5 rounded-lg border border-[var(--border-light)] text-xs font-medium text-[var(--text-secondary)] hover:bg-white"
+                                            >
+                                                View PDF
+                                            </a>
+                                        ) : (
+                                            <span className="px-3 py-1.5 rounded-lg border border-dashed border-[var(--border-light)] text-xs text-[var(--text-secondary)]">
+                                                File pending
+                                            </span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push('/builder')}
+                                            className="px-3 py-1.5 rounded-lg bg-[var(--orange-primary)] text-white text-xs font-semibold hover:bg-[var(--orange-hover)]"
+                                        >
+                                            Edit in Builder
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

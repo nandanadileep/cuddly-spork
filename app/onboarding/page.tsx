@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { SiLinkedin } from 'react-icons/si'
-import { MdCheckCircle, MdLanguage, MdSchool, MdSync, MdUploadFile, MdWorkOutline } from 'react-icons/md'
+import { MdCheckCircle, MdEmojiEvents, MdGroups, MdLanguage, MdMenuBook, MdSchool, MdSync, MdUploadFile, MdWorkOutline } from 'react-icons/md'
 import PlatformSelector from '@/components/PlatformSelector'
 import ThemeToggle from '@/components/ThemeToggle'
 import { getPlatformById } from '@/lib/constants/platforms'
@@ -32,7 +32,13 @@ export default function OnboardingPage() {
     const [websitePreview, setWebsitePreview] = useState<{ title: string | null; description: string | null; url: string } | null>(null)
     const [websiteFetchError, setWebsiteFetchError] = useState('')
 
-    const [profileCounts, setProfileCounts] = useState<{ education: number; experience: number } | null>(null)
+    const [profileCounts, setProfileCounts] = useState<{
+        education: number
+        experience: number
+        extracurriculars: number
+        awards: number
+        publications: number
+    } | null>(null)
     const [profileSaveError, setProfileSaveError] = useState('')
     const [isSavingProfile, setIsSavingProfile] = useState(false)
 
@@ -44,6 +50,9 @@ export default function OnboardingPage() {
         projects: number
         education: number
         experience: number
+        extracurriculars: number
+        awards: number
+        publications: number
         contactFields: number
     } | null>(null)
 
@@ -69,13 +78,47 @@ export default function OnboardingPage() {
         description: '',
     }
 
+    const emptyExtracurricular = {
+        title: '',
+        organization: '',
+        location: '',
+        start_date: '',
+        end_date: '',
+        is_current: false,
+        description: '',
+    }
+
+    const emptyAward = {
+        title: '',
+        issuer: '',
+        awarded_at: '',
+        description: '',
+    }
+
+    const emptyPublication = {
+        title: '',
+        venue: '',
+        url: '',
+        published_at: '',
+        description: '',
+    }
+
     type EducationDraft = typeof emptyEducation
     type ExperienceDraft = typeof emptyExperience
+    type ExtracurricularDraft = typeof emptyExtracurricular
+    type AwardDraft = typeof emptyAward
+    type PublicationDraft = typeof emptyPublication
 
     const [newEducation, setNewEducation] = useState<EducationDraft>({ ...emptyEducation })
     const [newExperience, setNewExperience] = useState<ExperienceDraft>({ ...emptyExperience })
+    const [newExtracurricular, setNewExtracurricular] = useState<ExtracurricularDraft>({ ...emptyExtracurricular })
+    const [newAward, setNewAward] = useState<AwardDraft>({ ...emptyAward })
+    const [newPublication, setNewPublication] = useState<PublicationDraft>({ ...emptyPublication })
     const [pendingEducation, setPendingEducation] = useState<EducationDraft[]>([])
     const [pendingExperience, setPendingExperience] = useState<ExperienceDraft[]>([])
+    const [pendingExtracurriculars, setPendingExtracurriculars] = useState<ExtracurricularDraft[]>([])
+    const [pendingAwards, setPendingAwards] = useState<AwardDraft[]>([])
+    const [pendingPublications, setPendingPublications] = useState<PublicationDraft[]>([])
 
     // Syncing state
     const [syncProgress, setSyncProgress] = useState<Record<string, 'pending' | 'syncing' | 'complete'>>({})
@@ -83,10 +126,13 @@ export default function OnboardingPage() {
 
     const educationStep = 4
     const experienceStep = 5
-    const platformSelectStep = 6
-    const platformUrlsStep = 7
-    const targetRoleStep = 8
-    const syncStep = 9
+    const extracurricularStep = 6
+    const awardsStep = 7
+    const publicationsStep = 8
+    const platformSelectStep = 9
+    const platformUrlsStep = 10
+    const targetRoleStep = 11
+    const syncStep = 12
     const totalSteps = syncStep
 
     const handleNext = async () => {
@@ -97,6 +143,18 @@ export default function OnboardingPage() {
         }
         if (step === experienceStep) {
             const ok = await saveExperienceOnContinue()
+            if (!ok) return
+        }
+        if (step === extracurricularStep) {
+            const ok = await saveExtracurricularOnContinue()
+            if (!ok) return
+        }
+        if (step === awardsStep) {
+            const ok = await saveAwardsOnContinue()
+            if (!ok) return
+        }
+        if (step === publicationsStep) {
+            const ok = await savePublicationsOnContinue()
             if (!ok) return
         }
         setStep(prev => prev + 1)
@@ -147,6 +205,9 @@ export default function OnboardingPage() {
                 setProfileCounts({
                     education: data.counts?.education || 0,
                     experience: data.counts?.experience || 0,
+                    extracurriculars: data.counts?.extracurriculars || 0,
+                    awards: data.counts?.awards || 0,
+                    publications: data.counts?.publications || 0,
                 })
             }
         } catch (error) {
@@ -155,10 +216,17 @@ export default function OnboardingPage() {
     }
 
     useEffect(() => {
-        if ((step === educationStep || step === experienceStep) && session) {
+        if (
+            (step === educationStep ||
+                step === experienceStep ||
+                step === extracurricularStep ||
+                step === awardsStep ||
+                step === publicationsStep) &&
+            session
+        ) {
             refreshProfileCounts()
         }
-    }, [step, session, educationStep, experienceStep])
+    }, [step, session, educationStep, experienceStep, extracurricularStep, awardsStep, publicationsStep])
 
     const handleResumeExtract = async () => {
         if (!resumeFile) {
@@ -339,6 +407,211 @@ export default function OnboardingPage() {
         }
     }
 
+    const hasExtracurricularInput = (entry: ExtracurricularDraft) =>
+        Boolean(
+            entry.title.trim() ||
+            entry.organization.trim() ||
+            entry.location.trim() ||
+            entry.start_date ||
+            entry.end_date ||
+            entry.description.trim()
+        )
+
+    const isExtracurricularComplete = (entry: ExtracurricularDraft) =>
+        entry.title.trim().length > 0
+
+    const queueExtracurricular = () => {
+        if (!isExtracurricularComplete(newExtracurricular)) {
+            setProfileSaveError('Add a title to queue this extracurricular.')
+            return
+        }
+        setPendingExtracurriculars(prev => [...prev, { ...newExtracurricular }])
+        setNewExtracurricular({ ...emptyExtracurricular })
+        setProfileSaveError('')
+    }
+
+    const removeExtracurricular = (index: number) => {
+        setPendingExtracurriculars(prev => prev.filter((_, i) => i !== index))
+    }
+
+    const saveExtracurricularEntries = async (entries: ExtracurricularDraft[]) => {
+        for (const entry of entries) {
+            const res = await fetch('/api/profile/extracurricular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(entry),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to add extracurricular')
+            }
+        }
+    }
+
+    const saveExtracurricularOnContinue = async () => {
+        setProfileSaveError('')
+        const entries = [...pendingExtracurriculars]
+        if (hasExtracurricularInput(newExtracurricular)) {
+            if (!isExtracurricularComplete(newExtracurricular)) {
+                setProfileSaveError('Please add a title before continuing.')
+                return false
+            }
+            entries.push({ ...newExtracurricular })
+        }
+
+        if (entries.length === 0) return true
+
+        setIsSavingProfile(true)
+        try {
+            await saveExtracurricularEntries(entries)
+            setPendingExtracurriculars([])
+            setNewExtracurricular({ ...emptyExtracurricular })
+            await refreshProfileCounts()
+            return true
+        } catch (error) {
+            console.error('Add extracurricular error:', error)
+            setProfileSaveError(error instanceof Error ? error.message : 'Failed to add extracurricular')
+            return false
+        } finally {
+            setIsSavingProfile(false)
+        }
+    }
+
+    const hasAwardInput = (entry: AwardDraft) =>
+        Boolean(
+            entry.title.trim() ||
+            entry.issuer.trim() ||
+            entry.awarded_at ||
+            entry.description.trim()
+        )
+
+    const isAwardComplete = (entry: AwardDraft) => entry.title.trim().length > 0
+
+    const queueAward = () => {
+        if (!isAwardComplete(newAward)) {
+            setProfileSaveError('Add a title to queue this award.')
+            return
+        }
+        setPendingAwards(prev => [...prev, { ...newAward }])
+        setNewAward({ ...emptyAward })
+        setProfileSaveError('')
+    }
+
+    const removeAward = (index: number) => {
+        setPendingAwards(prev => prev.filter((_, i) => i !== index))
+    }
+
+    const saveAwardEntries = async (entries: AwardDraft[]) => {
+        for (const entry of entries) {
+            const res = await fetch('/api/profile/awards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(entry),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to add award')
+            }
+        }
+    }
+
+    const saveAwardsOnContinue = async () => {
+        setProfileSaveError('')
+        const entries = [...pendingAwards]
+        if (hasAwardInput(newAward)) {
+            if (!isAwardComplete(newAward)) {
+                setProfileSaveError('Please add a title before continuing.')
+                return false
+            }
+            entries.push({ ...newAward })
+        }
+
+        if (entries.length === 0) return true
+
+        setIsSavingProfile(true)
+        try {
+            await saveAwardEntries(entries)
+            setPendingAwards([])
+            setNewAward({ ...emptyAward })
+            await refreshProfileCounts()
+            return true
+        } catch (error) {
+            console.error('Add award error:', error)
+            setProfileSaveError(error instanceof Error ? error.message : 'Failed to add award')
+            return false
+        } finally {
+            setIsSavingProfile(false)
+        }
+    }
+
+    const hasPublicationInput = (entry: PublicationDraft) =>
+        Boolean(
+            entry.title.trim() ||
+            entry.venue.trim() ||
+            entry.url.trim() ||
+            entry.published_at ||
+            entry.description.trim()
+        )
+
+    const isPublicationComplete = (entry: PublicationDraft) => entry.title.trim().length > 0
+
+    const queuePublication = () => {
+        if (!isPublicationComplete(newPublication)) {
+            setProfileSaveError('Add a title to queue this publication.')
+            return
+        }
+        setPendingPublications(prev => [...prev, { ...newPublication }])
+        setNewPublication({ ...emptyPublication })
+        setProfileSaveError('')
+    }
+
+    const removePublication = (index: number) => {
+        setPendingPublications(prev => prev.filter((_, i) => i !== index))
+    }
+
+    const savePublicationEntries = async (entries: PublicationDraft[]) => {
+        for (const entry of entries) {
+            const res = await fetch('/api/profile/publications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(entry),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to add publication')
+            }
+        }
+    }
+
+    const savePublicationsOnContinue = async () => {
+        setProfileSaveError('')
+        const entries = [...pendingPublications]
+        if (hasPublicationInput(newPublication)) {
+            if (!isPublicationComplete(newPublication)) {
+                setProfileSaveError('Please add a title before continuing.')
+                return false
+            }
+            entries.push({ ...newPublication })
+        }
+
+        if (entries.length === 0) return true
+
+        setIsSavingProfile(true)
+        try {
+            await savePublicationEntries(entries)
+            setPendingPublications([])
+            setNewPublication({ ...emptyPublication })
+            await refreshProfileCounts()
+            return true
+        } catch (error) {
+            console.error('Add publication error:', error)
+            setProfileSaveError(error instanceof Error ? error.message : 'Failed to add publication')
+            return false
+        } finally {
+            setIsSavingProfile(false)
+        }
+    }
+
     const ensureRoleSnapshot = async () => {
         const trimmedRole = targetRole.trim()
         if (!trimmedRole || roleSnapshotReady) return roleSnapshotReady
@@ -500,7 +773,7 @@ export default function OnboardingPage() {
                             <SiLinkedin className="mx-auto text-5xl text-[#0077B5] mb-6 opacity-90" />
                             <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Connect your LinkedIn</h2>
                             <p className="text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-                                Optional. We'll include this link on your resume. Next, you'll add education and work experience.
+                                Optional. We'll include this link on your resume. Next, you'll add education, work experience, and more.
                             </p>
                         </div>
 
@@ -602,7 +875,7 @@ export default function OnboardingPage() {
                             </div>
                             <h2 className="text-2xl font-serif font-semibold mb-3 text-[var(--text-primary)]">Upload your existing resume</h2>
                             <p className="text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-                                Optional. We’ll extract skills, projects, education, and work experience into the right pools so you can review them later.
+                                Optional. We’ll extract skills, projects, education, work experience, extracurriculars, awards, and publications so you can review them later.
                             </p>
                         </div>
 
@@ -634,6 +907,9 @@ export default function OnboardingPage() {
                                     <div>Projects: {resumeExtractSummary.projects}</div>
                                     <div>Education: {resumeExtractSummary.education}</div>
                                     <div>Work Experience: {resumeExtractSummary.experience}</div>
+                                    <div>Extracurriculars: {resumeExtractSummary.extracurriculars}</div>
+                                    <div>Awards: {resumeExtractSummary.awards}</div>
+                                    <div>Publications: {resumeExtractSummary.publications}</div>
                                     <div>Contact fields updated: {resumeExtractSummary.contactFields}</div>
                                 </div>
                             )}
@@ -899,7 +1175,347 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
-                {/* Step 6: Select Platforms */}
+                {/* Step 6: Extracurriculars */}
+                {step === extracurricularStep && (
+                    <div className="space-y-8">
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                                <MdGroups className="text-3xl text-[var(--orange-primary)]" />
+                            </div>
+                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Extracurriculars</h2>
+                            <p className="text-[var(--text-secondary)] mt-1">
+                                Optional. Add clubs, volunteering, or leadership roles now or later in Profile.
+                            </p>
+                            {profileCounts && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                    Current: {profileCounts.extracurriculars} extracurriculars
+                                </p>
+                            )}
+                            {pendingExtracurriculars.length > 0 && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    Pending additions: {pendingExtracurriculars.length}
+                                </p>
+                            )}
+                        </div>
+
+                        {profileSaveError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                {profileSaveError}
+                            </div>
+                        )}
+
+                        <div className="max-w-2xl mx-auto space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Title"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newExtracurricular.title}
+                                onChange={(e) => setNewExtracurricular({ ...newExtracurricular, title: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Organization (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newExtracurricular.organization}
+                                onChange={(e) => setNewExtracurricular({ ...newExtracurricular, organization: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Location (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newExtracurricular.location}
+                                onChange={(e) => setNewExtracurricular({ ...newExtracurricular, location: e.target.value })}
+                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                    value={newExtracurricular.start_date}
+                                    onChange={(e) => setNewExtracurricular({ ...newExtracurricular, start_date: e.target.value })}
+                                />
+                                <input
+                                    type="date"
+                                    disabled={newExtracurricular.is_current}
+                                    className="flex-1 px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] disabled:opacity-50"
+                                    value={newExtracurricular.end_date}
+                                    onChange={(e) => setNewExtracurricular({ ...newExtracurricular, end_date: e.target.value })}
+                                />
+                            </div>
+                            <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                <input
+                                    type="checkbox"
+                                    checked={newExtracurricular.is_current}
+                                    onChange={(e) =>
+                                        setNewExtracurricular({
+                                            ...newExtracurricular,
+                                            is_current: e.target.checked,
+                                            end_date: e.target.checked ? '' : newExtracurricular.end_date,
+                                        })
+                                    }
+                                />
+                                Current
+                            </label>
+                            <textarea
+                                placeholder="Description (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
+                                value={newExtracurricular.description}
+                                onChange={(e) => setNewExtracurricular({ ...newExtracurricular, description: e.target.value })}
+                            />
+                            <button
+                                type="button"
+                                onClick={queueExtracurricular}
+                                disabled={isSavingProfile || !newExtracurricular.title.trim()}
+                                className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                            >
+                                Add another extracurricular
+                            </button>
+                            <p className="text-xs text-[var(--text-secondary)]">
+                                We’ll save your extracurricular entries when you continue.
+                            </p>
+                        </div>
+
+                        {pendingExtracurriculars.length > 0 && (
+                            <div className="max-w-2xl mx-auto rounded-lg border border-[var(--border-light)] bg-white p-4 space-y-3">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                                    Pending extracurriculars
+                                </div>
+                                {pendingExtracurriculars.map((item, index) => (
+                                    <div
+                                        key={`extracurricular-${index}`}
+                                        className="flex items-center justify-between gap-4 border-b border-[var(--border-light)] pb-2 last:border-b-0 last:pb-0"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-[var(--text-primary)]">
+                                                {item.title || 'Untitled extracurricular'}
+                                            </div>
+                                            <div className="text-xs text-[var(--text-secondary)]">
+                                                {item.organization || 'Organization not specified'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExtracurricular(index)}
+                                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 7: Awards */}
+                {step === awardsStep && (
+                    <div className="space-y-8">
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                                <MdEmojiEvents className="text-3xl text-[var(--orange-primary)]" />
+                            </div>
+                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Awards</h2>
+                            <p className="text-[var(--text-secondary)] mt-1">
+                                Optional. Add honors or recognitions now or later in Profile.
+                            </p>
+                            {profileCounts && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                    Current: {profileCounts.awards} awards
+                                </p>
+                            )}
+                            {pendingAwards.length > 0 && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    Pending additions: {pendingAwards.length}
+                                </p>
+                            )}
+                        </div>
+
+                        {profileSaveError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                {profileSaveError}
+                            </div>
+                        )}
+
+                        <div className="max-w-2xl mx-auto space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Award title"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newAward.title}
+                                onChange={(e) => setNewAward({ ...newAward, title: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Issuer (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newAward.issuer}
+                                onChange={(e) => setNewAward({ ...newAward, issuer: e.target.value })}
+                            />
+                            <input
+                                type="date"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newAward.awarded_at}
+                                onChange={(e) => setNewAward({ ...newAward, awarded_at: e.target.value })}
+                            />
+                            <textarea
+                                placeholder="Description (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
+                                value={newAward.description}
+                                onChange={(e) => setNewAward({ ...newAward, description: e.target.value })}
+                            />
+                            <button
+                                type="button"
+                                onClick={queueAward}
+                                disabled={isSavingProfile || !newAward.title.trim()}
+                                className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                            >
+                                Add another award
+                            </button>
+                            <p className="text-xs text-[var(--text-secondary)]">
+                                We’ll save your awards when you continue.
+                            </p>
+                        </div>
+
+                        {pendingAwards.length > 0 && (
+                            <div className="max-w-2xl mx-auto rounded-lg border border-[var(--border-light)] bg-white p-4 space-y-3">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                                    Pending awards
+                                </div>
+                                {pendingAwards.map((item, index) => (
+                                    <div
+                                        key={`award-${index}`}
+                                        className="flex items-center justify-between gap-4 border-b border-[var(--border-light)] pb-2 last:border-b-0 last:pb-0"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-[var(--text-primary)]">
+                                                {item.title || 'Untitled award'}
+                                            </div>
+                                            <div className="text-xs text-[var(--text-secondary)]">
+                                                {item.issuer || 'Issuer not specified'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeAward(index)}
+                                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 8: Publications */}
+                {step === publicationsStep && (
+                    <div className="space-y-8">
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-warm)] mb-6">
+                                <MdMenuBook className="text-3xl text-[var(--orange-primary)]" />
+                            </div>
+                            <h2 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">Publications</h2>
+                            <p className="text-[var(--text-secondary)] mt-1">
+                                Optional. Add papers, articles, or blog posts now or later in Profile.
+                            </p>
+                            {profileCounts && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-2">
+                                    Current: {profileCounts.publications} publications
+                                </p>
+                            )}
+                            {pendingPublications.length > 0 && (
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    Pending additions: {pendingPublications.length}
+                                </p>
+                            )}
+                        </div>
+
+                        {profileSaveError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                                {profileSaveError}
+                            </div>
+                        )}
+
+                        <div className="max-w-2xl mx-auto space-y-3">
+                            <input
+                                type="text"
+                                placeholder="Publication title"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newPublication.title}
+                                onChange={(e) => setNewPublication({ ...newPublication, title: e.target.value })}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Venue / Journal (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newPublication.venue}
+                                onChange={(e) => setNewPublication({ ...newPublication, venue: e.target.value })}
+                            />
+                            <input
+                                type="url"
+                                placeholder="URL (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newPublication.url}
+                                onChange={(e) => setNewPublication({ ...newPublication, url: e.target.value })}
+                            />
+                            <input
+                                type="date"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)]"
+                                value={newPublication.published_at}
+                                onChange={(e) => setNewPublication({ ...newPublication, published_at: e.target.value })}
+                            />
+                            <textarea
+                                placeholder="Description (optional)"
+                                className="w-full px-3 py-2 rounded-md border border-[var(--border-light)] bg-[var(--bg-warm)] min-h-[90px]"
+                                value={newPublication.description}
+                                onChange={(e) => setNewPublication({ ...newPublication, description: e.target.value })}
+                            />
+                            <button
+                                type="button"
+                                onClick={queuePublication}
+                                disabled={isSavingProfile || !newPublication.title.trim()}
+                                className="w-full px-4 py-2 rounded-md border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)] disabled:opacity-50"
+                            >
+                                Add another publication
+                            </button>
+                            <p className="text-xs text-[var(--text-secondary)]">
+                                We’ll save your publications when you continue.
+                            </p>
+                        </div>
+
+                        {pendingPublications.length > 0 && (
+                            <div className="max-w-2xl mx-auto rounded-lg border border-[var(--border-light)] bg-white p-4 space-y-3">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                                    Pending publications
+                                </div>
+                                {pendingPublications.map((item, index) => (
+                                    <div
+                                        key={`publication-${index}`}
+                                        className="flex items-center justify-between gap-4 border-b border-[var(--border-light)] pb-2 last:border-b-0 last:pb-0"
+                                    >
+                                        <div>
+                                            <div className="font-medium text-[var(--text-primary)]">
+                                                {item.title || 'Untitled publication'}
+                                            </div>
+                                            <div className="text-xs text-[var(--text-secondary)]">
+                                                {item.venue || item.url || 'Venue not specified'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removePublication(index)}
+                                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 9: Select Platforms */}
                 {step === platformSelectStep && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
@@ -915,7 +1531,7 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
-                {/* Step 7: Enter URLs */}
+                {/* Step 10: Enter URLs */}
                 {step === platformUrlsStep && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
@@ -959,7 +1575,7 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                {/* Step 8: Target Role */}
+                {/* Step 11: Target Role */}
                 {step === targetRoleStep && (
                         <div className="space-y-8">
                         <div className="text-center py-4">
@@ -1001,7 +1617,7 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                {/* Step 9: Syncing Progress */}
+                {/* Step 12: Syncing Progress */}
                 {step === syncStep && (
                         <div className="space-y-8">
                         <div className="text-center">

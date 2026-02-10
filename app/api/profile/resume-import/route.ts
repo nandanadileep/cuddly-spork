@@ -197,6 +197,112 @@ export async function POST(req: NextRequest) {
             experienceAdded++
         }
 
+        const existingExtras = await prisma.extracurricular.findMany({
+            where: { user_id: user.id },
+            select: { title: true, organization: true },
+        })
+        const extracurricularKeys = new Set(
+            existingExtras.map((item) =>
+                normalizeKey(`${item.title}|${item.organization || ''}`)
+            )
+        )
+
+        let extracurricularAdded = 0
+        for (const item of extraction.extracurriculars || []) {
+            const title = (item.title || '').trim()
+            if (!title) continue
+            const organization = (item.organization || '').trim()
+            const key = normalizeKey(`${title}|${organization}`)
+            if (extracurricularKeys.has(key)) continue
+
+            const isCurrent = Boolean(item.isCurrent) || /present|current/i.test(item.endDate || '')
+            const startDate = parseDateValue(item.startDate)
+            const endDate = isCurrent ? null : parseDateValue(item.endDate)
+
+            await prisma.extracurricular.create({
+                data: {
+                    user_id: user.id,
+                    title,
+                    organization: organization || null,
+                    location: item.location || null,
+                    start_date: startDate,
+                    end_date: endDate,
+                    is_current: isCurrent,
+                    description: item.description || null,
+                },
+            })
+            extracurricularKeys.add(key)
+            extracurricularAdded++
+        }
+
+        const existingAwards = await prisma.award.findMany({
+            where: { user_id: user.id },
+            select: { title: true, issuer: true },
+        })
+        const awardKeys = new Set(
+            existingAwards.map((item) =>
+                normalizeKey(`${item.title}|${item.issuer || ''}`)
+            )
+        )
+
+        let awardsAdded = 0
+        for (const item of extraction.awards || []) {
+            const title = (item.title || '').trim()
+            if (!title) continue
+            const issuer = (item.issuer || '').trim()
+            const key = normalizeKey(`${title}|${issuer}`)
+            if (awardKeys.has(key)) continue
+
+            const awardedAt = parseDateValue(item.awardedAt)
+
+            await prisma.award.create({
+                data: {
+                    user_id: user.id,
+                    title,
+                    issuer: issuer || null,
+                    awarded_at: awardedAt,
+                    description: item.description || null,
+                },
+            })
+            awardKeys.add(key)
+            awardsAdded++
+        }
+
+        const existingPublications = await prisma.publication.findMany({
+            where: { user_id: user.id },
+            select: { title: true, venue: true, url: true },
+        })
+        const publicationKeys = new Set(
+            existingPublications.map((item) =>
+                normalizeKey(`${item.title}|${item.venue || ''}|${item.url || ''}`)
+            )
+        )
+
+        let publicationsAdded = 0
+        for (const item of extraction.publications || []) {
+            const title = (item.title || '').trim()
+            if (!title) continue
+            const venue = (item.venue || '').trim()
+            const url = (item.url || '').trim()
+            const key = normalizeKey(`${title}|${venue}|${url}`)
+            if (publicationKeys.has(key)) continue
+
+            const publishedAt = parseDateValue(item.publishedAt)
+
+            await prisma.publication.create({
+                data: {
+                    user_id: user.id,
+                    title,
+                    venue: venue || null,
+                    url: url || null,
+                    published_at: publishedAt,
+                    description: item.description || null,
+                },
+            })
+            publicationKeys.add(key)
+            publicationsAdded++
+        }
+
         const draft = await prisma.analysisDraft.findUnique({
             where: { user_id: user.id },
         })
@@ -279,6 +385,9 @@ export async function POST(req: NextRequest) {
                 projects: newProjects.length,
                 education: educationAdded,
                 experience: experienceAdded,
+                extracurriculars: extracurricularAdded,
+                awards: awardsAdded,
+                publications: publicationsAdded,
                 contactFields: Object.keys(contactUpdates).length,
             },
         })

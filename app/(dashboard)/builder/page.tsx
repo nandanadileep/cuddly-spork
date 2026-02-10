@@ -58,6 +58,19 @@ type ResumeGenerationError = {
     hint?: string
 }
 
+type CachedPreview = {
+    latex: string
+    pdfBase64?: string | null
+    templateId: string
+    updatedAt: string
+}
+
+const buildPdfUrl = (base64: string) => {
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+    const blob = new Blob([bytes], { type: 'application/pdf' })
+    return URL.createObjectURL(blob)
+}
+
 export default function ResumeBuilderPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
@@ -77,6 +90,21 @@ export default function ResumeBuilderPage() {
     const [resumePreview, setResumePreview] = useState<ResumePreview | null>(null)
 
     const isHistoryClearAllowed = (session?.user?.email || '').trim().toLowerCase() === 'nandanadileep2002@gmail.com'
+    const previewStorageKey = useMemo(() => {
+        const email = (session?.user?.email || '').trim().toLowerCase()
+        if (!email) return null
+        return `shipcv_preview_${email}_${templateId}`
+    }, [session?.user?.email, templateId])
+
+    const persistPreview = (payload: CachedPreview) => {
+        if (!previewStorageKey || typeof window === 'undefined') return
+        try {
+            sessionStorage.setItem(previewStorageKey, JSON.stringify(payload))
+        } catch (error) {
+            console.warn('Failed to persist preview:', error)
+        }
+    }
+
 
     const fetchProjects = () => {
         return fetch('/api/projects')
@@ -148,6 +176,32 @@ export default function ResumeBuilderPage() {
         }
     }, [status])
 
+    useEffect(() => {
+        if (isLoading || latexContent || !previewStorageKey || typeof window === 'undefined') return
+        try {
+            const raw = sessionStorage.getItem(previewStorageKey)
+            if (!raw) return
+            const cached = JSON.parse(raw) as CachedPreview
+            if (!cached?.latex) return
+            setLatexContent(cached.latex)
+            setLatexDraft(cached.latex)
+            if (cached.pdfBase64) {
+                const url = buildPdfUrl(cached.pdfBase64)
+                setPdfUrl(url)
+            }
+        } catch (error) {
+            console.warn('Failed to restore preview:', error)
+        }
+    }, [isLoading, latexContent, previewStorageKey])
+
+    useEffect(() => {
+        return () => {
+            if (pdfUrl) {
+                URL.revokeObjectURL(pdfUrl)
+            }
+        }
+    }, [pdfUrl])
+
     const selectedProjects = useMemo(() => {
         if (!draft) return []
         return projects.filter(project => draft.selectedProjectIds.includes(project.id))
@@ -202,7 +256,6 @@ export default function ResumeBuilderPage() {
     const handleGenerate = async () => {
         if (!draft) return
         setIsGenerating(true)
-        setPdfUrl(null)
         setGenerateError(null)
         try {
             await saveDraft()
@@ -224,11 +277,15 @@ export default function ResumeBuilderPage() {
                 setLatexContent(latex)
                 setLatexDraft(latex)
                 if (data.pdfBase64) {
-                    const bytes = Uint8Array.from(atob(data.pdfBase64), c => c.charCodeAt(0))
-                    const blob = new Blob([bytes], { type: 'application/pdf' })
-                    const url = URL.createObjectURL(blob)
+                    const url = buildPdfUrl(data.pdfBase64)
                     setPdfUrl(url)
                 }
+                persistPreview({
+                    latex,
+                    pdfBase64: data.pdfBase64 || null,
+                    templateId,
+                    updatedAt: new Date().toISOString(),
+                })
             } else {
                 setGenerateError({
                     message: data.error || 'Failed to generate resume',
@@ -918,7 +975,7 @@ export default function ResumeBuilderPage() {
                                         className="w-full min-h-[200px] px-3 py-2 rounded-lg border border-[var(--border-light)] bg-[var(--bg-warm)] text-xs font-mono"
                                     />
                                 )}
-                                {latexContent && (
+                                    {latexContent && (
                                     <button
                                         onClick={async () => {
                                             if (!latexDraft.trim()) return
@@ -929,10 +986,14 @@ export default function ResumeBuilderPage() {
                                             })
                                             const data = await res.json()
                                             if (res.ok && data.pdfBase64) {
-                                                const bytes = Uint8Array.from(atob(data.pdfBase64), c => c.charCodeAt(0))
-                                                const blob = new Blob([bytes], { type: 'application/pdf' })
-                                                const url = URL.createObjectURL(blob)
+                                                const url = buildPdfUrl(data.pdfBase64)
                                                 setPdfUrl(url)
+                                                persistPreview({
+                                                    latex: latexDraft,
+                                                    pdfBase64: data.pdfBase64 || null,
+                                                    templateId,
+                                                    updatedAt: new Date().toISOString(),
+                                                })
                                             } else if (!res.ok) {
                                                 setGenerateError({
                                                     message: data.error || 'Failed to compile LaTeX',
