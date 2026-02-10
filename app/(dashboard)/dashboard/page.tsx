@@ -700,7 +700,7 @@ export default function DashboardPage() {
                                     <button
                                         onClick={handleAnalyzeAll}
                                         disabled={isAnalyzing || projects.length === 0}
-                                        className="px-4 py-2 bg-white border border-[var(--border-light)] text-[var(--text-primary)] rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
+                                        className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-light)] text-[var(--text-primary)] rounded-md text-sm font-medium hover:bg-[var(--bg-warm)] flex items-center gap-2 disabled:opacity-50"
                                     >
                                         {isAnalyzing && analysisProgress
                                             ? `Analyzing ${analysisProgress.current}/${analysisProgress.total}` 
