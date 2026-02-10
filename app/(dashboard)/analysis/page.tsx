@@ -382,6 +382,14 @@ export default function AnalysisFlowPage() {
         setManualProjectInput({ name: '', description: '', technologies: '', url: '' })
     }
 
+    const handleRemoveManualProject = (projectId: string) => {
+        const nextManual = manualProjects.filter(project => project.id !== projectId)
+        const nextSelected = selectedProjectIds.filter(id => id !== projectId)
+        setManualProjects(nextManual)
+        setSelectedProjectIds(nextSelected)
+        saveDraft({ manualProjects: nextManual, selectedProjectIds: nextSelected })
+    }
+
     const handleFetchFromUrl = async () => {
         if (!manualProjectInput.url.trim()) {
             setUrlMessage('Add a URL to fetch details.')
@@ -846,8 +854,19 @@ export default function AnalysisFlowPage() {
                                 <div className="space-y-2 text-sm text-[var(--text-secondary)]">
                                     {manualProjects.map(project => (
                                         <div key={project.id} className="border border-[var(--border-light)] rounded-lg p-3">
-                                            <div className="font-semibold text-[var(--text-primary)]">{project.name}</div>
-                                            <div className="text-xs">{project.description}</div>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <div className="font-semibold text-[var(--text-primary)]">{project.name}</div>
+                                                    <div className="text-xs">{project.description}</div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveManualProject(project.id)}
+                                                    className="text-xs text-red-500 hover:underline"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -975,7 +994,16 @@ export default function AnalysisFlowPage() {
                                 key={project.id}
                                 className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-sm"
                             >
-                                <h3 className="text-lg font-semibold">{project.name}</h3>
+                                <div className="flex items-start justify-between gap-3">
+                                    <h3 className="text-lg font-semibold">{project.name}</h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveManualProject(project.id)}
+                                        className="text-xs text-red-500 hover:underline"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
                                 <p className="text-sm text-[var(--text-secondary)] mb-4">{project.description}</p>
                                 <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
                                     Manual Highlights
