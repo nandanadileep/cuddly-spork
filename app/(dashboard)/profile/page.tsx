@@ -503,11 +503,17 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-12">
-            <header className="border-b border-[var(--border-light)] pb-6 flex justify-between items-end">
+            <header className="border-b border-[var(--border-light)] pb-6 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
                 <div>
                     <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)]">Profile</h1>
                     <p className="text-[var(--text-secondary)] mt-1">Manage your professional details for resume generation.</p>
                 </div>
+                <Link
+                    href="/builder"
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
+                >
+                    Back to Builder
+                </Link>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -573,7 +579,7 @@ export default function ProfilePage() {
                 {/* Right Side: Resume Details */}
                 <div className="lg:col-span-3 space-y-8">
 	                    {/* Contact & Links */}
-                    <section className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
+                    <section id="contact" className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-light)] shadow-sm space-y-4">
                         <h2 className="text-xl font-bold flex items-center gap-2">Contact & Links</h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

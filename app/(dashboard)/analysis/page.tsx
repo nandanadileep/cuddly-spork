@@ -46,6 +46,8 @@ export default function AnalysisFlowPage() {
     const [excludedSkills, setExcludedSkills] = useState<string[]>([])
     const [skillInput, setSkillInput] = useState('')
     const [isAddingSkill, setIsAddingSkill] = useState(false)
+    const [roleSkillSuggestions, setRoleSkillSuggestions] = useState<string[]>([])
+    const [roleTitle, setRoleTitle] = useState<string | null>(null)
     const [manualProjectInput, setManualProjectInput] = useState({
         name: '',
         description: '',
@@ -228,10 +230,42 @@ export default function AnalysisFlowPage() {
             })
     }
 
+    const fetchRoleSuggestions = () => {
+        return fetch('/api/user/target-role')
+            .then(res => res.json())
+            .then(data => {
+                const jobDescription = data?.jobDescription || null
+                const requiredSkills = Array.isArray(jobDescription?.requiredSkills) ? jobDescription.requiredSkills : []
+                const preferredSkills = Array.isArray(jobDescription?.preferredSkills) ? jobDescription.preferredSkills : []
+                const tools = Array.isArray(jobDescription?.tools) ? jobDescription.tools : []
+
+                const combined = [...requiredSkills, ...preferredSkills, ...tools]
+                    .filter((item) => typeof item === 'string')
+                    .map((item) => item.trim())
+                    .filter(Boolean)
+
+                const seen = new Set<string>()
+                const unique: string[] = []
+                combined.forEach((skill) => {
+                    const key = skill.toLowerCase()
+                    if (seen.has(key)) return
+                    seen.add(key)
+                    unique.push(skill)
+                })
+
+                setRoleSkillSuggestions(unique)
+                setRoleTitle(data?.targetRole || jobDescription?.title || null)
+            })
+            .catch(() => {
+                setRoleSkillSuggestions([])
+                setRoleTitle(null)
+            })
+    }
+
     useEffect(() => {
         if (status === 'authenticated') {
             setIsLoading(true)
-            Promise.all([fetchProjects(), fetchDraft()]).finally(() => setIsLoading(false))
+            Promise.all([fetchProjects(), fetchDraft(), fetchRoleSuggestions()]).finally(() => setIsLoading(false))
         }
     }, [status])
 
@@ -524,10 +558,13 @@ export default function AnalysisFlowPage() {
         }
     }
 
-    const handleAddManualSkill = async () => {
-        const trimmed = skillInput.trim()
+    const hasSkill = (items: string[], value: string) =>
+        items.some((item) => item.toLowerCase() === value.toLowerCase())
+
+    const addManualSkill = async (value: string) => {
+        const trimmed = value.trim()
         if (!trimmed) return
-        if (manualSkills.includes(trimmed)) return
+        if (hasSkill(manualSkills, trimmed) || hasSkill(skills, trimmed)) return
         const next = [...manualSkills, trimmed]
         setManualSkills(next)
         setSkillInput('')
@@ -537,6 +574,10 @@ export default function AnalysisFlowPage() {
         } finally {
             setIsAddingSkill(false)
         }
+    }
+
+    const handleAddManualSkill = async () => {
+        await addManualSkill(skillInput)
     }
 
     const handleRemoveSkill = (skill: string) => {
@@ -558,6 +599,25 @@ export default function AnalysisFlowPage() {
         const manual = manualProjects.filter(project => selectedProjectIds.includes(project.id))
         return { apiProjects, manual }
     }, [projects, manualProjects, selectedProjectIds])
+
+    const roleSuggestionSet = useMemo(() => {
+        const existing = new Set<string>()
+        skills.forEach((skill) => existing.add(skill.toLowerCase()))
+        manualSkills.forEach((skill) => existing.add(skill.toLowerCase()))
+        excludedSkills.forEach((skill) => existing.add(skill.toLowerCase()))
+        return existing
+    }, [skills, manualSkills, excludedSkills])
+
+    const filteredRoleSuggestions = useMemo(() => {
+        if (roleSkillSuggestions.length === 0) return []
+        const query = skillInput.trim().toLowerCase()
+        return roleSkillSuggestions.filter((skill) => {
+            const key = skill.toLowerCase()
+            if (roleSuggestionSet.has(key)) return false
+            if (query && !key.includes(query)) return false
+            return true
+        })
+    }, [roleSkillSuggestions, roleSuggestionSet, skillInput])
 
     if (status === 'loading' || isLoading) {
         return (
@@ -1038,6 +1098,26 @@ export default function AnalysisFlowPage() {
                                     {isAddingSkill ? 'Adding...' : 'Add'}
                                 </button>
                             </div>
+                            {filteredRoleSuggestions.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold mb-2">
+                                        Suggested for {roleTitle || 'this role'}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {filteredRoleSuggestions.slice(0, 12).map((skill) => (
+                                            <button
+                                                key={`suggested-${skill}`}
+                                                type="button"
+                                                onClick={() => addManualSkill(skill)}
+                                                disabled={isAddingSkill}
+                                                className="px-3 py-1 rounded-full bg-[var(--bg-warm)] border border-[var(--border-light)] text-sm text-[var(--text-secondary)] hover:bg-[var(--orange-light)] disabled:opacity-50"
+                                            >
+                                                {skill} +
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             {isAddingSkill && (
                                 <div className="text-xs text-[var(--text-secondary)] -mt-2 mb-4">
                                     Saving skill...

@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MdCheckCircle, MdLink, MdRadioButtonUnchecked } from 'react-icons/md'
+import { MdCheckCircle, MdClose, MdLink, MdRadioButtonUnchecked } from 'react-icons/md'
 
 interface Project {
     id: string
@@ -305,7 +305,17 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto">
             {showTour && (
                 <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
-                    <div className="w-full max-w-lg bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-xl space-y-4">
+                    <div className="relative w-full max-w-lg bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-light)] shadow-xl space-y-4">
+                        <button
+                            onClick={() => {
+                                setShowTour(false)
+                                if (tourHideNext) localStorage.setItem('shipcv_tour_seen', 'true')
+                            }}
+                            className="absolute top-4 right-4 rounded-full p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-warm)] transition-colors"
+                            aria-label="Close tour"
+                        >
+                            <MdClose className="text-lg" />
+                        </button>
                         <div>
                             <div className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-bold">
                                 Getting Started
@@ -316,59 +326,38 @@ export default function DashboardPage() {
                             <p className="text-sm text-[var(--text-secondary)] mt-2">
                                 {tourSteps[tourStep]?.body}
                             </p>
-                        </div>
-                        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                            <input
-                                type="checkbox"
-                                checked={tourHideNext}
-                                onChange={(e) => setTourHideNext(e.target.checked)}
-                            />
-                            Don’t show this again
-                        </label>
-                        <div className="flex flex-wrap gap-3 justify-between">
                             <button
                                 onClick={() => {
-                                    setShowTour(false)
-                                    if (tourHideNext) localStorage.setItem('shipcv_tour_seen', 'true')
+                                    tourSteps[tourStep]?.action?.()
                                 }}
-                                className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm text-[var(--text-secondary)]"
+                                className="mt-3 text-sm font-semibold text-[var(--orange-primary)] hover:underline"
                             >
-                                Close
+                                {tourSteps[tourStep]?.cta}
                             </button>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => {
-                                        const next = Math.max(0, tourStep - 1)
-                                        setTourStep(next)
-                                    }}
-                                    disabled={tourStep === 0}
-                                    className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm text-[var(--text-secondary)] disabled:opacity-50"
-                                >
-                                    Back
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        tourSteps[tourStep]?.action?.()
-                                    }}
-                                    className="px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm text-[var(--text-secondary)]"
-                                >
-                                    {tourSteps[tourStep]?.cta}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        const next = tourStep + 1
-                                        if (next >= tourSteps.length) {
-                                            setShowTour(false)
-                                            localStorage.setItem('shipcv_tour_seen', 'true')
-                                            return
-                                        }
-                                        setTourStep(next)
-                                    }}
-                                    className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold"
-                                >
-                                    {tourStep === tourSteps.length - 1 ? 'Finish' : 'Next'}
-                                </button>
-                            </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                                <input
+                                    type="checkbox"
+                                    checked={tourHideNext}
+                                    onChange={(e) => setTourHideNext(e.target.checked)}
+                                />
+                                Don’t show this again
+                            </label>
+                            <button
+                                onClick={() => {
+                                    const next = tourStep + 1
+                                    if (next >= tourSteps.length) {
+                                        setShowTour(false)
+                                        localStorage.setItem('shipcv_tour_seen', 'true')
+                                        return
+                                    }
+                                    setTourStep(next)
+                                }}
+                                className="px-4 py-2 rounded-lg bg-[var(--orange-primary)] text-white text-sm font-semibold"
+                            >
+                                {tourStep === tourSteps.length - 1 ? 'Finish' : 'Next'}
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -606,7 +606,7 @@ export default function ResumeBuilderPage() {
                             {selectedProjects.length === 0 && manualProjects.length === 0 ? (
                                 <p className="text-sm text-[var(--text-secondary)]">No projects selected yet.</p>
                             ) : (
-                                <div className="space-y-5">
+                                <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-5">
                                     {selectedProjects.map(project => {
                                         const bullets = resolveProjectBullets(project)
                                         return (
@@ -805,6 +805,16 @@ export default function ResumeBuilderPage() {
                                     if (!resumePreview?.user?.linkedinUrl) missingContact.push('LinkedIn')
                                     if (!resumePreview?.links?.githubUrl) missingContact.push('GitHub')
 
+                                    const missingProfileSections: string[] = []
+                                    if (missingContact.length > 0) missingProfileSections.push('Contact info')
+                                    if ((resumePreview?.counts?.experience || 0) === 0) missingProfileSections.push('Work')
+                                    if ((resumePreview?.counts?.education || 0) === 0) missingProfileSections.push('Education')
+
+                                    const profileEditLabel = missingProfileSections.length > 0
+                                        ? `Edit Profile (${missingProfileSections.join('/')})`
+                                        : 'Edit Profile'
+                                    const profileEditHref = missingContact.length > 0 ? '/profile#contact' : '/profile'
+
                                     const rows = [
                                         {
                                             key: 'contact',
@@ -869,10 +879,10 @@ export default function ResumeBuilderPage() {
                                             <div className="pt-4 border-t border-[var(--border-light)] flex flex-col sm:flex-row gap-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() => router.push('/profile')}
+                                                    onClick={() => router.push(profileEditHref)}
                                                     className="flex-1 px-4 py-2 rounded-lg border border-[var(--border-light)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-warm)]"
                                                 >
-                                                    Edit Profile (Education/Work)
+                                                    {profileEditLabel}
                                                 </button>
                                                 <button
                                                     type="button"
