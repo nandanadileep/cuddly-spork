@@ -13,9 +13,8 @@ export default function HomePage() {
                 </div>
 
                 <h1 className="text-6xl font-extrabold mb-6 leading-tight">
-                    Turn your scattered repos into an{' '}
-                    <span className="text-[var(--orange-primary)]">ATS-winning resume</span>{' '}
-                    in 60 seconds
+                    Turn your projects into an{' '}
+                    <span className="text-[var(--orange-primary)]">ATS-friendly resume</span>.
                 </h1>
 
                 <p className="text-xl text-[var(--text-secondary)] mb-8 max-w-2xl mx-auto leading-relaxed">
