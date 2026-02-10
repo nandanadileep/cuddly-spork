@@ -291,6 +291,8 @@ export default function DashboardPage() {
         }
     }
 
+    const analyzedCount = projects.filter(p => typeof p.ai_score === 'number').length
+
     if (status === 'loading' || isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
