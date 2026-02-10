@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import ThemeToggle from '@/components/ThemeToggle'
 
 function ResetPasswordForm() {
     const router = useRouter()
@@ -127,6 +128,9 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6">
+            <div className="fixed top-4 right-4 z-40">
+                <ThemeToggle />
+            </div>
             <p className="text-sm text-[var(--text-secondary)] mb-4 text-center max-w-md">
                 Kindly use desktop for a better experience.
             </p>

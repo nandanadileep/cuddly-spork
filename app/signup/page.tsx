@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function SignupPage() {
     const router = useRouter()
-    const [name, setName] = useState('')
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -19,11 +21,17 @@ export default function SignupPage() {
         setLoading(true)
 
         try {
+            const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
+            if (!firstName.trim() || !lastName.trim()) {
+                setError('Please enter your first and last name.')
+                setLoading(false)
+                return
+            }
             // 1. Create the account
             const response = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({ name: fullName, email, password }),
             })
 
             const data = await response.json()
@@ -45,6 +53,9 @@ export default function SignupPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
+            <div className="fixed top-4 right-4 z-40">
+                <ThemeToggle />
+            </div>
             <div className="max-w-md w-full">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-extrabold mb-2">Create your account</h1>
@@ -64,16 +75,29 @@ export default function SignupPage() {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-semibold mb-2">Full name</label>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
-                                placeholder="First Last"
-                                required
-                            />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm font-semibold mb-2">First name</label>
+                                <input
+                                    type="text"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
+                                    placeholder="First"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-2">Last name</label>
+                                <input
+                                    type="text"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-lg border-2 border-[var(--border-light)] bg-[var(--bg-warm)] focus:border-[var(--orange-primary)] outline-none transition-colors"
+                                    placeholder="Last"
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <div>

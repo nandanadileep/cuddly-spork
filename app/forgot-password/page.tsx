@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('')
@@ -36,6 +37,9 @@ export default function ForgotPasswordPage() {
     if (sent) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6">
+                <div className="fixed top-4 right-4 z-40">
+                    <ThemeToggle />
+                </div>
                 <p className="text-sm text-[var(--text-secondary)] mb-4 text-center max-w-md">
                     Kindly use desktop for a better experience.
                 </p>
@@ -57,6 +61,9 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6">
+            <div className="fixed top-4 right-4 z-40">
+                <ThemeToggle />
+            </div>
             <p className="text-sm text-[var(--text-secondary)] mb-4 text-center max-w-md">
                 Kindly use desktop for a better experience.
             </p>

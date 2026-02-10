@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { getProviders, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { FcGoogle } from 'react-icons/fc'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -96,6 +97,9 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
+            <div className="fixed top-4 right-4 z-40">
+                <ThemeToggle />
+            </div>
             <div className="max-w-md w-full">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-extrabold mb-2">Welcome back</h1>

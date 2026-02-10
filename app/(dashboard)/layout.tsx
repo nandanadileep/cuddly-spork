@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { MdInsights, MdOutlineDescription, MdPersonOutline, MdSettings, MdSpaceDashboard } from 'react-icons/md'
+import ThemeToggle from '@/components/ThemeToggle'
 
 interface Project {
     id: string
@@ -209,6 +210,7 @@ export default function DashboardLayout({
 
                         {/* User Menu */}
                         <div className="flex items-center gap-6">
+                            <ThemeToggle />
 
                             <div className="h-6 w-px bg-[var(--border-light)]" />
 
