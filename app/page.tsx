@@ -13,7 +13,8 @@ export default function HomePage() {
                 </div>
 
                 <h1 className="text-6xl font-extrabold mb-6 leading-tight">
-                    Turn your projects into an{' '}
+                    Turn your projects into an
+                    <br />
                     <span className="text-[var(--orange-primary)]">ATS-friendly resume</span>.
                 </h1>
 
