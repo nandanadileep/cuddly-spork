@@ -7,7 +7,12 @@ export const metadata: Metadata = {
     title: 'ShipCV - ATS Resume Builder',
     description: 'Turn your projects into an ATS-friendly resume.',
     icons: {
-        icon: '/favicon.svg',
+        icon: [
+            { url: '/favicon.ico', type: 'image/x-icon' },
+            { url: '/favicon.png', type: 'image/png' },
+            { url: '/favicon.svg', type: 'image/svg+xml' },
+        ],
+        apple: [{ url: '/favicon.png' }],
     },
     openGraph: {
         title: 'ShipCV - ATS Resume Builder',
