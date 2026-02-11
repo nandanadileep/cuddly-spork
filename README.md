@@ -22,6 +22,10 @@ ShipCV is a resume builder that turns your projects, experience, and profile dat
 - **AI:** OpenAI API for analysis + skill extraction
 - **PDF:** LaTeXLite for LaTeX compilation
 - **Scraping:** Cheerio for metadata extraction
+- **Storage:** Supabase Storage (resume PDFs), optional S3/R2
+- **Queues & Cache:** BullMQ + Redis, Upstash Redis
+- **Email:** Resend
+- **Parsing:** pdf-parse, mammoth, docx
 
 ## Challenges We Hit (And How We Handled Them)
 
