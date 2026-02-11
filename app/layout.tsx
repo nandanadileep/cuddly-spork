@@ -3,10 +3,22 @@ import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 
 export const metadata: Metadata = {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://shipcv.nandanadileep.com'),
     title: 'ShipCV - ATS Resume Builder',
-    description: 'Land more interviews.',
+    description: 'Turn your projects into an ATS-friendly resume.',
     icons: {
         icon: '/favicon.svg',
+    },
+    openGraph: {
+        title: 'ShipCV - ATS Resume Builder',
+        description: 'Turn your projects into an ATS-friendly resume.',
+        images: ['/og.png'],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'ShipCV - ATS Resume Builder',
+        description: 'Turn your projects into an ATS-friendly resume.',
+        images: ['/og.png'],
     },
 }
 
