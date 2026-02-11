@@ -39,6 +39,11 @@
     --text-primary: #F9FAFB;
     --text-secondary: #9CA3AF;
     --border-light: #374151;
+    --orange-primary: #8ABF9C;
+    --orange-hover: #9ACBAC;
+    --github-green: #7FC89B;
+    --orange-light: #33483E;
+    --green-light: #2F433A;
 }
 
 * {
