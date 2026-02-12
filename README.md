@@ -35,6 +35,7 @@ ShipCV is a resume builder that turns your projects, experience, and profile dat
 - **LaTeX compilation errors:** We tightened the template, removed fragile line breaks, and standardized spacing to prevent render failures.
 - **Data quality drift:** Projects and profiles can be updated over time, so we added caching and change detection to avoid stale or incorrect resume content.
 
+
 ## Local Development
 
 1. Install dependencies:
